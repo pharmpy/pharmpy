@@ -170,7 +170,7 @@ The input model to the structsearch tool is the highest ranking (PK) model from 
 will be used regardless of the elimination type.
 The dataset of the input model is replaced with the original dataset containing all DVIDs.
 
-The extra model is the highest-ranking model that has the same structural features as the input model but with one less
+The extra model is the highest-ranking model that has the same structural features as the final model but with one less
 peripheral compartment. If no such model exists the extra model is set to ``None``.
 
 For a TMDD model, structsearch is run to determine the best structural model. All input arguments are specified by
