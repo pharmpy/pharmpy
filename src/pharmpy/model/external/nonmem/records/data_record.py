@@ -4,7 +4,7 @@ NONMEM data record class.
 
 from itertools import chain
 
-from pharmpy.basic import BooleanExpr, Expr
+from pharmpy.basic import BooleanExpr, Expr, equals
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.model import Ignore, ModelSyntaxError
@@ -232,9 +232,19 @@ class DataRecord(OptionRecord):
         lpar_token = AttrToken('LPAR', '(')
         rpar_token = AttrToken('RPAR', ')')
 
+        def _is_in(ignore, old) -> bool:
+            if ignore in old:
+                return True
+            # To allow ID==1.0 to be the same as ID==1
+            expr = ignore.expression
+            for e in old:
+                if equals(expr, e.expression):
+                    return True
+            return False
+
         nodes = []
         for ignore in new:
-            if ignore in old:
+            if _is_in(ignore, old):
                 continue
             expr, strings = ignore.expression, ignore.strings
             rhs = expr.rhs if not strings else strings[expr.rhs]

@@ -3,14 +3,13 @@ from __future__ import annotations
 from collections.abc import Collection, Iterable, Mapping
 from typing import Self
 
-from pharmpy.deps import symengine, sympy
-from pharmpy.deps.sympy_printing import pretty
+from pharmpy.deps import symengine, sympy, sympy_printing
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images_and_symbols
 from pharmpy.internals.expr.subs import subs
 
 
-class ExprPrinter(pretty.PrettyPrinter):
+class ExprPrinter(sympy_printing.pretty.PrettyPrinter):
     def __init__(self):
         super().__init__(settings={'wrap_line': False, 'use_unicode': True})
 
@@ -23,6 +22,14 @@ class ExprPrinter(pretty.PrettyPrinter):
             lhs = e.lhs
             rhs = e.rhs
         return super()._print_Relational(sympy.Eq(lhs, rhs))
+
+
+class ExprStrPrinter(sympy_printing.str.StrPrinter):
+    def _print_Float(self, expr):
+        s = str(super()._print_Float(expr))
+        if '.' in s:
+            s = s.rstrip('0').rstrip('.')
+        return s
 
 
 class Expr:
@@ -159,7 +166,9 @@ class Expr:
         return self._expr != 0
 
     def __repr__(self) -> str:
-        return repr(sympy.sympify(self._expr))
+        printer = ExprStrPrinter()
+        expr_str = printer.doprint(sympy.sympify(self._expr))
+        return expr_str
 
     def serialize(self) -> str:
         return sympy.srepr(sympy.sympify(self._expr))
