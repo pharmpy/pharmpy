@@ -268,7 +268,9 @@ def create_workflow(
     return Workflow(wb)
 
 
-def _store_input_model(context, model, results, max_eval):
+def _store_input_model(
+    context: Context, model: Model, results: ModelfitResults, max_eval: bool
+) -> bool:
     context.log_info("Starting tool covsearch")
     context.log_info(f"Input model OFV: {results.ofv:.3f}")
     model = model.replace(name="input", description="")
