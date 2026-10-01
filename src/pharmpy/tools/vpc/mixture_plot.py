@@ -20,7 +20,7 @@ def plot_mixture_ids(orig_phm_path, sim_phm_path):
     simtab = NONMEMTableFile(sim_phm_path)
 
     full = pd.DataFrame()
-    for i, tab in enumerate(simtab.tables):
+    for i, _ in enumerate(simtab.tables):
         df = simtab.tables[i].data_frame
         df = df[['ID', 'SUBPOP', 'PMIX']]
         df = df.assign(sim=i)

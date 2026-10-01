@@ -183,7 +183,7 @@ class WorkflowBuilder(WorkflowBase):
         gather_task = Task("gather", gather_func)
         self.add_task(gather_task)
 
-        for i, task in enumerate(sources):
+        for _, task in enumerate(sources):
             self._g.add_edge(task, gather_task)
 
         if destination is not None:

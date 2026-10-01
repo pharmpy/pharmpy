@@ -1389,7 +1389,7 @@ class CompartmentalSystem(Statement):
             outflows = self.get_compartment_outflows(current)
             comp_height = max(comp_height, len(bidirects) + 1)
             comp_width += 1
-            for comp, rate in outflows:
+            for comp, _ in outflows:
                 if comp not in bidirects and comp != output:
                     current = comp
                     break
@@ -1448,7 +1448,7 @@ class CompartmentalSystem(Statement):
                     ),
                 )
 
-            for comp, rate in outflows:
+            for comp, _ in outflows:
                 if comp not in bidirects and comp != output:
                     next_comp = comp
                     break

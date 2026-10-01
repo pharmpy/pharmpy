@@ -162,7 +162,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         for s in model.statements.after_odes:
             if s.symbol == dv:
                 if s.expression.is_piecewise:
-                    for value, cond in s.expression.args:
+                    for value, _ in s.expression.args:
                         if value != dv:
                             dv_term = res_error_term(model, value)
                             dependencies.update(dv_term.dependencies())

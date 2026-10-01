@@ -203,7 +203,7 @@ def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
                 last.result()
 
                 results = []
-                for i in range(n):
+                for _ in range(n):
                     results.append(results_queue.get())
 
                 assert sorted(results) == sorted(range(n))
@@ -384,7 +384,7 @@ def test_chained_shared_one_exclusive_blocking(tmp_path, parallelization):
                 last.result()
 
                 results = []
-                for i in range(n):
+                for _ in range(n):
                     results.append(results_queue.get())
 
                 assert results == sorted(range(n))

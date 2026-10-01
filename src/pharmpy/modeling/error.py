@@ -498,7 +498,7 @@ def set_combined_error_model(
             for s in model.statements.after_odes:
                 if s.expression.is_piecewise():
                     args = s.expression.piecewise_args
-                    for expr, cond in args:
+                    for expr, _ in args:
                         if expr == ipred:
                             ipredadj = s.symbol
                             break
@@ -1087,7 +1087,7 @@ def set_power_on_ruv(
                 break
             if s.expression.is_piecewise():
                 args = s.expression.piecewise_args
-                for expr, cond in args:
+                for expr, _ in args:
                     if expr == ipred:
                         ipredadj = s.symbol
                         break

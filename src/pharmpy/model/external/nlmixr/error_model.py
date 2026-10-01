@@ -230,7 +230,7 @@ def find_aliases(symbol: Expr, model: Model, aliases=None) -> set:
 
         # If RES = PIECEWISE or PIECEWISE = RES
         if expr.expression.is_piecewise():
-            for e, c in expr.expression.piecewise_args:
+            for e, _ in expr.expression.piecewise_args:
                 if symbol == expr.symbol and e.is_symbol():
                     if e not in aliases:
                         aliases.union(find_aliases(e, model, aliases))

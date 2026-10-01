@@ -65,7 +65,7 @@ def get_observation_expression(model: Model) -> Expr:
     stats = model.statements
     # FIXME: Handle other DVs
     dv = next(iter(model.dependent_variables.keys()))
-    for i, s in enumerate(stats):
+    for i, s in enumerate(stats):  # noqa: B007
         if s.symbol == dv:
             y = s.expression
             break

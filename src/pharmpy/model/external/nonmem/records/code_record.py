@@ -718,7 +718,7 @@ class CodeRecord(Record):
 def create_dvs_node(dvs, dvid_name):
     """Create special dvs AST node"""
     s = ""
-    for i, (dv, dvid) in enumerate(dvs.items()):
+    for dv, dvid in dvs.items():
         s += f'IF ({dvid_name}.EQ.{dvid}) Y = {dv}\n'
     node = CodeRecordParser(s).root
     return node

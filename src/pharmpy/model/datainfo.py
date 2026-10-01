@@ -1374,7 +1374,7 @@ class DataInfo(Sequence, Immutable):
         return self.typeix['id'][0]
 
     def _set_column_type(self, name: str, type: str) -> DataInfo:
-        for i, col in enumerate(self):
+        for col in self:
             if col.name != name and col.type == type:
                 raise ValueError(
                     f"Cannot set new {type} column: column {col.name} already has type {type}"
