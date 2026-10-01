@@ -4,7 +4,6 @@ import shutil
 import pytest
 
 from pharmpy import modeling
-from pharmpy.config import site_config_path, user_config_path
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
@@ -19,9 +18,6 @@ from pharmpy.workflows import LocalDirectoryContext, ModelEntry
 
 
 def test_configuration():
-    print("User config dir:", user_config_path())
-    print("Site config dir:", site_config_path())
-    print("Default NONMEM path:", conf.default_nonmem_path)
     assert (conf.default_nonmem_path / 'license' / 'nonmem.lic').is_file()
 
 

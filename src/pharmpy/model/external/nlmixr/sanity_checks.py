@@ -324,7 +324,6 @@ def change_rvs_same(model: pharmpy.model.Model, sigma: bool = False) -> pharmpy.
                 current_var.append(new_var)
 
                 rvs_and_var[(rv.names, var)] = new_var
-                # print(rv, " : ", new_var)
             else:
                 current_var.append(var)
 
@@ -352,8 +351,6 @@ def change_rvs_same(model: pharmpy.model.Model, sigma: bool = False) -> pharmpy.
             model = model.replace(random_variables=all_rvs[keep])
             model = model.replace(random_variables=model.random_variables + new_rv)
 
-    # Add newline after all updated sigma values have been printed
-    print()
     return model
 
 

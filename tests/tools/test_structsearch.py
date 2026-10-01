@@ -369,7 +369,6 @@ def test_set_error_model_tmdd(
     dv_types = {'drug': 1, 'target': 2, 'complex': 3}
     tmdd_model = set_tmdd(tmdd_model, type='QSS', dv_types=dv_types)
     tmdd_model = set_error_model(tmdd_model, initial_error_models)
-    print(tmdd_model.code)
     assert check_drug_error(tmdd_model, dv=1)
     assert check_target_error(tmdd_model, dv=2)
     assert check_complex_error(tmdd_model, dv=3)

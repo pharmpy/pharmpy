@@ -1,3 +1,5 @@
+import warnings
+
 import pharmpy.model
 from pharmpy.basic import Expr
 from pharmpy.deps import sympy
@@ -89,7 +91,9 @@ class res_error_term:
         if self.res is None:
             raise ValueError("No resulting term found")
         elif len(errors) > 2:
-            print("Too many error terms found. Will try to translate either way.")
+            warnings.warn(
+                "Too many error terms found. Will try to translate either way.", UserWarning
+            )
         for t in errors:
             prop = False
             ali_removed = False

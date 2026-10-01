@@ -444,7 +444,6 @@ def convert_unit(
                 new_statements = model.statements.reassign(
                     ipred, ipred_assignment.expression / Expr.rational(conversion_factor)
                 )
-                print(new_statements)
         else:
             original_symbol = Expr.symbol(variable)
             scaled_symbol = Expr.symbol(f"SCALED_{variable}")

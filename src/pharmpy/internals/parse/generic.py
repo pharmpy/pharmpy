@@ -324,7 +324,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
 
     def treeprint(self, indent=''):
         """Prints debug formatted tree structure."""
-        print(self.debug())
+        print(self.debug())  # noqa: T201
 
     # -- private methods -----------------------------------------------
     def __len__(self):

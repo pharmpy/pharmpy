@@ -424,7 +424,6 @@ def set_error_model(model, initial_error_models, skip=(1,)):
             model = set_additive_error_model(model, dv=dvid)
         else:
             model = set_combined_error_model(model, dv=dvid)
-    print(model.code)
     return model
 
 

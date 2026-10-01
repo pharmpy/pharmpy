@@ -260,7 +260,7 @@ def print_model_code(model: Model) -> None:
     <BLANKLINE>
 
     """
-    print(model.code)
+    print(model.code)  # noqa: T201
 
 
 def set_name(model: Model, new_name: str) -> Model:
@@ -528,7 +528,7 @@ def print_model_symbols(model: Model) -> None:
     s += f'Sigmas: {", ".join(sigmas)}\n'
     s += f'Variables: {", ".join(variables)}\n'
     s += f'Data columns: {", ".join(model.datainfo.names)}'
-    print(s)
+    print(s)  # noqa: T201
 
 
 def get_config_path() -> str | None:

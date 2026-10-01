@@ -191,11 +191,6 @@ def test_pheno(pheno, advan, trans, compmat, amounts, strodes, corrics):
     assert ass.expression == Expr.function('A_CENTRAL', 't') / S(
         'S1'
     ) or ass.expression == Expr.function('A_CENTRAL', 't')
-    print(cm.compartmental_matrix._m.__class__)
-    print(Matrix(compmat)._m.__class__)
-    print(cm.compartmental_matrix._m)
-    print(Matrix(compmat)._m)
-    print(cm.compartmental_matrix._m == Matrix(compmat)._m)
     assert cm.compartmental_matrix == Matrix(compmat)
     assert cm.amounts == Matrix(amounts)
     odes, ics = cm.eqs, get_initial_conditions(model, dosing=True)

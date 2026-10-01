@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 
 import pharmpy.model
 from pharmpy.basic import BooleanExpr
@@ -434,9 +435,8 @@ def find_parentheses(s: str) -> dict:
             try:
                 d[start.pop()] = i
             except IndexError:
-                print('Too many closing parentheses')
-    if start:  # Check if stack is empty afterward
-        print('Too many opening parentheses')
+                assert False, 'Too many closing parentheses'
+    assert not start, 'Too many opening parentheses'
 
     return d
 
@@ -489,5 +489,7 @@ def convert_eq(cond) -> str:
         or re.search(r'(ID\s*<\s*)(\d+)', cond)
         or re.search(r'(ID\s*>\s*)(\d+)', cond)
     ):
-        print(f"Condition '{cond}' not supported by nlmixr. Model will not run.")
+        warnings.warn(
+            f"Condition '{cond}' not supported by nlmixr. Model will not run.", UserWarning
+        )
     return cond

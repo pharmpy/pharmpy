@@ -471,7 +471,6 @@ def test_get_params(load_model_for_test, create_model_for_test, testdata):
     npars = 2
 
     param_names = get_params(model, rvs, npars)
-    print(param_names)
     assert param_names == ['CL', 'V']
 
 

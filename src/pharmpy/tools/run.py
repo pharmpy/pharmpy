@@ -847,12 +847,12 @@ def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
 
     def print_header(text, first=False):
         if not first:
-            print()
-        print(text)
-        print("-" * len(text))
+            print()  # noqa: T201
+        print(text)  # noqa: T201
+        print("-" * len(text))  # noqa: T201
 
     def print_fmt(text, result):
-        print(f"{text:33} {result}")
+        print(f"{text:33} {result}")  # noqa: T201
 
     res = mfr(modelfit_results)
 
@@ -886,7 +886,7 @@ def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
         df = pd.concat([pe, se, rse], axis=1)
     else:
         df = pd.concat([pe], axis=1)
-    print(df)
+    print(df)  # noqa: T201
 
 
 def write_results(results: Results, path: str | Path, compression: bool = False, csv: bool = False):

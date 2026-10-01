@@ -215,7 +215,6 @@ def summarize_individuals_count_table(
             parent_ofvs.loc[name] = np.nan
         else:
             parent_ofvs.loc[name] = list(ofvs.loc[parent])
-    print(df)
 
     for name in df.index.unique(level='model'):
         val = df.loc[name]['parent_model'].iloc[0]

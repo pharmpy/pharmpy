@@ -101,7 +101,6 @@ def test_repr_latex_rv():
     )
 
     dist2 = NormalDistribution.create('x', 'iiv', 0, 1)
-    print(dist2._repr_latex_())
     assert dist2._repr_latex_() == '$x\\sim  \\mathcal{N} \\left(0,1\\right)$'
 
 
