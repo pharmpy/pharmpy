@@ -1,5 +1,6 @@
 import textwrap
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -135,8 +136,14 @@ def test_tree_create_abuse():
 @pytest.mark.parametrize(
     "s,correct",
     [
-        ("Tue Feb  3 03:50:44 PM CET 2026", datetime(2026, 2, 3, 15, 50, 44)),
-        ("Tue Feb  3 03:50:44 AM CET 2025", datetime(2025, 2, 3, 3, 50, 44)),
+        (
+            "Tue Feb  3 03:50:44 PM CET 2026",
+            datetime(2026, 2, 3, 15, 50, 44, tzinfo=ZoneInfo("Europe/Paris")),
+        ),
+        (
+            "Tue Feb  3 03:50:44 AM CET 2025",
+            datetime(2025, 2, 3, 3, 50, 44, tzinfo=ZoneInfo("Europe/Paris")),
+        ),
     ],
 )
 def test_parse_datestamp(s, correct):

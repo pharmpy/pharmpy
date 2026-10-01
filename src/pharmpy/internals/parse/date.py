@@ -1,10 +1,10 @@
+import datetime
 import re
-from datetime import datetime
 
 import dateutil
 
 
-def parse_datestamp(row: str, row_next: str | None = None) -> datetime | None:
+def parse_datestamp(row: str, row_next: str | None = None) -> datetime.datetime | None:
     weekday_month_en = re.compile(
         r'^\s*(Sun|Mon|Tue|Wed|Thu|Fri|Sat)'
         r'\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'  # Month
@@ -49,6 +49,17 @@ def parse_datestamp(row: str, row_next: str | None = None) -> datetime | None:
 
         return None
 
+    def _parse_time_zone(row: str) -> datetime.timezone:
+        m = re.search(r"\s(CEST|CET)\s", row)
+        if m:
+            if m.group(1) == "CEST":
+                tz = datetime.timezone(datetime.timedelta(hours=2))
+            else:
+                tz = datetime.timezone(datetime.timedelta(hours=1))
+        else:
+            tz = datetime.UTC
+        return tz
+
     dmy = _dmy(row)
     if dmy is not None:
         day, month, year = dmy
@@ -58,14 +69,15 @@ def parse_datestamp(row: str, row_next: str | None = None) -> datetime | None:
             month_en = month_trans[month.upper()]
             month = month_no[month_en.upper()]
 
-        date = datetime(int(year), int(month), int(day))
+        tz = _parse_time_zone(row)
+        date = datetime.date(int(year), int(month), int(day))
 
         match = timestamp.search(row)
         if match is None:
-            return date
-
-        time_str = match.groups()[0]
-        time = dateutil.parser.parse(time_str).time()
+            time = datetime.time.min
+        else:
+            time_str = match.groups()[0]
+            time = dateutil.parser.parse(time_str).time()
 
     elif (match_day_first := day_month_year.match(row)) or year_month_day.match(row):
         date = dateutil.parser.parse(row, dayfirst=bool(match_day_first))
@@ -74,8 +86,9 @@ def parse_datestamp(row: str, row_next: str | None = None) -> datetime | None:
             return date
 
         time = dateutil.parser.parse(row_next).time()
+        tz = datetime.UTC
     else:
         return None
 
-    combined = datetime.combine(date, time)
+    combined = datetime.datetime.combine(date, time, tzinfo=tz)
     return combined
