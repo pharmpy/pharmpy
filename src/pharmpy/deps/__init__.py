@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pharmpy.internals.module.lazy import LazyImport
+from .lazy import LazyImport
 
 if TYPE_CHECKING:
     import altair
