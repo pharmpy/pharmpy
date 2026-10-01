@@ -27,8 +27,7 @@ class ExprPrinter(sympy_printing.pretty.PrettyPrinter):
 class ExprStrPrinter(sympy_printing.str.StrPrinter):
     def _print_Float(self, expr):
         s = str(super()._print_Float(expr))
-        if '.' in s:
-            s = s.rstrip('0').rstrip('.')
+        s = s.rstrip('0').rstrip('.')
         return s
 
 
