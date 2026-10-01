@@ -126,7 +126,7 @@ def execute_model(model_entry, db):
     return model_entry
 
 
-def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> None | ModelfitResults:
+def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> ModelfitResults | None:
     rdata_path = path / (model.name + '.RDATA')
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning

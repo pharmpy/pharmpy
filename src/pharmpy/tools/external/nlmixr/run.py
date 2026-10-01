@@ -592,7 +592,7 @@ def verify_param(model1, res1, model2, res2, est=False):
     return passed, failed
 
 
-def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> None | ModelfitResults:
+def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> ModelfitResults | None:
     """
     Create ModelfitResults object for given model object taken from values saved in executed Rdata file
 
