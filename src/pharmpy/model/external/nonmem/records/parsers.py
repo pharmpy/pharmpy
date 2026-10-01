@@ -31,17 +31,6 @@ class AbbreviatedRecordParser(RecordParser):
 
 
 @install_grammar
-class SimulationRecordParser(RecordParser):
-    grammar_filename = 'simulation_record.lark'
-    grammar_options = frozenmapping(
-        {
-            'propagate_positions': True,
-        }
-    )
-    post_process = (with_ignored_tokens,)
-
-
-@install_grammar
 class ProblemRecordParser(RecordParser):
     grammar_filename = 'problem_record.lark'
     post_process = (
