@@ -5,9 +5,8 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
-from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
+from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Model
-from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows import (
     Context,
     ModelEntry,
@@ -499,7 +498,7 @@ def validate_input(
 
     if search_space and isinstance(search_space, str):
         try:
-            ModelFeaturesNew.create(search_space)
+            ModelFeatures.create(search_space)
         except ValueError:
             raise ValueError(f'Invalid `search_space`: {search_space}')
 
