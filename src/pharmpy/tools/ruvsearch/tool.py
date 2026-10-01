@@ -54,7 +54,7 @@ from pharmpy.tools.run import (
     summarize_modelfit_results_from_entries,
 )
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
-from pharmpy.workflows.results import ModelfitResults
+from pharmpy.workflows.results import ModelfitResults, mfr
 
 from .results import RUVSearchResults, calculate_results
 
@@ -309,8 +309,7 @@ def start(
 
     # Check that there actually occured an improvement from the initial model.
     input_results = input_model_entry.modelfit_results
-    assert input_results is not None
-    delta_ofv = input_results.ofv - best_results.ofv
+    delta_ofv = mfr(input_results).ofv - mfr(best_results).ofv
     if delta_ofv < cutoff:
         model_entry = input_model_entry
         changing = "input"
@@ -491,7 +490,9 @@ def rank_models(
     return rank_res
 
 
-def _create_base_model(input_model_entry, current_iteration, dv):
+def _create_base_model(
+    input_model_entry: ModelEntry, current_iteration: int, dv: int
+) -> ModelEntry:
     input_model = input_model_entry.model
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
