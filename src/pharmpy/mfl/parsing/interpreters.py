@@ -180,7 +180,7 @@ class TransitsInterpreter(CountInterpreter):
         assert 1 <= len(children) <= 2
         numbers = children[0]
         if len(children) == 1:
-            transits = [Transits.create(number=n) for n in numbers]
+            transits = [Transits.create(number=n, depot=bool(isinstance(n, int))) for n in numbers]
             return sorted(transits)
 
         depot_settings = children[1]

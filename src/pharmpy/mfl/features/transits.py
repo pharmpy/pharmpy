@@ -18,7 +18,7 @@ class Transits(ModelFeature):
         self._depot = depot
 
     @classmethod
-    def create(cls, number: int | Literal['N'], depot: bool = True) -> Transits:
+    def create(cls, number: int | Literal['N'], depot: bool | None = None) -> Transits:
         if isinstance(number, int):
             if number < 0:
                 raise ValueError(f'Number of transits must be positive: got {number}')
@@ -32,8 +32,12 @@ class Transits(ModelFeature):
             raise TypeError(
                 f'Type of `number` must be an integer or string "N": got {builtins.type(number)}'
             )
-        if not isinstance(depot, bool):
+        if depot is not None and not isinstance(depot, bool):
             raise TypeError(f'Type of `depot` must be a bool: got {builtins.type(type)}')
+        elif number == 'N' and depot:
+            raise ValueError(f'Value of `depot` must be false if "N" transits: got {depot}')
+        if depot is None:
+            depot = bool(number != 'N')
         return cls(number=number, depot=depot)
 
     def replace(self, **kwargs):
@@ -55,7 +59,7 @@ class Transits(ModelFeature):
 
     def __repr__(self) -> str:
         inner = f'{self.number}'
-        if not self.depot:
+        if isinstance(self.number, int) and not self.depot:
             inner += ',NODEPOT'
         return f'TRANSITS({inner})'
 
@@ -91,8 +95,12 @@ class Transits(ModelFeature):
         if len(features) == 1:
             return repr(features[0])
         features = sorted(features)
+        transits_repr = []
         numbers_by_type = defaultdict(list)
         for feat in features:
+            if feat.number == 'N':
+                transits_repr.append(repr(feat))
+                continue
             numbers_by_type[feat.depot] += [feat.number]
         numbers_by_type = {key: tuple(value) for key, value in numbers_by_type.items()}
         if len(numbers_by_type) > 1 and len(set(numbers_by_type.values())) == 1:
@@ -100,7 +108,6 @@ class Transits(ModelFeature):
             inner = _get_inner(numbers, [True, False])
             return f'TRANSITS({inner})'
 
-        transits_repr = []
         for with_depot, numbers in numbers_by_type.items():
             numbers = list(numbers)
             if 'N' in numbers:

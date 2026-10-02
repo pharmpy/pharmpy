@@ -56,6 +56,8 @@ def test_repr():
     assert repr(t1) == 'TRANSITS(0)'
     t2 = Transits.create(1, False)
     assert repr(t2) == 'TRANSITS(1,NODEPOT)'
+    tn = Transits.create('N', False)
+    assert repr(tn) == 'TRANSITS(N)'
 
 
 def test_eq():
@@ -110,16 +112,8 @@ def test_lt():
             'TRANSITS(1)',
         ),
         (
-            ((0, True), (1, True), (2, True), ('N', True)),
-            'TRANSITS(N);TRANSITS([0,1,2])',
-        ),
-        (
-            ((0, False), (1, False), (2, False), ('N', True)),
-            'TRANSITS(N);TRANSITS([0,1,2],NODEPOT)',
-        ),
-        (
             ((0, True), (1, True), (2, True), ('N', False)),
-            'TRANSITS([0,1,2]);TRANSITS(N,NODEPOT)',
+            'TRANSITS(N);TRANSITS([0,1,2])',
         ),
         (
             ((0, True), (1, True), (2, True), (0, False)),
