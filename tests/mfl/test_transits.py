@@ -35,6 +35,9 @@ def test_create():
     with pytest.raises(TypeError):
         Transits.create(0, 1)
 
+    with pytest.raises(ValueError):
+        Transits.create('N', depot=True)
+
 
 def test_replace():
     t1 = Transits.create(0)

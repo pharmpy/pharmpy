@@ -75,7 +75,8 @@ class Transits(ModelFeature):
             return NotImplemented
         if self == other:
             return False
-        if self.depot != other.depot:
+
+        if self.number != 'N' and other.number != 'N' and self.depot != other.depot:
             # Depot is "less then" no depot, False < True
             return self.depot > other.depot
 
@@ -110,22 +111,13 @@ class Transits(ModelFeature):
 
         for with_depot, numbers in numbers_by_type.items():
             numbers = list(numbers)
-            if 'N' in numbers:
-                numbers.remove('N')
-                inner = _get_inner('N', with_depot)
-                transits_repr.append(f'TRANSITS({inner})')
-            if not numbers:
-                continue
             inner = _get_inner(numbers, with_depot)
             transits_repr.append(f'TRANSITS({inner})')
         return ';'.join(transits_repr)
 
 
 def _get_inner(numbers, with_depot):
-    if isinstance(numbers, str):
-        inner = f'{numbers}'
-    else:
-        inner = format_numbers(numbers)
+    inner = format_numbers(numbers)
     if isinstance(with_depot, list):
         inner += ',[DEPOT,NODEPOT]'
     elif not with_depot:
