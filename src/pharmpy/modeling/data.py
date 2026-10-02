@@ -1793,7 +1793,7 @@ def remove_loq_data(
 
     """
     which_keep, exprs_keep = _loq_mask(model, lloq=lloq, uloq=uloq, blq=blq, alq=alq)
-    df = get_and_check_dataset(model)
+    df = get_and_check_dataset(model).copy()
     if keep > 0:
         idcol = model.datainfo.id_column.name
         keep_df = pd.DataFrame(
