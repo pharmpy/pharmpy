@@ -27,22 +27,15 @@ def test_datavariable_create():
     assert dict(var.properties) == {}
     assert var.count is False
 
-    with pytest.raises(ValueError):
-        DataVariable.create("WGT", properties={'myprop': 23})
-
 
 def test_datavariable_descriptor():
     var = DataVariable.create("DUMMY", properties={'descriptor': "body weight"})
     assert var.properties['descriptor'] == "body weight"
-    with pytest.raises(ValueError):
-        DataVariable.create("DUMMY2", properties={'descriptor': "notaknowndescriptor"})
 
 
 def test_datavariable_molar_mass():
     var = DataVariable.create("DUMMY", properties={'molar_mass': 234.5})
     assert var.get_property("molar_mass") == 234.5
-    with pytest.raises(ValueError):
-        DataVariable.create("DUMMY", properties={'molar_mass': "o"})
 
 
 def test_datavariable_type():
@@ -61,8 +54,6 @@ def test_datavariable_categories():
     assert var.properties['categories'] == (1, 2, 3)
     var = DataVariable.create("DUMMY", properties={'categories': (1, 2, 3)})
     assert var.properties['categories'] == (1, 2, 3)
-    with pytest.raises(TypeError):
-        DataVariable.create("DUMMY", properties={'categories': 1})
 
 
 def test_datavariable_scale():
@@ -84,9 +75,24 @@ def test_datavariable_symbol():
     assert var.symbol == Expr.symbol("DUMMY")
 
 
+@pytest.mark.parametrize(
+    'properties,type_error',
+    [
+        ({'unit': 'nospecialunit'}, False),
+        ({'categories': 1}, True),
+        ({'descriptor': "notaknowndescriptor"}, False),
+        ({'molar_mass': 'o'}, False),
+        ({'myprop': 23}, False),
+        ({'lower_bound': 0, 'upper_bound': -1}, False),
+    ],
+)
+def test_datavariable_bad_properties(properties, type_error):
+    exception = TypeError if type_error else ValueError
+    with pytest.raises(exception):
+        DataVariable.create("X", properties=properties)
+
+
 def test_datavariable_unit():
-    with pytest.raises(ValueError):
-        DataVariable.create("DUMMY", properties={'unit': "nospecialunit"})
     var = DataVariable.create("DUMMY", properties={'unit': "kg"})
     assert var.properties['unit'].unicode() == "kg"
 
@@ -572,6 +578,18 @@ def test_get_property():
         var1.get_property("descriptor")
     with pytest.raises(ValueError):
         var1.get_property("unknownprop")
+
+
+@pytest.mark.parametrize(
+    'property,value',
+    [
+        ('lower_bound', -float("inf")),
+        ('upper_bound', float("inf")),
+    ],
+)
+def test_get_property_defaults(property, value):
+    var = DataVariable.create("X")
+    assert var.get_property(property) == value
 
 
 def test_mapped_variable():

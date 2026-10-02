@@ -391,7 +391,9 @@ class DataVariable(Immutable):
             'pd measurement',
         }
     )
-    _all_properties = frozenset({'unit', 'categories', 'descriptor', 'molar_mass'})
+    _all_properties = frozenset(
+        {'unit', 'categories', 'descriptor', 'molar_mass', 'lower_bound', 'upper_bound'}
+    )
 
     def __init__(
         self,
@@ -418,10 +420,16 @@ class DataVariable(Immutable):
             elif key == 'descriptor':
                 if value not in DataVariable._all_descriptors:
                     raise ValueError(f"unknown descriptor {value}")
-            elif key == 'molar_mass':
+            elif key in {'molar_mass', 'lower_bound', 'upper_bound'}:
                 new[key] = float(value)
             else:
                 raise ValueError(f'Unknown DataVariable property "{key}"')
+            lb = new.get('lower_bound', -float("inf"))
+            ub = new.get('upper_bound', float("inf"))
+            if lb >= ub:
+                raise ValueError(
+                    f'Lower bound ({lb}) of variable is greater than the upper bound ({ub})'
+                )
         return frozenmapping(new)
 
     @classmethod
@@ -691,6 +699,10 @@ class DataVariable(Immutable):
 
         if property == 'unit':
             default = Unit(1)
+        elif property == 'lower_bound':
+            default = -float("inf")
+        elif property == 'upper_bound':
+            default = float("inf")
         else:
             default = None
         value = self.properties.get(property, default)
