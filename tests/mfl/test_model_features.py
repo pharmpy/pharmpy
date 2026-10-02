@@ -785,6 +785,42 @@ def test_contains(features1, features2, expected):
     assert [1] not in mf1
 
 
+@pytest.mark.parametrize(
+    'search_space_full, search_space_subset, contain_subset',
+    (
+        (
+            'ABSORPTION(ZO);PERIPHERALS(0..1)',
+            'ABSORPTION(ZO);PERIPHERALS(1)',
+            True,
+        ),
+        (
+            'ABSORPTION(ZO);PERIPHERALS(0..1)',
+            'ABSORPTION(ZO);PERIPHERALS(2)',
+            False,
+        ),
+        (
+            'COVARIATE?([CL,VC],WT,EXP)',
+            'COVARIATE(CL,WT,EXP)',
+            True,
+        ),
+        (
+            'LET(CONTINUOUS,[WT]);COVARIATE?([CL,V],@CONTINUOUS,[EXP,LIN])',
+            'COVARIATE(CL,WT,EXP);COVARIATE(V,WT,LIN)',
+            True,
+        ),
+        (
+            'LET(CONTINUOUS,[WT]);COVARIATE?([CL,V],@CONTINUOUS,[EXP,LIN])',
+            'COVARIATE([CL,V],WT,EXP)',
+            True,
+        ),
+    ),
+)
+def test_contains2(search_space_full, search_space_subset, contain_subset):
+    mfl_full = ModelFeatures.create(search_space_full)
+    mfl_subset = ModelFeatures.create(search_space_subset)
+    assert (mfl_subset in mfl_full) == contain_subset
+
+
 def test_add():
     a1 = Absorption.create('FO')
     mf1 = ModelFeatures.create([a1])

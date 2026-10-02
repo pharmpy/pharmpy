@@ -417,6 +417,223 @@ def test_get_mfl_funcs(load_model_for_test, testdata, funcs, search_space, mfl_k
     assert set(mfl_funcs.keys()) == mfl_keys
 
 
+@pytest.mark.parametrize(
+    ('source', 'expected'),
+    (
+        (
+            'ABSORPTION(FO)',
+            (('ABSORPTION', 'FO'),),
+        ),
+        (
+            'ABSORPTION(* )',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('ABSORPTION', 'SEQ-ZO-FO'),
+                ('ABSORPTION', 'WEIBULL'),
+            ),
+        ),
+        (
+            'ABSORPTION([ZO,FO])',
+            (('ABSORPTION', 'FO'), ('ABSORPTION', 'ZO')),
+        ),
+        (
+            'ABSORPTION([ZO,  FO])',
+            (('ABSORPTION', 'FO'), ('ABSORPTION', 'ZO')),
+        ),
+        (
+            'ABSORPTION( [   SEQ-ZO-FO,  FO   ]  )',
+            (('ABSORPTION', 'FO'), ('ABSORPTION', 'SEQ-ZO-FO')),
+        ),
+        (
+            'ABSORPTION([zo, fo])',
+            (('ABSORPTION', 'FO'), ('ABSORPTION', 'ZO')),
+        ),
+        (
+            'ABSORPTION(FO);ABSORPTION(ZO)',
+            (('ABSORPTION', 'FO'), ('ABSORPTION', 'ZO')),
+        ),
+        (
+            'ABSORPTION(FO)\nABSORPTION([FO, SEQ-ZO-FO])',
+            (('ABSORPTION', 'FO'), ('ABSORPTION', 'SEQ-ZO-FO')),
+        ),
+        (
+            'ELIMINATION(FO)',
+            (('ELIMINATION', 'FO'),),
+        ),
+        (
+            'ELIMINATION( *)',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ELIMINATION', 'ZO'),
+                ('ELIMINATION', 'MM'),
+                ('ELIMINATION', 'MIX-FO-MM'),
+            ),
+        ),
+        (
+            'ELIMINATION([ZO,FO])',
+            (('ELIMINATION', 'FO'), ('ELIMINATION', 'ZO')),
+        ),
+        (
+            'ELIMINATION([ZO,  FO])',
+            (('ELIMINATION', 'FO'), ('ELIMINATION', 'ZO')),
+        ),
+        (
+            'ELIMINATION( [   MIX-FO-MM,  FO   ]  )',
+            (('ELIMINATION', 'FO'), ('ELIMINATION', 'MIX-FO-MM')),
+        ),
+        (
+            'elimination([zo, fo])',
+            (('ELIMINATION', 'FO'), ('ELIMINATION', 'ZO')),
+        ),
+        (
+            'ELIMINATION(FO);ABSORPTION(ZO)',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+            ),
+        ),
+        ('TRANSITS(0)', (('TRANSITS', 0, 'DEPOT'),)),
+        (
+            'TRANSITS([0, 1])',
+            (
+                ('TRANSITS', 0, 'DEPOT'),
+                ('TRANSITS', 1, 'DEPOT'),
+            ),
+        ),
+        (
+            'TRANSITS([0, 2, 4])',
+            (
+                ('TRANSITS', 0, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+            ),
+        ),
+        (
+            'TRANSITS(0..1)',
+            (
+                ('TRANSITS', 0, 'DEPOT'),
+                ('TRANSITS', 1, 'DEPOT'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4); TRANSITS(5)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+                ('TRANSITS', 5, 'DEPOT'),
+            ),
+        ),
+        ('TRANSITS(0);PERIPHERALS(0)', (('TRANSITS', 0, 'DEPOT'), ('PERIPHERALS', 0))),
+        (
+            'TRANSITS(1..4, DEPOT)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4, NODEPOT)',
+            (
+                ('TRANSITS', 1, 'NODEPOT'),
+                ('TRANSITS', 2, 'NODEPOT'),
+                ('TRANSITS', 3, 'NODEPOT'),
+                ('TRANSITS', 4, 'NODEPOT'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4, *)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+                ('TRANSITS', 1, 'NODEPOT'),
+                ('TRANSITS', 2, 'NODEPOT'),
+                ('TRANSITS', 3, 'NODEPOT'),
+                ('TRANSITS', 4, 'NODEPOT'),
+            ),
+        ),
+        ('PERIPHERALS(0)', (('PERIPHERALS', 0),)),
+        (
+            'PERIPHERALS([0, 1])',
+            (
+                ('PERIPHERALS', 0),
+                ('PERIPHERALS', 1),
+            ),
+        ),
+        (
+            'PERIPHERALS([0, 2, 4])',
+            (
+                ('PERIPHERALS', 0),
+                ('PERIPHERALS', 2),
+                ('PERIPHERALS', 4),
+            ),
+        ),
+        (
+            'PERIPHERALS(0..1)',
+            (
+                ('PERIPHERALS', 0),
+                ('PERIPHERALS', 1),
+            ),
+        ),
+        (
+            'PERIPHERALS(1..4)',
+            (
+                ('PERIPHERALS', 1),
+                ('PERIPHERALS', 2),
+                ('PERIPHERALS', 3),
+                ('PERIPHERALS', 4),
+            ),
+        ),
+        (
+            'PERIPHERALS(1..4); PERIPHERALS(5)',
+            (
+                ('PERIPHERALS', 1),
+                ('PERIPHERALS', 2),
+                ('PERIPHERALS', 3),
+                ('PERIPHERALS', 4),
+                ('PERIPHERALS', 5),
+            ),
+        ),
+        ('LAGTIME(ON)', (('LAGTIME', 'ON'),)),
+        ('LAGTIME ( ON )', (('LAGTIME', 'ON'),)),
+        ('LAGTIME(OFF)', (('LAGTIME', 'OFF'),)),
+        ('LAGTIME([ON, OFF])', (('LAGTIME', 'OFF'), ('LAGTIME', 'ON'))),
+        (
+            'TRANSITS(1, *)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 1, 'NODEPOT'),
+            ),
+        ),
+        ('TRANSITS(1)', (('TRANSITS', 1, 'DEPOT'),)),
+        ('TRANSITS(1, DEPOT)', (('TRANSITS', 1, 'DEPOT'),)),
+        ('TRANSITS(1, NODEPOT)', (('TRANSITS', 1, 'NODEPOT'),)),
+        ('TRANSITS(N)', (('TRANSITS', 'N', 'NODEPOT'),)),
+        ('ALLOMETRY(WGT, 70)', (('ALLOMETRY', 'WGT', 70.0),)),
+    ),
+    ids=repr,
+)
+def test_get_mfl_funcs2(load_model_for_test, source, expected):
+    mfl = ModelFeatures.create(source)
+    funcs = get_mfl_funcs(mfl)
+    assert set(funcs.keys()) == set(expected)
+
+
 def test_categorize_model_entries(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')

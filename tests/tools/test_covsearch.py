@@ -103,6 +103,102 @@ def test_get_exploratory_covariates(search_space, no_of_exploratory_covs):
     assert len(exploratory_cov_funcs) == no_of_exploratory_covs
 
 
+@pytest.mark.parametrize(
+    ('source', 'expected'),
+    (
+        ('LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)', []),
+        (
+            (
+                'COVARIATE?([CL, MAT, VC], WGT, EXP, *)\n'
+                'COVARIATE?([CL, MAT, VC], APGR, CAT2, +)\n'
+                'COVARIATE?([CL, MAT, VC], APGR, CAT, +)'
+            ),
+            (
+                ('CL', 'APGR', 'cat', '+'),
+                ('CL', 'APGR', 'cat2', '+'),
+                ('CL', 'WGT', 'exp', '*'),
+                ('MAT', 'APGR', 'cat', '+'),
+                ('MAT', 'APGR', 'cat2', '+'),
+                ('MAT', 'WGT', 'exp', '*'),
+                ('VC', 'APGR', 'cat', '+'),
+                ('VC', 'APGR', 'cat2', '+'),
+                ('VC', 'WGT', 'exp', '*'),
+            ),
+        ),
+        (
+            (
+                'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+                'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
+            (
+                ('CL', 'AGE', 'exp', '*'),
+                ('CL', 'SEX', 'cat', '+'),
+                ('CL', 'WT', 'exp', '*'),
+                ('MAT', 'AGE', 'exp', '*'),
+                ('MAT', 'SEX', 'cat', '+'),
+                ('MAT', 'WT', 'exp', '*'),
+                ('VC', 'AGE', 'exp', '*'),
+                ('VC', 'SEX', 'cat', '+'),
+                ('VC', 'WT', 'exp', '*'),
+                ('CL', 'AGE', 'exp', '*'),
+                ('CL', 'SEX', 'cat', '+'),
+                ('CL', 'WT', 'exp', '*'),
+                ('MAT', 'AGE', 'exp', '*'),
+                ('MAT', 'SEX', 'cat', '+'),
+                ('MAT', 'WT', 'exp', '*'),
+                ('VC', 'AGE', 'exp', '*'),
+                ('VC', 'SEX', 'cat', '+'),
+                ('VC', 'WT', 'exp', '*'),
+            ),
+        ),
+        (
+            (
+                'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL, MAT, VC], @CONTINUOUS, [EXP])\n'
+                'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
+            (
+                ('CL', 'AGE', 'exp', '*'),
+                ('CL', 'SEX', 'cat', '+'),
+                ('CL', 'WT', 'exp', '*'),
+                ('MAT', 'AGE', 'exp', '*'),
+                ('MAT', 'SEX', 'cat', '+'),
+                ('MAT', 'WT', 'exp', '*'),
+                ('VC', 'AGE', 'exp', '*'),
+                ('VC', 'SEX', 'cat', '+'),
+                ('VC', 'WT', 'exp', '*'),
+            ),
+        ),
+        (
+            (
+                'LET(CONTINUOUS, AGE); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL], @CONTINUOUS, *)\n'
+                'COVARIATE?([VC], @CATEGORICAL, CAT, +)'
+            ),
+            (
+                ('CL', 'AGE', 'exp', '*'),
+                ('CL', 'AGE', 'lin', '*'),
+                ('CL', 'AGE', 'piece_lin', '*'),
+                ('CL', 'AGE', 'pow', '*'),
+                ('CL', 'AGE', 'exp', '*'),
+                ('CL', 'AGE', 'lin', '*'),
+                ('CL', 'AGE', 'piece_lin', '*'),
+                ('CL', 'AGE', 'pow', '*'),
+                ('VC', 'SEX', 'cat', '+'),
+                ('CL', 'AGE', 'cat', '*'),
+                ('CL', 'AGE', 'cat2', '*'),
+            ),
+        ),
+    ),
+)
+def test_get_exploratory_covariates2(source, expected):
+    mfl = ModelFeatures.create(source)
+    funcs = get_exploratory_covariates(mfl)
+    keys = funcs.keys()
+    assert set(keys) == set(expected)
+
+
 def test_filter_effects():
     search_space = 'COVARIATE?([CL,VC],[WT,AGE],EXP)'
     mfl = ModelFeatures.create(search_space)
