@@ -264,6 +264,10 @@ jobs:
         with:
           python-version: 3.12
 
+      - name: Debug session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+
       - name: Run integration tests
         run: tox -e integration
 
