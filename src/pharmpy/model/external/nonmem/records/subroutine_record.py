@@ -20,8 +20,12 @@ class SubroutineRecord(OptionRecord):
     @property
     def trans(self):
         trans = self.get_option('TRANS')
-        if trans is None:
-            trans = self.get_option_startswith('TRANS')
+        if trans is not None:
+            if trans.startswith("TRANS"):
+                return trans
+            else:
+                return f"TRANS{trans}"
+        trans = self.get_option_startswith('TRANS')
         if trans is None:
             trans = 'TRANS1'
         return trans

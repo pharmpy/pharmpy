@@ -8,6 +8,7 @@ import pytest
         ('$SUBROUTINES ADVAN15', 'ADVAN15', 'TRANS1'),
         ('$SUBROUTINES ADVAN=ADVAN2', 'ADVAN2', 'TRANS1'),
         ('$SUBROUTINES ADVAN=ADVAN5 TRANS=TRANS1', 'ADVAN5', 'TRANS1'),
+        ('$SUBROUTINES ADVAN1 TRANS=2', 'ADVAN1', 'TRANS2'),
     ],
 )
 def test_advan_trans(parser, buf, advan, trans):
