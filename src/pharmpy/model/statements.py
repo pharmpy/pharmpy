@@ -159,7 +159,7 @@ class Assignment(Statement):
             Expr(f)
             for f in prefuncs
             if isinstance(f, AppliedUndef)
-            if f.name not in {'first', 'newind', 'forward', 'PHI'}
+            if f.name not in {'count_if', 'first', 'newind', 'forward', 'PHI'}
         }
         symbols = self._expression.free_symbols
         return funcs | symbols

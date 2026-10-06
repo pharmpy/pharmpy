@@ -2,7 +2,7 @@ import pytest
 
 from pharmpy.basic import Expr, Matrix
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.model import output
+from pharmpy.model import Assignment, output
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.model.external.nonmem.advan import compartmental_model
 from pharmpy.modeling import (
@@ -185,7 +185,9 @@ def S(x):
 def test_pheno(pheno, advan, trans, compmat, amounts, strodes, corrics):
     cm, ass, _ = compartmental_model(pheno, advan, trans)
     statements = pheno.statements.before_odes + cm + pheno.statements.after_odes
-    model = pheno.replace(statements=statements)
+    needed_defines = cm.rhs_symbols - statements.lhs_symbols - {'AMT', 't'}
+    assignments = [Assignment.create(symb, 0) for symb in needed_defines]
+    model = pheno.replace(statements=assignments + statements)
 
     assert ass.symbol == S('F')
     assert ass.expression == Expr.function('A_CENTRAL', 't') / S(
@@ -392,7 +394,9 @@ def test_multiple_doses_different_compartments(
         model = write_model(model, tmp_path / "temp_pheno.ctl", force=True)
         cm, ass, _ = compartmental_model(model, advan, trans)
         statements = model.statements.before_odes + cm + model.statements.after_odes
-        model = model.replace(statements=statements)
+        needed_defines = cm.rhs_symbols - statements.lhs_symbols - {'AMT', 't'}
+        assignments = [Assignment.create(symb, 0) for symb in needed_defines]
+        model = model.replace(statements=assignments + statements)
 
         odes = model.statements.ode_system
         assert len(odes.dosing_compartments) == 2
@@ -601,7 +605,9 @@ def test_multiple_doses_same_compartment(
         model = write_model(model, tmp_path / "temp_pheno.ctl", force=True)
         cm, ass, _ = compartmental_model(model, advan, trans)
         statements = model.statements.before_odes + cm + model.statements.after_odes
-        model = model.replace(statements=statements)
+        needed_defines = cm.rhs_symbols - statements.lhs_symbols - {'AMT', 't'}
+        assignments = [Assignment.create(symb, 0) for symb in needed_defines]
+        model = model.replace(statements=assignments + statements)
 
         odes = model.statements.ode_system
         assert len(odes.dosing_compartments) == 1

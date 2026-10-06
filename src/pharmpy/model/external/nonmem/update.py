@@ -580,9 +580,10 @@ def update_infusion(model: Model, old: CompartmentalSystem):
     ):
         # Handle direct moving of Infusion dose
         statements = statements.subs({Expr.symbol('D2'): Expr.symbol('D1')})
-
-    if isinstance(new.dosing_compartments[0].doses[0], Infusion) and isinstance(
-        old.dosing_compartments[0].doses[0], Bolus
+    if (
+        isinstance(new.dosing_compartments[0].doses[0], Infusion)
+        and isinstance(old.dosing_compartments[0].doses[0], Bolus)
+        and new.dosing_compartments[0].doses[0].rate != Expr.symbol("RATE")
     ):
         dose = new.dosing_compartments[0].doses[0]
         if dose.rate is None:

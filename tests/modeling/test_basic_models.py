@@ -63,17 +63,9 @@ def test_create_basic_pk_model(testdata, tmp_path):
     assert len(model.datainfo.provenance) == 2
 
 
-def test_create_basic_pk_model_raises(testdata):
-    dataset_path = testdata / 'nonmem/pheno.dta'
-
+def test_create_basic_pk_model_raises():
     with pytest.raises(ValueError):
         create_basic_pk_model('x')
-
-    with pytest.raises(ValueError):
-        create_basic_pk_model(
-            administration='ivoral',
-            dataset_path=dataset_path,
-        )
 
 
 def test_create_basic_pd_model(testdata):

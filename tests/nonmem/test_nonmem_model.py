@@ -1061,9 +1061,7 @@ def test_convert_model_iv(testdata, tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_rate.dta', '.')
         start_model = create_basic_pk_model(administration='iv', dataset_path='pheno_rate.dta')
         assert 'RATE' in start_model.datainfo.names
-        model = convert_model(start_model)
-        assert 'RATE' not in model.datainfo.names
-        assert model.datainfo.provenance[-1] == Drop.create('RATE')
+        convert_model(start_model)
 
 
 def test_parse_derivatives(load_model_for_test, testdata):

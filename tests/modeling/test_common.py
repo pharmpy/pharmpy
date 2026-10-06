@@ -26,6 +26,7 @@ from pharmpy.modeling import (
     read_model_from_string,
     remove_iiv,
     remove_unused_parameters_and_rvs,
+    rename_symbols,
     set_additive_error_model,
     set_dataset,
     set_description,
@@ -170,6 +171,7 @@ def test_remove_unused_parameters_and_rvs(load_model_for_test, pheno_path):
     model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     statements = model.statements
     i = statements.index(statements.find_assignment('CL'))
+    model = rename_symbols(model, {"CL": model.parameters[0].symbol})
     model = model.replace(statements=model.statements[0:i] + model.statements[i + 1 :])
     model = remove_unused_parameters_and_rvs(model)
     assert len(model.random_variables['ETA_2'].names) == 1

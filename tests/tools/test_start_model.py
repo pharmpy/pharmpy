@@ -20,5 +20,5 @@ def test_create_start_model(testdata):
     path_2 = testdata / 'nonmem' / 'modeling' / 'pheno_zero_order.csv'
     model = create_basic_pk_model(dataset_path=path_2, administration='iv')
     assert model.statements.ode_system.dosing_compartments[0].doses[0] == Infusion.create(
-        "AMT", duration="D1"
+        "AMT", rate="RATE"
     )

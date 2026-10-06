@@ -21,6 +21,7 @@ from pharmpy.model import (
     DataVariable,
     EstimationStep,
     ExecutionSteps,
+    Infusion,
     Model,
     NormalDistribution,
     Parameter,
@@ -114,11 +115,49 @@ def create_basic_pk_model(
     vc_ass = Assignment(VC, pop_vc.symbol * Expr.symbol(eta_vc_name).exp())
 
     cb = CompartmentalSystemBuilder()
-    # FIXME: This shouldn't be used here
-    from pharmpy.model.external.nonmem.advan import dosing, find_dose
 
-    doses = dosing(di, df, 1)
-    central = Compartment.create('CENTRAL', doses=find_dose(doses, 1))
+    def find_dose(di, admin):
+        # This is simplified. Could handled mixed Infusion/Bolus
+        dose_symbol = None
+        rate_symbol = None
+        for col in di:
+            if col.drop:
+                continue
+            if col.type == "dose":
+                dose_symbol = col.symbol
+            elif col.type == "rate":
+                rate_symbol = col.symbol
+        if dose_symbol is None:
+            raise ValueError("No dose information in dataset")
+        if rate_symbol is None:
+            if admin == 'iv':
+                dose_iv = Bolus.create(dose_symbol, admid=1)
+                dose_oral = None
+            elif admin == 'oral':
+                dose_iv = None
+                dose_oral = Bolus.create(dose_symbol, admid=1)
+            else:
+                dose_iv = Bolus.create(dose_symbol, admid=1)
+                dose_oral = Bolus.create(dose_symbol, admid=2)
+        else:
+            if admin == 'iv':
+                dose_iv = Infusion.create(dose_symbol, rate=rate_symbol, admid=1)
+                dose_oral = None
+            elif admin == 'oral':
+                dose_iv = None
+                dose_oral = Infusion.create(dose_symbol, rate=rate_symbol, admid=1)
+            else:
+                dose_iv = Infusion.create(dose_symbol, rate=rate_symbol, admid=1)
+                dose_oral = Infusion.create(dose_symbol, rate=rate_symbol, admid=2)
+
+        return dose_iv, dose_oral
+
+    dose_iv, dose_oral = find_dose(di, administration)
+    # Note that this dose will move to the depot for the oral/ivoral cases
+    central_dose = dose_iv if administration == "iv" else dose_oral
+    assert central_dose is not None
+
+    central = Compartment.create('CENTRAL', doses=(central_dose,))
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 
@@ -168,20 +207,10 @@ def create_basic_pk_model(
         # Set dosing to the CENTRAL compartment as well
         ode = model.statements.ode_system
         cb = CompartmentalSystemBuilder(ode)
-        if df is None:
-            doses = dosing(di, df, 2)
-            central_dose = find_dose(doses, comp_number=2, admid=2)
-        else:
-            # doses = dosing(di, df, 1)
-            central_dose = find_dose(doses, comp_number=2, admid=2)
-            if not central_dose:
-                raise ValueError(
-                    "Could not determine IV dose from dataset. "
-                    "Currently require CMT column with values 1 and 2 "
-                )
         central = cb.find_compartment("CENTRAL")
         assert central is not None
-        cb.set_dose(central, dose=central_dose)
+        assert dose_oral is not None
+        cb.set_dose(central, dose=(dose_oral,))
 
         ode = CompartmentalSystem(cb)
         model = model.replace(

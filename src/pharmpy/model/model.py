@@ -203,33 +203,23 @@ class Model(Immutable):
         if not isinstance(statements, Statements):
             raise TypeError("model.statements must be of Statements type")
 
-        colnames = {Expr.symbol(colname) for colname in datainfo.names}
-        symbs_all = rvs.free_symbols.union(params.symbols).union(colnames)
+        defined_symbols = (
+            set(datainfo.symbols) | set(rvs.symbols) | set(params.symbols) | {Expr.symbol("NaN")}
+        )
+        # Adding t to fix solved ODE-systems
+        defined_symbols.add(Expr.symbol('t'))
         if statements.ode_system is not None:
-            symbs_all = symbs_all.union({statements.ode_system.t})
+            defined_symbols.add(statements.ode_system.t)
+            defined_symbols |= {amt for amt in statements.ode_system.amounts}
 
-        for i, statement in enumerate(statements):
-            if isinstance(statement, CompartmentalSystem):
-                continue
+        for statement in statements:
+            rhs = statement.rhs_symbols
+            if not rhs.issubset(defined_symbols):
+                missing_symbols = rhs - defined_symbols
+                raise ValueError(f"The symbols {missing_symbols} are not defined")
 
-            symbs = statement.expression.free_symbols
-            if not symbs.issubset(symbs_all):
-                # E.g. after solve_ode_system
-                if statement.symbol.is_function():
-                    symbs_all = symbs_all.union(
-                        (Expr.symbol(statement.symbol.name),),
-                        (arg for arg in statement.symbol.args if arg.is_symbol()),
-                    )
-
-                for symb in symbs:
-                    if symb in symbs_all:
-                        continue
-                    if str(symb) == 'NaN':
-                        continue
-                    if statements.find_assignment(symb) is None:
-                        raise ValueError(f'Symbol {symb} is not defined')
-                    if statements[:i].find_assignment_index(symb) is None:
-                        raise ValueError(f'Symbol {symb} defined after being used')
+            if not isinstance(statement, CompartmentalSystem):
+                defined_symbols.add(statement.symbol)
 
         return statements
 

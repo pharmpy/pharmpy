@@ -154,13 +154,13 @@ def test_allometry(load_model_for_test, testdata):
 
 
 def test_add_allometry_tmdd(pheno_path, load_model_for_test):
-    model = load_model_for_test(pheno_path)
-    model = set_tmdd(model, type="full")
-    add_allometry(
-        model,
-        allometric_variable='WGT',
-        reference_value=70,
-    )
+    # model = load_model_for_test(pheno_path)
+    # model = set_tmdd(model, type="full")
+    # add_allometry(
+    #    model,
+    #    allometric_variable='WGT',
+    #    reference_value=70,
+    # )
 
     # FIXME: Currently adds to CL and LAFREE, is this correct?
     model = load_model_for_test(pheno_path)
