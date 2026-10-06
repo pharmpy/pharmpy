@@ -96,8 +96,8 @@ def create_basic_pk_model(
     ]:
         raise ValueError(f'Invalid input: `{administration}` as administration is not supported.')
 
-    pop_cl = Parameter('POP_CL', cl_init, lower=0)
-    pop_vc = Parameter('POP_VC', vc_init, lower=0)
+    pop_cl = Parameter('POP_CL', cl_init, lower=0.0)
+    pop_vc = Parameter('POP_VC', vc_init, lower=0.0)
     iiv_cl = Parameter('IIV_CL', 0.1)
     iiv_vc = Parameter('IIV_VC', 0.1)
 
