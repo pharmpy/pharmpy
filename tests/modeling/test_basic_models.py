@@ -9,6 +9,7 @@ from pharmpy.modeling import (
     create_basic_kpd_model,
     create_basic_pd_model,
     create_basic_pk_model,
+    drop_columns,
     set_zero_order_absorption,
 )
 
@@ -32,7 +33,7 @@ def test_create_basic_pk_model(testdata, tmp_path):
     assert isinstance(model.dependent_variables, frozenmapping)
     assert len(model.datainfo.provenance) == 1
 
-    df = model.dataset
+    df = model.dataset.copy()
     df['CMT'] = np.random.randint(1, 3, size=len(df))
 
     model = create_basic_pk_model('ivoral')
@@ -42,6 +43,19 @@ def test_create_basic_pk_model(testdata, tmp_path):
     with chdir(tmp_path):
         df.to_csv('pheno_cmt.csv', index_label=False, index=False)
         model = create_basic_pk_model('ivoral', tmp_path / 'pheno_cmt.csv')
+        assert len(model.statements.ode_system.dosing_compartments) == 2
+
+    with chdir(tmp_path):
+        df = model.dataset.copy()
+        df['RATE'] = np.random.randint(1, 3, size=len(df))
+        df.to_csv('pheno_rate.csv', index_label=False, index=False)
+        model = create_basic_pk_model('oral', tmp_path / 'pheno_rate.csv')
+        assert len(model.statements.ode_system.dosing_compartments) == 1
+        model = create_basic_pk_model('ivoral', tmp_path / 'pheno_rate.csv')
+        assert len(model.statements.ode_system.dosing_compartments) == 2
+        model = drop_columns(model, ['RATE'], mark=True)
+        model.datainfo.to_json(tmp_path / "pheno_rate.datainfo")
+        model = create_basic_pk_model('ivoral', tmp_path / 'pheno_rate.csv')
         assert len(model.statements.ode_system.dosing_compartments) == 2
 
     dataset_path = testdata / 'nonmem/pheno_pd.csv'
@@ -61,6 +75,9 @@ def test_create_basic_pk_model(testdata, tmp_path):
         mat_init=0.1,
     )
     assert len(model.datainfo.provenance) == 2
+
+    with pytest.raises(ValueError):
+        create_basic_pk_model(administration='oral', dataset_path=testdata / 'nonmem' / 'file.csv')
 
 
 def test_create_basic_pk_model_raises():
