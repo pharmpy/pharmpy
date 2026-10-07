@@ -21,6 +21,8 @@ from pharmpy.model import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    DataInfo,
+    DataVariable,
     Ignore,
     JointNormalDistribution,
     Model,
@@ -670,11 +672,39 @@ def rename_symbols(model: Model, new_names: Mapping[TSymbol, TSymbol]) -> Model:
             newparam = p
         new.append(newparam)
 
-    model = model.replace(
-        parameters=Parameters.create(new),
-        statements=model.statements.subs(d),
-        random_variables=model.random_variables.subs(d),
-    )
+    if any(item.name in model.datainfo.names for item in d):
+        newcols = []
+        for col in model.datainfo:
+            if col.symbol in d:
+                new_name = d[col.symbol].name
+                if isinstance(col.variable_mapping, DataVariable):
+                    var = col.variable_mapping.replace(name=new_name)
+                    newcol = col.replace(variable_mapping=var, name=new_name)
+                else:
+                    newcol = col.replace(name=new_name)
+            else:
+                newcol = col
+            newcols.append(newcol)
+        df = model.dataset
+        if df is not None:
+            colnames = {key.name: val.name for key, val in d.items() if key.name in df.columns}
+            df = df.rename(columns=colnames)
+
+        model = model.replace(
+            parameters=Parameters.create(new),
+            statements=model.statements.subs(d),
+            random_variables=model.random_variables.subs(d),
+            datainfo=DataInfo.create(newcols),
+            dataset=df,
+        )
+    else:
+        # Only touch datainfo if necessary
+        model = model.replace(
+            parameters=Parameters.create(new),
+            statements=model.statements.subs(d),
+            random_variables=model.random_variables.subs(d),
+        )
+
     return model.update_source()
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming
 
