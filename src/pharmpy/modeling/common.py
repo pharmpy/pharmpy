@@ -661,16 +661,24 @@ def rename_symbols(model: Model, new_names: Mapping[TSymbol, TSymbol]) -> Model:
         Updated Pharmpy model
     """
     d = {Expr(key): Expr(val) for key, val in new_names.items()}
+    d = {key: val for key, val in d.items() if key != val}
+    if not d:
+        return model
 
-    new = []
-    for p in model.parameters:
-        if p.symbol in d:
-            newparam = Parameter(
-                name=d[p.symbol].name, init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
-            )
-        else:
-            newparam = p
-        new.append(newparam)
+    kwargs = {}
+
+    if any(item.name in model.parameters for item in d):
+        new = []
+        for p in model.parameters:
+            if p.symbol in d:
+                newparam = Parameter(
+                    name=d[p.symbol].name, init=p.init, lower=p.lower, upper=p.upper, fix=p.fix
+                )
+            else:
+                newparam = p
+            new.append(newparam)
+        new_parameters = Parameters.create(new)
+        kwargs['parameters'] = new_parameters
 
     if any(item.name in model.datainfo.names for item in d):
         newcols = []
@@ -689,21 +697,14 @@ def rename_symbols(model: Model, new_names: Mapping[TSymbol, TSymbol]) -> Model:
         if df is not None:
             colnames = {key.name: val.name for key, val in d.items() if key.name in df.columns}
             df = df.rename(columns=colnames)
+        kwargs['dataset'] = df
+        kwargs['datainfo'] = DataInfo.create(newcols)
 
-        model = model.replace(
-            parameters=Parameters.create(new),
-            statements=model.statements.subs(d),
-            random_variables=model.random_variables.subs(d),
-            datainfo=DataInfo.create(newcols),
-            dataset=df,
-        )
-    else:
-        # Only touch datainfo if necessary
-        model = model.replace(
-            parameters=Parameters.create(new),
-            statements=model.statements.subs(d),
-            random_variables=model.random_variables.subs(d),
-        )
+    model = model.replace(
+        statements=model.statements.subs(d),
+        random_variables=model.random_variables.subs(d),
+        **kwargs,
+    )
 
     return model.update_source()
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming
