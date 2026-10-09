@@ -307,7 +307,7 @@ class Expr:
         return cls(x)
 
     @classmethod
-    def derivative(cls, f, *x) -> Expr:
+    def derivative(cls, f, *x: Expr) -> Expr:
         dfdx = symengine.Derivative(f, *x)
         return cls(dfdx)
 
@@ -320,7 +320,7 @@ class Expr:
         return cls(func)
 
     @classmethod
-    def piecewise(cls, *args) -> Self:
+    def piecewise(cls, *args: tuple[Expr | int | float, BooleanExpr | bool]) -> Self:
         pw = symengine.Piecewise(*args)
         return cls(pw)
 
@@ -478,7 +478,7 @@ class BooleanExpr:
     def unicode(self) -> str:
         return ExprPrinter().doprint(sympy.sympify(self._expr))
 
-    def atoms(self, *types):
+    def atoms(self, *types: type):
         return self._expr.atoms(types)  # pyright: ignore [reportArgumentType]
 
     def _symengine_(self) -> symengine.Expr:

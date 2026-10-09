@@ -13,7 +13,7 @@ from itertools import chain, combinations
 from operator import add, mul
 from typing import Literal, Self
 
-from pharmpy.basic import Expr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -380,7 +380,7 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
 
         expression = Expr.piecewise(
             *(
-                (sympy.Symbol(eta_name(i, k)), sympy.Eq(cat, sympy.Symbol(occ)))
+                (Expr.symbol(eta_name(i, k)), BooleanExpr.eq(cat, Expr.symbol(occ)))
                 for k, cat in enumerate(categories, 1)
             )
         )

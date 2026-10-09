@@ -7,8 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pharmpy.basic import Expr
-from pharmpy.deps import sympy
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     Assignment,
@@ -226,9 +225,9 @@ def create_basic_pk_model(
                     Expr.piecewise(
                         (
                             1 / (1 + ((-Expr.symbol("BIO")).exp())),
-                            sympy.Eq(sympy.Symbol('ADMID'), 1),
+                            BooleanExpr.eq(Expr.symbol('ADMID'), 1),
                         ),
-                        (1, sympy.true),
+                        (1, BooleanExpr.true()),
                     ),
                 )
             )

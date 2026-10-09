@@ -335,7 +335,7 @@ def set_proportional_error_model(
             adjval = 0.01 * minobs
         else:
             adjval = 2.225e-16
-        guard_expr = Expr.piecewise((adjval, sympy.Eq(f, 0)), (f, True))
+        guard_expr = Expr.piecewise((adjval, BooleanExpr.eq(f, 0)), (f, True))
         guard_assignment = Assignment(ipred, guard_expr)
         ind = 0
         # Find first occurrence of IPREDADJ
@@ -906,7 +906,9 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False) -> Model:
     obs = model.observation_transformation
     obs = obs.replace(
         y,
-        Expr.piecewise((y.log(), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))),
+        Expr.piecewise(
+            (y.log(), BooleanExpr.eq(lam, 0)), ((y**lam - 1) / lam, BooleanExpr.ne(lam, 0))
+        ),
     )
     model = model.replace(observation_transformation=obs, statements=statements)
 
@@ -1079,7 +1081,7 @@ def set_power_on_ruv(
                 alternative = s.symbol
                 if zero_protection:
                     guard_expr = Expr.piecewise(
-                        (2.225e-307, sympy.Eq(s.expression, 0)), (s.expression, True)
+                        (2.225e-307, BooleanExpr.eq(s.expression, 0)), (s.expression, True)
                     )
                     guard_assignment = Assignment.create(ipred, guard_expr)
                     ind = sset.find_assignment_index('Y')

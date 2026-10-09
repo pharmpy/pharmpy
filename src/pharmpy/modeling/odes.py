@@ -1225,7 +1225,7 @@ def add_lag_time(model: Model) -> Model:
                 model.statements.before_odes
                 + Assignment.create(
                     Expr.symbol("lag_time"),
-                    Expr.piecewise((mdt_symb, sympy.Eq(admid, oral_admid)), (0, sympy.true)),
+                    Expr.piecewise((mdt_symb, BooleanExpr.eq(admid, oral_admid)), (0, True)),
                 )
                 + CompartmentalSystem(cb)
                 + model.statements.after_odes

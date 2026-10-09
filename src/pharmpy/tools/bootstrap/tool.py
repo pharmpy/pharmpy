@@ -120,7 +120,13 @@ def run_dofv(context, input_model, tpl):
     return (me, groups, res_me)
 
 
-def post_process_results(context, original_model, original_model_res, strictness, *tpls):
+def post_process_results(
+    context,
+    original_model,
+    original_model_res,
+    strictness,
+    *tpls: tuple[ModelEntry, list, ModelEntry],
+):
     model_entries = [tpl[0] for tpl in tpls]
     groups = [tpl[1] for tpl in tpls]
     dofv_mes = [tpl[2] for tpl in tpls]

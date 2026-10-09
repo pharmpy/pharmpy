@@ -275,7 +275,14 @@ def create_base_model(ss, allometry, model_or_model_entry):
 
 
 def post_process(
-    context, mfl, rank_type, cutoff, strictness, E, parameter_uncertainty_method, *model_entries
+    context,
+    mfl,
+    rank_type,
+    cutoff,
+    strictness,
+    E,
+    parameter_uncertainty_method,
+    *model_entries: ModelEntry,
 ):
     _, base_model_entry, res_model_entries = categorize_model_entries(model_entries)
 
