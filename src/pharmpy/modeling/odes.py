@@ -2609,7 +2609,7 @@ def _find_real_symbol(sset, symbol):
     return symbol
 
 
-def _get_dependent_assignments(sset, assignment):
+def _get_dependent_assignments(sset: Statements, assignment: Assignment):
     """Finds dependent assignments one layer deep"""
     return list(
         filter(

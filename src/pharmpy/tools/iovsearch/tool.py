@@ -35,7 +35,7 @@ from pharmpy.tools.run import (
     summarize_errors_from_entries,
     summarize_modelfit_results_from_entries,
 )
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import Context, ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 NAME_WF = 'iovsearch'
@@ -135,7 +135,7 @@ def create_init(model, modelfit_results):
     return task
 
 
-def _init(context, modelfit_results, model):
+def _init(context: Context, modelfit_results: ModelfitResults, model: Model) -> ModelEntry:
     context.log_info("Starting tool iovsearch")
     context.log_info(f"Input model OFV: {modelfit_results.ofv:.3f}")
     model = model.replace(name="input", description="")
@@ -144,7 +144,7 @@ def _init(context, modelfit_results, model):
 
 
 def task_brute_force_search(
-    context,
+    context: Context,
     occ: str,
     list_of_parameters: list | None,
     rank_type: str,

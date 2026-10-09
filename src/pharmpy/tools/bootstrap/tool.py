@@ -11,7 +11,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import Context, ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 
@@ -71,7 +71,7 @@ def create_workflow(
     return Workflow(wb)
 
 
-def start(context, input_model, results):
+def start(context: Context, input_model: Model, results: ModelfitResults) -> Model:
     context.log_info("Starting tool bootstrap")
     input_me = ModelEntry.create(input_model, modelfit_results=results)
     context.store_input_model_entry(input_me)
