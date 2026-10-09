@@ -141,6 +141,10 @@ General arguments
 |                                                   | such information is extracted using the datainfo, in the absence of arguments given by the user. Default        |
 |                                                   | is False.                                                                                                       |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``initial_error_models``                          | A mapping from DVID to one of ``'additive'``, ``'proportional'`` or ``'combined'`` to be used as the starting   |
+|                                                   | error model for each DV. ``'proportinal'`` is the default for all not specified. For details see                |
+|                                                   | :ref:`Initial error models<initial_error_models>`                                                               |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 .. _input_amd:
 
@@ -153,7 +157,7 @@ The AMD tool can use both a dataset and a model as input. If the input is a data
 
 * Structural: one compartment, first order absorption (if ``administration`` is ``'oral'``), first order elimination
 * IIV: CL and VC with covariance (``'iv'``) or CL and VC with covariance and MAT (``'oral'``)
-* Residual: proportional error model
+* Residual: proportional error model (see :ref:`Initial error models<initial_error_models>` for options)
 * Estimation steps: FOCE with interaction
 
 If the input is a model, the model needs to be a PK model.
@@ -164,6 +168,23 @@ In order to easily differentiate the two doses, an administration ID (ADMID) col
 used in order to differentiate the different doses from one another with respect to the applied error model. If a model is used as 
 input instead, this is not applied as it is assumed to have the correct CMT values for the connected model, along with a way of 
 differentiating the doses from one another.
+
+.. _initial_error_models:
+
+Initial error models
+~~~~~~~~~~~~~~~~~~~~
+
+The initial error model for each DV can be specified using the ``initial_error_models`` option. This is the error model that will be used when creating a new model. It will
+be used until ruvsearch is run. The default is to use a proportional error model for all DVs, but this can be overridden separately for each DV:
+
+.. pharmpy-code::
+
+    run_amd(
+        initial_error_models={1: 'proportional', 2: 'additive'},
+    )
+
+The available options are ``'additive'``, ``'proportional'`` and ``'combined'``. Note that when running the PD-part in a PKPD workflow, the error model for the PK will not
+change even if specified using this option.
 
 .. _search_space_amd:
 
