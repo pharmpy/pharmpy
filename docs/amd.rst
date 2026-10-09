@@ -145,6 +145,8 @@ General arguments
 |                                                   | error model for each DV. ``'proportinal'`` is the default for all not specified. For details see                |
 |                                                   | :ref:`Initial error models<initial_error_models>`                                                               |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
+| ``units``                                         | A mapping from quantities to units to use for unit conversions in the model code.                               |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 .. _input_amd:
 
