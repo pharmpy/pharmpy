@@ -98,6 +98,8 @@ linkcheck_ignore = [r'https://doi.org/10.1002/psp4.12741', # Page is reachable f
     r'https://doi.org/10.1515/ijb-2019-0082',
     r'https://projecteuclid.org/journals/electronic-journal-of-statistics/volume-8/issue-1/A-note-on-BIC-in-mixed-effects-models/10.1214/14-EJS890.full',
     r'https://www.page-meeting.org/?abstract=8683',
-    r'https://www.page-meeting.org/default.asp?abstract=11600']
+    r'https://www.page-meeting.org/default.asp?abstract=11600',
+    r'https://github.com/pharmpy/pharmpy',
+    r'https://github.com/pharmpy/pharmpr']
 
 linkcheck_ignore = [re.escape(url) for url in linkcheck_ignore]
