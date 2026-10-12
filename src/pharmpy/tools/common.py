@@ -64,7 +64,6 @@ class ToolResults(Results):
     summary_errors: pd.DataFrame | None = None
     final_model: Model | None = None
     final_results: ModelfitResults | None = None
-    models: Sequence[Model] = ()
     final_model_dv_vs_ipred_plot: alt.Chart | None = None
     final_model_dv_vs_pred_plot: alt.Chart | None = None
     final_model_cwres_vs_idv_plot: alt.Chart | None = None

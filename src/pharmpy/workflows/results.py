@@ -272,6 +272,7 @@ class Results(Immutable):
             'input_model',  # NOTE: Was removed in d5b3503 and 8578c8b
             'summary_individuals',  # NOTE: Was removed in 5873fe9
             'summary_individuals_count',  # NOTE: Was removed in 5873fe9
+            'models',
         }
         return cls(
             __version__=d.get('__version__', 'unknown'),  # NOTE: Override default version
