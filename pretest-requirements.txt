@@ -1,6 +1,6 @@
 # Direct dependencies
 pip==26.2.1
-tox==4.64.9
+tox==4.64.10
 # Indirect dependencies
 cachetools==7.2.1
 chardet==7.6.0
@@ -11,5 +11,5 @@ packaging==26.3
 platformdirs==4.12.3
 pluggy==1.6.0
 pyproject-api==1.11.3
-tomli==2.4.1
 virtualenv==21.14.6
+tomli==2.5.0
