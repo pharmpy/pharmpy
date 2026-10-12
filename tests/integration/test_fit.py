@@ -231,3 +231,4 @@ def test_fit_in_project(tmp_path, load_example_model_for_test):
             x for x in modeldb_path.iterdir() if x.is_dir() and not x.name.startswith(".")
         ]
         assert len(model_dirs) == 1
+        raise
