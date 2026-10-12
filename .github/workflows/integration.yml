@@ -274,7 +274,6 @@ jobs:
 
       - name: Upload failed integration test directories artifact
         uses: actions/upload-artifact@v6
-        if: ${{ failure() }}
         with:
             name: integration-tests-windows
-            path: ${{ runner.temp }}/pytest-of-*
+            path: ${{ runner.temp }}\pytest-of-*
