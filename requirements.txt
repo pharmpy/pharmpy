@@ -18,7 +18,7 @@ decorator==5.3.1
 defusedxml==0.7.1
 distributed==2026.8.0
 docutils==0.22.4
-executing==2.2.1
+executing==2.3.0
 fastjsonschema==2.22.2
 fsspec==2026.9.0
 idna==3.20
