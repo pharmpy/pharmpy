@@ -115,14 +115,27 @@ def test_model_equality(load_example_model_for_test):
     model2 = Model.create('model2', execution_steps=pheno1.execution_steps)
     assert model1 != model2
 
-    model2 = Model.create('model2', initial_individual_estimates=pd.DataFrame({'a': [1, 2, 3]}))
+    model1 = Model.create('model1', random_variables=pheno1.random_variables)
+    model2 = Model.create(
+        'model2',
+        initial_individual_estimates=pd.DataFrame({'ETA_CL': [1, 2, 3]}),
+        random_variables=pheno1.random_variables,
+    )
     assert model1 != model2
     assert model2 != model1
 
-    model1 = Model.create('model1', initial_individual_estimates=pd.DataFrame({'a': [1, 2, 3]}))
+    model1 = Model.create(
+        'model1',
+        initial_individual_estimates=pd.DataFrame({'ETA_CL': [1, 2, 3]}),
+        random_variables=pheno1.random_variables,
+    )
     assert model1 == model2
 
-    model1 = Model.create('model1', initial_individual_estimates=pd.DataFrame({'a': [1, 2, 4]}))
+    model1 = Model.create(
+        'model1',
+        initial_individual_estimates=pd.DataFrame({'ETA_CL': [1, 2, 4]}),
+        random_variables=pheno1.random_variables,
+    )
     assert model1 != model2
 
 
@@ -162,7 +175,11 @@ def test_dict(load_model_for_test, testdata):
     model2 = Model.from_dict(d)
     assert model == model2
 
-    model = Model.create('model', initial_individual_estimates=pd.DataFrame({'a': [1, 2, 3]}))
+    model = Model.create(
+        'model',
+        initial_individual_estimates=pd.DataFrame({'ETA_1': [1, 2, 3]}),
+        random_variables=model.random_variables,
+    )
     d = model.to_dict()
     assert d['initial_individual_estimates'] is not None
 
@@ -399,3 +416,34 @@ def test_is_defined(load_example_model_for_test):
     assert is_defined(model, "WGT")
     assert is_defined(model, Expr.symbol("CL"))
     assert not is_defined(model, "CLCR")
+
+
+def test_initial_individual_estimates(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    assert model.initial_individual_estimates is None
+    ids = model.dataset['ID']
+    inits1 = pd.DataFrame(1.0, index=ids, columns=['ETA_1', 'ETA_2', 'ETA_3'])
+    model1 = model.replace(initial_individual_estimates=inits1)
+    assert model1.initial_individual_estimates.equals(inits1)
+
+    inits2 = pd.DataFrame(1.0, index=ids, columns=['ETA_2', 'ETA_3'])
+    model2 = model.replace(initial_individual_estimates=inits2)
+    assert model2.initial_individual_estimates.equals(inits2)
+
+    inits3 = pd.DataFrame(1.0, index=ids, columns=['ETA_2', 'ETA_3', 'ETA_1'])
+    model3 = model.replace(initial_individual_estimates=inits3)
+    assert model3.initial_individual_estimates.equals(inits1)
+
+    inits4 = pd.DataFrame(1.0, index=ids, columns=['ETA_3', 'ETA_2'])
+    model4 = model.replace(initial_individual_estimates=inits4)
+    assert model4.initial_individual_estimates.equals(inits2)
+
+    model5 = model4.replace(initial_individual_estimates=None)
+    assert model5.initial_individual_estimates is None
+
+    with pytest.raises(TypeError):
+        model.replace(initial_individual_estimates='x')
+
+    inits = pd.DataFrame(1.0, index=ids, columns=['x', 'ETA_2'])
+    with pytest.raises(ValueError):
+        model.replace(initial_individual_estimates=inits)

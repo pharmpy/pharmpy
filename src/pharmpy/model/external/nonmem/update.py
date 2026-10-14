@@ -2457,15 +2457,15 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
     estimates = estimates.copy()
     eta_names = model.random_variables.etas.names
     columns = set(estimates.columns)
-    diff = columns - set(eta_names)
-    if columns < set(eta_names):
+    diff_to_model = columns - set(eta_names)
+    if diff_to_model:
         raise ValueError(
-            f'Cannot set initial estimate for random variable not in the model:'
-            f' {set(eta_names) - columns}'
+            f'Cannot set initial estimate for random variable not in the model: {diff_to_model}'
         )
     # If not setting all etas automatically set remaining to 0 for all individuals
-    if len(diff) > 0:
-        for name in diff:
+    diff_to_inits = set(eta_names) - columns
+    if len(diff_to_inits) > 0:
+        for name in diff_to_inits:
             estimates[name] = 0
 
     zero_fix = get_zero_fix_rvs(model, eta=True)

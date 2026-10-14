@@ -133,6 +133,9 @@ class Model(Immutable):
         obs_transformation = Model._canonicalize_observation_transformation(
             observation_transformation, dvs
         )
+        ind_inits = Model._canonicalize_initial_individual_estimates(
+            initial_individual_estimates, random_variables
+        )
         return cls(
             name=name,
             dependent_variables=dvs,
@@ -144,7 +147,7 @@ class Model(Immutable):
             description=description,
             value_type=value_type,
             internals=internals,
-            initial_individual_estimates=initial_individual_estimates,
+            initial_individual_estimates=ind_inits,
             dataset=dataset,
             datainfo=datainfo,
         )
@@ -282,6 +285,31 @@ class Model(Immutable):
             return steps
 
     @staticmethod
+    def _canonicalize_initial_individual_estimates(
+        inits: pd.DataFrame | None, rvs: RandomVariables
+    ) -> pd.DataFrame | None:
+        if inits is None:
+            return inits
+        if not isinstance(inits, pd.DataFrame):
+            raise TypeError("initial_individual_estimates must be of pd.DataFrame type")
+        init_names = list(inits.columns)
+        rvs_names = list(rvs.etas.names)
+        if init_names == rvs_names:
+            return inits
+        if diff := set(init_names) - set(rvs_names):
+            raise ValueError(
+                f"initial_individual_estimates must be in random variables, found: {sorted(diff)}"
+            )
+        names_canonical_order = []
+        for name in rvs_names:
+            if name in init_names:
+                names_canonical_order.append(name)
+        if names_canonical_order == init_names:
+            return inits
+        else:
+            return inits.reindex(columns=names_canonical_order)
+
+    @staticmethod
     def _check_symbol_names(datainfo: DataInfo, statements: Statements) -> None:
         # Currently that column names do not overlap with lhs in statements
         colnames = {Expr.symbol(colname) for colname in datainfo.names}
@@ -301,14 +329,10 @@ class Model(Immutable):
 
         description = kwargs.get('description', self.description)
         internals = kwargs.get('internals', self._internals)
-        initial_individual_estimates = kwargs.get(
-            'initial_individual_estimates', self.initial_individual_estimates
-        )
         for key_name in (
             'name',
             'description',
             'internals',
-            'initial_individual_estimates',
         ):
             try:
                 kwargs.pop(key_name)
@@ -403,6 +427,14 @@ class Model(Immutable):
             kwargs.pop('value_type')
         else:
             value_type = self.value_type
+
+        if 'initial_individual_estimates' in kwargs:
+            initial_individual_estimates = Model._canonicalize_initial_individual_estimates(
+                kwargs['initial_individual_estimates'], random_variables
+            )
+            kwargs.pop('initial_individual_estimates')
+        else:
+            initial_individual_estimates = self.initial_individual_estimates
 
         if len(kwargs) != 0:
             raise ValueError(f'Invalid keywords given : {[key for key in kwargs]}')

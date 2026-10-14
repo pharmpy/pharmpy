@@ -30,6 +30,7 @@ from pharmpy.modeling import (
     transform_etas_john_draper,
     transform_etas_tdist,
     update_initial_individual_estimates,
+    write_model,
 )
 from pharmpy.modeling.parameter_variability import (
     EtaAddition,
@@ -147,6 +148,18 @@ def test_add_iiv_raises(load_model_for_test, pheno_path):
 
     with pytest.raises(ValueError):
         add_iiv(model, ['V', 'S1'], 'add', eta_names=['x', None])
+
+
+def test_add_iiv_initial_individual_estimates(load_model_for_test, testdata, tmp_path):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    inits = pd.DataFrame(1.0, index=model.dataset['ID'], columns=['ETA_1', 'ETA_2', 'ETA_3'])
+    model = model.replace(initial_individual_estimates=inits)
+    model = add_iiv(model, 'KA', 'exp')
+    assert 'ETA_KA' not in model.initial_individual_estimates.columns
+    with chdir(tmp_path):
+        write_model(model)
+        with open(tmp_path / 'mox2_input.phi', 'r') as f:
+            assert 'ETA(4)' in f.read()
 
 
 def test_add_pd_iiv(load_model_for_test, testdata):
@@ -980,6 +993,14 @@ def test_remove_iiv_assignment(load_model_for_test, testdata, func):
 
     model = remove_iiv(model, 'ETA_X')
     assert model.statements.find_assignment('X').expression == 0
+
+
+def test_remove_iiv_initial_individual_estimates(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    inits = pd.DataFrame(1.0, index=model.dataset['ID'], columns=['ETA_1', 'ETA_2', 'ETA_3'])
+    model = model.replace(initial_individual_estimates=inits)
+    model = remove_iiv(model, 'ETA_1')
+    assert 'ETA_1' not in model.initial_individual_estimates.columns
 
 
 def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
