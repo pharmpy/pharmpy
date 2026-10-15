@@ -89,7 +89,7 @@ def create_workflow(
     parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
     units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
-    initial_error_models: dict[int, str] | None = None,
+    initial_error_models: Mapping[int, str] | None = None,
     _E: dict[str, float | str] | None = None,
 ):
     """Run Automatic Model Development (AMD) tool
@@ -137,7 +137,7 @@ def create_workflow(
         Dictionary of DV types for TMDD models with multiple DVs.
     mechanistic_covariates : list
         List of covariates or tuple of covariate and parameter combination to run in a
-        separate proioritized covsearch run. For instance ["WT", ("CRCL", "CL")].
+        separate prioritized covsearch run. For instance ["WT", ("CRCL", "CL")].
         The effects are extracted from the search space for covsearch.
     retries_strategy: str
         Whether or not to run retries tool. Valid options are 'skip', 'all_final' or 'final'.

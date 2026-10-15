@@ -1,6 +1,6 @@
 from .results import PDSearchResults
-from .tool import create_workflow
+from .tool import create_workflow, validate_input
 
 results_class = PDSearchResults
 
-__all__ = ('PDSearchResults', 'create_workflow')
+__all__ = ('PDSearchResults', 'create_workflow', 'validate_input')
