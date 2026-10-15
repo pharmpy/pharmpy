@@ -703,7 +703,7 @@ def remove_iiv(model: Model, to_remove: list[str] | str | None = None) -> Model:
 
     ind_inits = model.initial_individual_estimates
     if ind_inits is not None and (to_drop := set(ind_inits.columns) - set(keep)):
-        ind_inits = ind_inits.drop(to_drop, axis=1)
+        ind_inits = ind_inits.drop(sorted(to_drop), axis=1)
         model = model.replace(initial_individual_estimates=ind_inits)
 
     model = remove_unused_parameters_and_rvs(model)
