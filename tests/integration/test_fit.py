@@ -231,4 +231,26 @@ def test_fit_in_project(tmp_path, load_example_model_for_test):
             x for x in modeldb_path.iterdir() if x.is_dir() and not x.name.startswith(".")
         ]
         assert len(model_dirs) == 1
-        raise
+
+
+def test_fit_in_project2(testdata, tmp_path, load_example_model_for_test):
+    with chdir(tmp_path):
+        proj = open_project('myproject', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        model = Model.parse_model('pheno.mod')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
+        res = fit(model, project=proj)
+        assert res.ofv == pytest.approx(730.8947268137308)
+        modeldb_path = tmp_path / 'myproject' / '.modeldb'
+        assert modeldb_path.exists()
+        assert not (tmp_path / 'myproject' / 'modelfit1' / '.modeldb').is_dir()
+        model_path = tmp_path / 'myproject' / 'modelfit1' / 'models' / 'pheno'
+        assert model_path.is_dir()
+        assert read_model(model_path / 'model.ctl') == model
+
+        fit(model, project=proj)
+        model_dirs = [
+            x for x in modeldb_path.iterdir() if x.is_dir() and not x.name.startswith(".")
+        ]
+        assert len(model_dirs) == 1
