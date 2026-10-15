@@ -451,7 +451,7 @@ def validate_input(
     strictness,
     parameter_uncertainty_method,
 ):
-    if isinstance(input, (str, Path)) and not Path(input).is_file():
+    if isinstance(input, (str, Path)) and not normalize_user_given_path(input).is_file():
         raise FileNotFoundError(f"Cannot find input file {input}")
 
     if type == 'pd' and treatment_variable is None:
