@@ -475,7 +475,7 @@ have been selected, a delinearized version of the best candidate is created and 
       ]
 
       draw -> derivative;
-      derivative -> linearize[label = "Fit model"];
+      derivative -> linearize[label = "Evaluate model"];
       linearize -> cands[label = "Fit model"];
       cands -> best_cand[label = "Fit models"];
       best_cand -> better[label = "Fit model"];
