@@ -11,6 +11,7 @@ from pharmpy.modeling import (
     get_rv_parameters,
     remove_iiv,
     set_description,
+    split_joint_distribution,
 )
 from pharmpy.modeling.mfl import (
     expand_model_features,
@@ -384,11 +385,15 @@ def create_candidate_linearized(name, mfl, type, param_mapping, base_model_entry
     if type in ('covariance', 'simultaneous'):
         covariances = Covariance.get_covariance_blocks(mfl.covariance)
         ies = base_res.individual_estimates
+        etas_remaining = set(base_model.random_variables.iiv.names)
         for block in covariances:
             etas = [param_to_eta[param] for param in block]
+            etas_remaining -= set(etas)
             candidate_model = create_joint_distribution(
                 candidate_model, etas, individual_estimates=ies
             )
+        if len(etas_remaining) > 1:
+            candidate_model = split_joint_distribution(candidate_model, rvs=etas_remaining)
 
     iivs = get_base_features_linearized(candidate_model, 'iiv', param_mapping)
     covs = get_base_features_linearized(candidate_model, 'covariance', param_mapping)

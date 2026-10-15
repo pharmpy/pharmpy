@@ -124,6 +124,19 @@ def test_create_param_mapping(load_model_for_test, testdata):
     param_mapping = create_param_mapping(model)
     assert param_mapping == {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
 
+    model = add_peripheral_compartment(model)
+    me = ModelEntry.create(model)
+    mfl = ModelFeatures.create('IIV(CL,EXP);IIV?([VC,MAT,QP1,VP1],EXP)')
+    model = create_base_model_entry('linearize', mfl, as_fullblock=True, input_model_entry=me).model
+    param_mapping = create_param_mapping(model)
+    assert param_mapping == {
+        'ETA_1': 'CL',
+        'ETA_2': 'VC',
+        'ETA_3': 'MAT',
+        'ETA_QP1': 'QP1',
+        'ETA_VP1': 'VP1',
+    }
+
 
 @pytest.mark.parametrize(
     'mfl, type, expected',
@@ -199,6 +212,7 @@ def test_get_covariance_combinations(mfl, base_features, expected):
             '[CL,VC]+[MAT,MDT]',
             6,
         ),
+        (create_joint_distribution, '', 'covariance', '[CL]+[MAT]+[VC]', 3),
     ],
 )
 def test_create_candidate_linearized(
