@@ -5,6 +5,12 @@ import pytest
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.model import AddColumn, DataInfo, Ignore
+from pharmpy.modeling import (
+    add_peripheral_compartment,
+    add_pk_iiv,
+    fix_parameters_to,
+    remove_iiv,
+)
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
@@ -209,3 +215,50 @@ def test_delinearize_model(load_model_for_test, testdata):
     assert (
         delinearized_model.parameters["IVV"].init == pm_delinearized_model.parameters["IIV_CL"].init
     )
+
+
+def _create_linbase(model, model_entry_factory):
+    me = model_entry_factory([model])[0]
+    derivative_me = create_derivative_model(me)
+    derivative_me = model_entry_factory([derivative_me.model])[0]
+    linbase_me = create_linearized_model('linbase', '', model, derivative_me)
+    return linbase_me.model
+
+
+@pytest.mark.parametrize(
+    'to_remove',
+    [
+        [],
+        ['ETA_1'],
+        ['ETA_1', 'ETA_2'],
+    ],
+)
+def test_delinearize_model_with_fixed(
+    load_model_for_test, testdata, model_entry_factory, to_remove
+):
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model = load_model_for_test(path)
+    model = add_peripheral_compartment(model)
+    model = add_pk_iiv(model)
+    model = fix_parameters_to(model, {'IIV_QP1': 1e-6, 'IIV_VP1': 1e-6})
+    linbase = _create_linbase(model, model_entry_factory)
+
+    param_mapping = {
+        "ETA_1": "CL",
+        "ETA_2": "VC",
+        "ETA_3": "MAT",
+        "ETA_QP1": "QP1",
+        "ETA_VP1": "VP1",
+    }
+    if to_remove:
+        linbase = remove_iiv(linbase, to_remove)
+        for eta in to_remove:
+            del param_mapping[eta]
+    delin_model = delinearize_model(linbase, model, param_mapping=param_mapping)
+
+    assert len(delin_model.random_variables.etas) == len(param_mapping)
+    assert len(delin_model.parameters.fixed) == 0
+    assert 'DUMMYOMEGA' not in delin_model.parameters.names
+    assert 'eta_dummy' not in delin_model.random_variables.names
+    assert Expr.symbol('DUMMYETA') not in delin_model.statements.lhs_symbols
+    assert all(eta not in delin_model.random_variables.names for eta in to_remove)

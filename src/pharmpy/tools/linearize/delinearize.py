@@ -47,6 +47,11 @@ def delinearize_model(
             if eta not in param_mapping:
                 raise ValueError(f'{eta} is missing from param_mapping')
 
+        if param_mapping:
+            to_unfix = base_model.random_variables[
+                [eta for eta in param_mapping]
+            ].variance_parameters
+            base_model = unfix_parameters(base_model, to_unfix)
         dl_model = remove_iiv(base_model)  # Remove all IIV and then add based on linearized model
         for block in linearized_model.random_variables.etas:
             if len(block) > 1:
@@ -92,6 +97,9 @@ def delinearize_model(
 
         dl_model = unfix_parameters(dl_model, "DUMMYOMEGA")
         dl_model = remove_iiv(dl_model, "eta_dummy")
+        dl_sset = dl_model.statements
+        dummy_idx = dl_sset.get_assignment_index('DUMMYETA')
+        dl_model = dl_model.replace(statements=dl_sset[:dummy_idx] + dl_sset[dummy_idx + 1 :])
     else:
         if not all(o in get_omegas(base_model).names for o in get_omegas(linearized_model).names):
             raise ValueError(

@@ -643,9 +643,7 @@ def create_delinearized_model_entry(
 
 
 def create_delinearize_workflow(input_model, final_model, param_mapping, stepno=None):
-    flm_etas = final_model.random_variables.iiv.names
-    final_param_map = {k: v for k, v in param_mapping.items() if k in flm_etas}
-    final_delinearized_model = delinearize_model(final_model, input_model, final_param_map)
+    final_delinearized_model = delinearize_model(final_model, input_model, param_mapping)
     name = f'delinearized{stepno}'
 
     final_delinearized_model = final_delinearized_model.replace(
