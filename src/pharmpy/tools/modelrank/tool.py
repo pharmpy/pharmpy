@@ -7,6 +7,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Model
+from pharmpy.modeling import add_parameter_uncertainty_step, set_description, set_name
 from pharmpy.workflows import (
     Context,
     ModelEntry,
@@ -17,7 +18,6 @@ from pharmpy.workflows import (
     WorkflowBuilder,
 )
 
-from ...modeling import add_parameter_uncertainty_step, set_description, set_name
 from ..common import concat_summaries
 from ..modelfit import create_fit_workflow
 from ..run import summarize_modelfit_results_from_entries
