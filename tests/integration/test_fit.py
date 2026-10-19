@@ -39,6 +39,8 @@ def test_fit_single(tmp_path, model_count, testdata):
         original_dataset_path = tmp_path / 'pheno.dta'
         context_dataset_path = rundir / '.modeldb' / '.datasets' / 'pheno.dta'
         assert filecmp.cmp(original_dataset_path, context_dataset_path)
+        with open(rundir / 'log.csv') as f:
+            assert 'error' not in f.read()
 
 
 def test_fit_multiple(tmp_path, model_count, testdata):

@@ -168,10 +168,7 @@ def parse_line(line, fmts):
             start = i * col_width + offset
             end = start + col_width
             value = line[start:end].strip()
-            if '.' in value:
-                value = float(value)
-            else:  # NONMEM only supports numbers
-                value = int(value)
+            value = float(value)  # NONMEM only supports numbers
             values.append(value)
         offset = end
     return values

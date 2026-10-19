@@ -257,6 +257,6 @@ def validate_dataset(model, path: Path):
     dataset = model.dataset.drop(to_drop, axis=1, inplace=False)
     fdata = fcon_model.dataset
     fdata = fdata[fdata.columns.intersection(dataset.columns)]
-
+    fdata = fdata.astype(dataset.dtypes)
     if not fdata.equals(dataset):
         raise DatasetValidationError('FDATA does not match internal dataset')
