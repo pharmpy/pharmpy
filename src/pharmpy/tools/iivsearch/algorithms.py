@@ -392,7 +392,7 @@ def create_candidate_linearized(name, mfl, type, param_mapping, base_model_entry
             candidate_model = create_joint_distribution(
                 candidate_model, etas, individual_estimates=ies
             )
-        if len(etas_remaining) > 1:
+        if type == 'covariance' and len(etas_remaining) > 1:
             candidate_model = split_joint_distribution(candidate_model, rvs=etas_remaining)
 
     iivs = get_base_features_linearized(candidate_model, 'iiv', param_mapping)
