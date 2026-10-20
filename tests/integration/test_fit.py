@@ -215,12 +215,15 @@ def test_fit_use_pharmpy_dataset(tmp_path, model_count, testdata):
         assert (rundir / '.modeldb' / '.datasets' / 'data1.csv').is_file()
 
 
-def test_fit_in_project(tmp_path, load_example_model_for_test):
+def test_fit_in_project(tmp_path, testdata):
     with chdir(tmp_path):
         proj = open_project('myproject', tmp_path)
-        model = load_example_model_for_test('pheno')
+        shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        model = Model.parse_model('pheno.mod')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
         res = fit(model, project=proj)
-        assert res.ofv == pytest.approx(586.2760562804789)
+        assert res.ofv == pytest.approx(730.8947268137308)
         modeldb_path = tmp_path / 'myproject' / '.modeldb'
         assert modeldb_path.exists()
         assert not (tmp_path / 'myproject' / 'modelfit1' / '.modeldb').is_dir()
