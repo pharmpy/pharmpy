@@ -7,6 +7,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Parameter, Parameters
+from pharmpy.modeling import read_model
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.external.nonmem.results import parse_modelfit_results, simfit_results
 from pharmpy.workflows.results import read_results
@@ -357,7 +358,7 @@ def test_serialization(testdata, load_model_for_test):
     res_decode = read_results(res_json)
 
     assert res.parameter_estimates.equals(res_decode.parameter_estimates)
-    assert res.log.to_dataframe().equals(res_decode.log.to_dataframe())
+    assert res.warning_messages == res_decode.warning_messages
 
 
 def test_empty_results(testdata, pheno):
@@ -445,3 +446,56 @@ def test_eps_shrinkage(testdata, load_model_for_test, path, expected):
     res = parse_modelfit_results(model, testdata / path)
     assert res is not None
     assert str(res.eps_shrinkage) == str(expected)
+
+
+@pytest.mark.parametrize(
+    'file_name, no_of_warnings, no_of_errors',
+    (
+        (
+            'no_header_error.lst',
+            1,
+            2,
+        ),
+        (
+            'rounding_error.lst',
+            0,
+            2,
+        ),
+    ),
+)
+def test_error_and_warning_messages(tmp_path, testdata, file_name, no_of_warnings, no_of_errors):
+    with chdir(tmp_path):
+        error_path = testdata / 'nonmem' / 'errors'
+
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path)
+        shutil.copy2(error_path / file_name, tmp_path / 'pheno_real.lst')
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path)
+        model_no_header = read_model('pheno_real.mod')
+        res_no_header = parse_modelfit_results(model_no_header, 'pheno_real.mod')
+
+        assert len(res_no_header.warning_messages) == no_of_warnings
+        assert len(res_no_header.error_messages) == no_of_errors
+
+
+def test_error_and_warning_messages_skip(tmp_path, testdata):
+    with chdir(tmp_path):
+        error_path = testdata / 'nonmem' / 'errors'
+
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path)
+        shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_real.lst')
+        shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path)
+        model_no_header = read_model('pheno_real.mod')
+        res_no_header = parse_modelfit_results(
+            model_no_header, 'pheno_real.mod', parse_error_messages=False
+        )
+
+        assert res_no_header.warning_messages == ()
+        assert res_no_header.error_messages == ()
+
+
+def test_log_deprecation_warning():
+    with pytest.raises(DeprecationWarning):
+        parse_modelfit_results(None, None, with_log=True)
+
+    with pytest.raises(DeprecationWarning):
+        parse_modelfit_results(None, None, with_log=False)
