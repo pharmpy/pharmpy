@@ -1,7 +1,6 @@
 from .args import split_common_options
 from .contexts import Context, LocalDirectoryContext
 from .execute import execute_subtool, execute_workflow
-from .log import Log
 from .model_database import (
     LocalDirectoryDatabase,
     LocalModelDirectoryDatabase,
@@ -26,7 +25,6 @@ __all__ = (
     'LocalDirectoryDatabase',
     'LocalDirectoryProject',
     'LocalModelDirectoryDatabase',
-    'Log',
     'ModelDatabase',
     'ModelEntry',
     'ModelfitResults',
