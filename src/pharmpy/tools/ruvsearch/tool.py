@@ -787,15 +787,17 @@ def validate_input(
             )
 
         if dv is not None:
-            if 'DVID' not in model.dataset.columns and 'dvid' not in model.datainfo.types:
-                raise ValueError("No DVID column in dataset.")
+            col = model.datainfo.find_column_by_type('dvid')
+
+            if col is not None:
+                dvid = col.name
+            elif 'DVID' in model.dataset.columns:
+                dvid = 'DVID'
             else:
-                try:
-                    dvid_name = model.datainfo.typeix['dvid'][0].name
-                except IndexError:
-                    dvid_name = 'DVID'
-                if dv not in model.dataset[dvid_name].unique():
-                    raise ValueError(f"No {dvid_name} = {dv} in dataset.")
+                raise ValueError("No DVID column in dataset.")
+
+            if dv not in model.dataset[dvid].unique():
+                raise ValueError(f"No {dvid} = {dv} in dataset.")
 
         if Expr.symbol('TAD') in model.statements.lhs_symbols:
             raise ValueError("Invalid `model`: TAD must be a column")
