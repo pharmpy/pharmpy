@@ -40,9 +40,8 @@ class TemporaryDirectory:
 
     @classmethod
     def _rmtree(cls, name, ignore_errors=False):
-        def onerror(func, path, exc_info):
-            exc = exc_info
-            if issubclass(exc, PermissionError):
+        def onerror(func, path, exc):
+            if isinstance(exc, PermissionError):
 
                 def resetperms(path):
                     try:
@@ -73,7 +72,7 @@ class TemporaryDirectory:
                                 raise pe
                 except FileNotFoundError:
                     pass
-            elif issubclass(exc, FileNotFoundError):
+            elif isinstance(exc, FileNotFoundError):
                 pass
             else:
                 if not ignore_errors:
