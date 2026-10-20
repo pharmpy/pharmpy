@@ -137,9 +137,8 @@ def execute_model(model_entry, context):
     else:
         simulation_results = None
 
-    log = modelfit_results.log if modelfit_results else None
     model_entry = model_entry.attach_results(
-        modelfit_results=modelfit_results, simulation_results=simulation_results, log=log
+        modelfit_results=modelfit_results, simulation_results=simulation_results
     )
 
     with database.transaction(model_entry) as txn:

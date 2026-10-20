@@ -111,7 +111,6 @@ def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata)
         model_entry = ModelEntry(
             model=model,
             modelfit_results=modelfit_results,
-            log=modelfit_results.log,
         )
 
         db = LocalModelDirectoryDatabase("database")

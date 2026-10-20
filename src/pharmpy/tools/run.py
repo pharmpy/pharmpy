@@ -940,13 +940,15 @@ def summarize_errors_from_entries(mes: list[ModelEntry]):
     for me in mes:
         name = me.model.name
         res = me.modelfit_results
-        if res is not None and len(res.log) > 0:
-            for i, entry in enumerate(res.log):
-                idcs.append((name, entry.category, i))
-                rows.append([entry.time, entry.message])
+        if res is None:
+            continue
+        for i, msg in enumerate(res.warning_messages + res.error_messages):
+            category = 'WARNING' if msg in res.warning_messages else 'ERROR'
+            idcs.append((name, category, i))
+            rows.append([msg])
 
     index_names = ['model', 'category', 'error_no']
-    col_names = ['time', 'message']
+    col_names = ['message']
     index = pd.MultiIndex.from_tuples(idcs, names=index_names)
 
     if rows:
@@ -1408,9 +1410,6 @@ def _get_model_result_summary(me, include_all_execution_steps=False):
 
 
 def _summarize_step(res, i):
-    no_of_errors = len(res.log.errors) if res.log is not None else 0
-    no_of_warnings = len(res.log.warnings) if res.log is not None else 0
-
     summary_dict = {}
 
     if i >= 0:
@@ -1423,8 +1422,8 @@ def _summarize_step(res, i):
     else:
         summary_dict['minimization_successful'] = False
 
-    summary_dict['errors_found'] = no_of_errors
-    summary_dict['warnings_found'] = no_of_warnings
+    summary_dict['errors_found'] = len(res.error_messages)
+    summary_dict['warnings_found'] = len(res.warning_messages)
 
     if i == -1 and res.ofv_iterations is not None:
         i = max(res.ofv_iterations.index.get_level_values(0)) - 1

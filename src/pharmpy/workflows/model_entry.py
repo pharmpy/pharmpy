@@ -3,7 +3,6 @@ from __future__ import annotations
 from pharmpy.internals.immutable import Immutable
 from pharmpy.model import Model
 
-from .log import Log
 from .results import ModelfitResults, SimulationResults
 
 
@@ -33,13 +32,11 @@ class ModelEntry(Immutable):
         parent: Model | None = None,
         modelfit_results: ModelfitResults | None = None,
         simulation_results: SimulationResults | None = None,
-        log: Log | None = None,
     ):
         self._model = model
         self._parent = parent
         self._modelfit_results = modelfit_results
         self._simulation_results = simulation_results
-        self._log = log
 
     @classmethod
     def create(
@@ -48,7 +45,6 @@ class ModelEntry(Immutable):
         parent: Model | None = None,
         modelfit_results: ModelfitResults | None = None,
         simulation_results: SimulationResults | None = None,
-        log: Log | None = None,
     ) -> ModelEntry:
         if parent:
             ModelEntry._canonicalize_parent(model, parent)
@@ -57,7 +53,6 @@ class ModelEntry(Immutable):
             parent=parent,
             modelfit_results=modelfit_results,
             simulation_results=simulation_results,
-            log=log,
         )
 
     @staticmethod
@@ -71,22 +66,18 @@ class ModelEntry(Immutable):
         self,
         modelfit_results: ModelfitResults,
         simulation_results: SimulationResults | None = None,
-        log: Log | None = None,
     ) -> ModelEntry:
         """Attaches modelfit results and possible log to ModelEntry objects"""
         if self._modelfit_results:
             raise ValueError('ModelEntry `modelfit_results` attribute already set')
         if self._simulation_results:
             raise ValueError('ModelEntry `simulation_results` attribute already set')
-        if self._log:
-            raise ValueError('ModelEntry `log` attribute already set')
 
         return ModelEntry.create(
             self._model,
             parent=self._parent,
             modelfit_results=modelfit_results,
             simulation_results=simulation_results,
-            log=log,
         )
 
     @property
@@ -108,11 +99,6 @@ class ModelEntry(Immutable):
     def simulation_results(self) -> SimulationResults | None:
         """Simulation results of main model"""
         return self._simulation_results
-
-    @property
-    def log(self):
-        """Log of main model"""
-        return self._log
 
     def __repr__(self) -> str:
         return f'<Pharmpy model entry object {self.model.name}>'

@@ -120,8 +120,7 @@ def execute_model(model_entry, db):
         txn.store_modelfit_results()
 
     res = parse_modelfit_results(model, path)
-    log = res.log if res else None
-    model_entry = model_entry.attach_results(modelfit_results=res, log=log)
+    model_entry = model_entry.attach_results(modelfit_results=res)
 
     return model_entry
 

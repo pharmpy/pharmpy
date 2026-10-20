@@ -123,8 +123,7 @@ def _format_input(input_option, default_option):
 
 
 def start(model, modelfit_results):
-    log = modelfit_results.log if modelfit_results else None
-    model_entry = ModelEntry(model, modelfit_results=modelfit_results, log=log)
+    model_entry = ModelEntry(model, modelfit_results=modelfit_results)
     return model_entry
 
 

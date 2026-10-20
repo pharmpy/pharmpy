@@ -88,10 +88,9 @@ def create_workflow(
 
 def start(context, modelfit_results, model):
     context.log_info("Starting tool allometry")
-    log = modelfit_results.log if modelfit_results else None
     mfr = modelfit_results
     input_model = model.replace(name="input", description="")
-    me = ModelEntry(input_model, modelfit_results=mfr, log=log)
+    me = ModelEntry(input_model, modelfit_results=mfr)
     context.store_input_model_entry(me)
     if mfr is not None:
         context.log_info(f"Input model OFV: {mfr.ofv:.3f}")

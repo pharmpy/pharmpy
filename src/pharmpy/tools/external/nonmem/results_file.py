@@ -117,8 +117,10 @@ class NONMEMResultsFile:
     We rely on tags in NONMEM >= 7.2.0
     """
 
-    def __init__(self, path=None, log=None):
-        self.log = log
+    def __init__(self, path=None, parse_error_messages=True):
+        self.parse_error_messages = parse_error_messages
+        self.warnings = []
+        self.errors = []
         self.table = {}
         self.nonmem_version = None
         self.runtime_total: float | None = None
@@ -391,14 +393,14 @@ class NONMEMResultsFile:
         except pd.errors.EmptyDataError:
             return None
 
-    def log_items(self, lines_section: str, lines: Iterable[str]):
-        if self.log is None:
-            return
-
-        fulltext = ''.join(lines)
-
+    def get_warnings_and_errors(self, lines_section: str, lines: Iterable[str]):
         warnings = []
         errors = []
+
+        if not self.parse_error_messages:
+            return warnings, errors
+
+        fulltext = ''.join(lines)
 
         warning_patterns = [
             ('exec', re.compile(r'0WARNING:((\s+.+\n)+)')),
@@ -498,11 +500,7 @@ class NONMEMResultsFile:
                 message_split = message.split('\n')
                 message_trimmed = '\n'.join([m.strip() for m in message_split])
                 errors.append(message_trimmed.strip())
-
-        for message in warnings:
-            self.log = self.log.log_warning(message)
-        for message in errors:
-            self.log = self.log.log_error(message)
+        return warnings, errors
 
     def tag_items(self, path) -> Generator[TaggedSection, None, None]:
         with open(path, 'rb') as lines:
@@ -662,18 +660,25 @@ class NONMEMResultsFile:
                     continue
                 runtime = (_endtime - _starttime).total_seconds()
                 yield ('runtime', {'total': runtime})
-            elif isinstance(section, ExecSection):
-                self.log_items('exec', section.rows)
-            elif isinstance(section, MethSection):
-                self.log_items('METH', section.rows)
-            elif isinstance(section, ProgramTerminatedByObjSection):
-                self.log_items('0PROGRAM TERMINATED BY OBJ', section.rows)
-            elif isinstance(section, TermSection):
-                self.log_items('TERM', section.rows)
-                if not parse:
-                    continue
-                content = NONMEMResultsFile.parse_termination(section.rows)
-                block.update(asdict(content))
+            elif isinstance(
+                section, (ExecSection, MethSection, ProgramTerminatedByObjSection, TermSection)
+            ):
+                if isinstance(section, ExecSection):
+                    lines_section = 'exec'
+                elif isinstance(section, MethSection):
+                    lines_section = 'METH'
+                elif isinstance(section, ProgramTerminatedByObjSection):
+                    lines_section = '0PROGRAM TERMINATED BY OBJ'
+                else:
+                    lines_section = 'TERM'
+                warnings, errors = self.get_warnings_and_errors(lines_section, section.rows)
+                self.warnings.extend(warnings)
+                self.errors.extend(errors)
+                if isinstance(section, TermSection):
+                    if not parse:
+                        continue
+                    content = NONMEMResultsFile.parse_termination(section.rows)
+                    block.update(asdict(content))
             elif isinstance(section, TereSection):
                 if not parse:
                     continue

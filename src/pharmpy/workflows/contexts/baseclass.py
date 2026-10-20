@@ -278,9 +278,7 @@ class Context(ABC):
         model = me.model
         annotation = self.retrieve_annotation(name)
         model = model.replace(name=name, description=annotation)
-        new_me = ModelEntry(
-            model=model, parent=me.parent, modelfit_results=me.modelfit_results, log=me.log
-        )
+        new_me = ModelEntry(model=model, parent=me.parent, modelfit_results=me.modelfit_results)
         return new_me
 
     def store_model_entry(self, me: Model | ModelEntry) -> None:

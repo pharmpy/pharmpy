@@ -8,7 +8,6 @@ import pytest
 import pharmpy.tools.external.nonmem.results_file as rf
 from pharmpy.model.external.nonmem import table
 from pharmpy.tools.external.results import parse_modelfit_results
-from pharmpy.workflows.log import Log
 
 anan = pytest.approx(np.nan, nan_ok=True)
 
@@ -416,8 +415,7 @@ def test_data_io(pheno_lst):
 )
 def test_estimation_status(testdata, file, table_number, expected, covariance_step_ok):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM')
-    log = Log()
-    rfile = rf.NONMEMResultsFile(p / file, log=log)
+    rfile = rf.NONMEMResultsFile(p / file)
     actual = rfile.estimation_status(table_number)
     _assert_estimation_status(actual, expected)
     if covariance_step_ok is None:
@@ -494,7 +492,7 @@ def test_estimation_status_empty():
 
 def test_estimation_status_withsim(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'withSIM')
-    rfile = rf.NONMEMResultsFile(p / 'control3boot.res', log=Log())
+    rfile = rf.NONMEMResultsFile(p / 'control3boot.res')
 
     assert rfile.estimation_status(45) == rf.TermInfo(
         minimization_successful=True,
@@ -532,7 +530,7 @@ def test_estimation_status_withsim(testdata):
 
 def test_ofv_table_gap(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'multPROB' / 'multEST' / 'withSIM')
-    rfile = rf.NONMEMResultsFile(p / 'multprobmix_nm730.lst', log=Log())
+    rfile = rf.NONMEMResultsFile(p / 'multprobmix_nm730.lst')
 
     _assert_estimation_status(
         rfile.estimation_status(2),
@@ -584,14 +582,14 @@ def test_ofv_table_gap(testdata):
             'no_header_error.lst',
             'PRED EXIT CODE = 1',
             9,
-            1,
+            0,
             2,
         ),
         (
             'no_header_error.lst',
             'PROGRAM TERMINATED BY OBJ',
             2,
-            2,
+            1,
             2,
         ),
         (
@@ -618,16 +616,15 @@ def test_ofv_table_gap(testdata):
     ],
 )
 def test_errors(testdata, file_name, ref_start, no_of_rows, idx, no_of_errors):
-    lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name, log=Log())
-    log_df = lst.log.to_dataframe()
-    message = log_df['message'].iloc[idx]
+    lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name)
+    message = lst.errors[idx]
     assert message.startswith(ref_start)
     assert len(message.split('\n')) == no_of_rows
-    assert log_df['category'].value_counts()['ERROR'] == no_of_errors
+    assert len(lst.errors) == no_of_errors
 
 
 @pytest.mark.parametrize(
-    'file_name, ref, idx',
+    'file_name, ref',
     [
         (
             'no_header_error.lst',
@@ -635,24 +632,20 @@ def test_errors(testdata, file_name, ref_start, no_of_rows, idx, no_of_errors):
                 'THE NUMBER OF PARAMETERS TO BE ESTIMATED\n'
                 'EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA.'
             ),
-            0,
         ),
         (
             'estimate_near_boundary_warning.lst',
             'PARAMETER ESTIMATE IS NEAR ITS BOUNDARY',
-            0,
         ),
         (
             'est_step_warning.lst',
             'MINIMIZATION SUCCESSFUL\nHOWEVER, PROBLEMS OCCURRED WITH THE MINIMIZATION.',
-            0,
         ),
     ],
 )
-def test_warnings(testdata, file_name, ref, idx):
-    lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name, log=Log())
-    message = lst.log.to_dataframe()['message'].iloc[idx]
-    assert message == ref
+def test_warnings(testdata, file_name, ref):
+    lst = rf.NONMEMResultsFile(testdata / 'nonmem' / 'errors' / file_name)
+    assert ref in lst.warnings
 
 
 def test_covariance_status(load_model_for_test, testdata):

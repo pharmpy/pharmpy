@@ -161,7 +161,6 @@ def test_execute_model_nonmem(tmp_path, testdata):
         model_entry = ModelEntry.create(
             model=model,
             modelfit_results=None,
-            log=None,
         )
 
         db = LocalDirectoryContext('db_model')

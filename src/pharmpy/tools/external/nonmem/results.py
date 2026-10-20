@@ -18,7 +18,6 @@ from pharmpy.model.external.nonmem.parsing import extract_verbatim_derivatives, 
 from pharmpy.model.external.nonmem.records.table_record import DEFAULT_TABLE_RECORD_FORMAT
 from pharmpy.model.external.nonmem.table import ExtTable, NONMEMTableFile, PhiTable
 from pharmpy.model.external.nonmem.update import create_name_map
-from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults, SimulationResults
 
 from .results_file import NONMEMResultsFile, TermInfo
@@ -79,7 +78,8 @@ class Status:
     termination_cause: list[Any]
     estimation_runtime: list[float]
     estimate_near_boundary: list[bool]
-    log: Log | None
+    warning_messages: tuple[str, ...] | None
+    error_messages: tuple[str, ...] | None
     est_table_numbers: list[int | None]
     eta_shrinkage: list[pd.DataFrame | None]
     eps_shrinkage: list[pd.DataFrame | None]
@@ -106,8 +106,8 @@ class ModelfitResultsProxy:
     name_map: dict[str, str]
     model: Model
     strict: bool = False
+    parse_error_messages: bool = True
     subproblem: int | None = None
-    log: Log | None = None
 
     @property
     @cache_method_no_args
@@ -120,23 +120,19 @@ class ModelfitResultsProxy:
             ext_tables = NONMEMTableFile(ext_path)
         except FileNotFoundError:
             msg = f"Couldn't find NONMEM .ext-file at {ext_path}"
-            if self.log is not None:
-                self.log = self.log.log_error(msg)
             raise FileNotFoundError(msg)
         except ValueError:
-            if self.log is not None:
-                self.log = self.log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
-            raise
+            msg = f"Broken ext-file {path.with_suffix('.ext')}"
+            raise ValueError(msg)
 
         for table in ext_tables:
             try:
                 _ = table.data_frame
             except ValueError:
-                if self.log is not None:
-                    self.log = self.log.log_error(
-                        f"Broken table in ext-file {path.with_suffix('.ext')}, "
-                        f"table no. {table.number}"
-                    )
+                msg = (
+                    f"Broken table in ext-file {path.with_suffix('.ext')}, table no. {table.number}"
+                )
+                warnings.warn(msg)
 
         control_stream = self.control_stream
         name_map = self.name_map
@@ -151,9 +147,9 @@ class ModelfitResultsProxy:
         model = self.model
         execution_steps = model.execution_steps
         path = self.path
-        log = self.log
-        status = _parse_lst(len(execution_steps), path, self.iterations.table_numbers, log)
-        self.log = status.log
+        status = _parse_lst(
+            len(execution_steps), path, self.iterations.table_numbers, self.parse_error_messages
+        )
         return status
 
     @property
@@ -334,14 +330,14 @@ class ModelfitResultsProxy:
 
     @property
     @cache_method_no_args
-    def warnings(self) -> list[str] | None:
+    def warnings(self) -> tuple[str, ...] | None:
         warnings = []
         if any(self.status.estimate_near_boundary):
             warnings.append('estimate_near_boundary')
         if self.gradient.final_is_zero:
             warnings.append('final_zero_gradient')
 
-        return warnings
+        return tuple(warnings)
 
     @property
     @cache_method_no_args
@@ -427,7 +423,7 @@ def _parse_modelfit_results(
     model: Model,
     strict: bool = False,
     subproblem: int | None = None,
-    with_log: bool = True,
+    parse_error_messages: bool = True,
     lazy: bool = False,
 ):
     # Path to model file or results file
@@ -442,8 +438,8 @@ def _parse_modelfit_results(
         name_map=name_map,
         model=model,
         strict=strict,
+        parse_error_messages=parse_error_messages,
         subproblem=subproblem,
-        log=Log() if with_log else None,
     )
 
     try:
@@ -452,11 +448,11 @@ def _parse_modelfit_results(
         if strict:
             raise
         else:
-            return create_failed_results(model, proxy.log)
+            return create_failed_results(model)
     except OSError:
         return None
     except ValueError:
-        return create_failed_results(model, proxy.log)
+        return create_failed_results(model)
 
     _lazy = LazyModelfitResults(proxy)
     if lazy:
@@ -503,7 +499,8 @@ def _parse_modelfit_results(
         eps_shrinkage=_lazy.eps_shrinkage,
         # NOTE: `proxy.log` is extracted last because other
         #       property extractions can update `proxy.log`.
-        log=_lazy.log,
+        warning_messages=_lazy.warning_messages,
+        error_messages=_lazy.error_messages,
     )
     return res
 
@@ -665,8 +662,12 @@ class LazyModelfitResults:
         return self._proxy.eps_shrinkage
 
     @property
-    def log(self):
-        return self._proxy.log
+    def warning_messages(self):
+        return self._proxy.status.warning_messages
+
+    @property
+    def error_messages(self):
+        return self._proxy.status.error_messages
 
 
 def calculate_cov_cor_coi(cov, cor, coi, ses):
@@ -708,7 +709,7 @@ def _parse_matrix(
     return df
 
 
-def _empty_lst_results(n: int, log):
+def _empty_lst_results(n: int):
     false_vec = [False] * n
     nan_vec = [np.nan] * n
     none_vec: list[Any] = [None] * n
@@ -723,7 +724,8 @@ def _empty_lst_results(n: int, log):
         none_vec,
         nan_vec,
         false_vec,
-        log,
+        (),
+        (),
         nan_vec,
         none_vec,
         none_vec,
@@ -756,14 +758,16 @@ def _parse_eps_shrinkage(info: TermInfo):
     return df
 
 
-def _parse_lst(n: int, path: Path, table_numbers: list[int | None], log: Log | None):
+def _parse_lst(n: int, path: Path, table_numbers: list[int | None], parse_error_messages: bool):
     try:
-        rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=log)
+        rfile = NONMEMResultsFile(
+            path.with_suffix('.lst'), parse_error_messages=parse_error_messages
+        )
     except OSError:
-        return _empty_lst_results(n, log)
+        return _empty_lst_results(n)
 
     if not table_numbers:
-        return _empty_lst_results(n, log)
+        return _empty_lst_results(n)
 
     runtime_total = rfile.runtime_total
 
@@ -818,7 +822,8 @@ def _parse_lst(n: int, path: Path, table_numbers: list[int | None], log: Log | N
         termination_cause,
         estimation_runtime,
         estimate_near_boundary,
-        rfile.log,
+        tuple(rfile.warnings),
+        tuple(rfile.errors),
         est_table_numbers,
         eta_shrinkage,
         eps_shrinkage,
@@ -1407,12 +1412,14 @@ def _get_fixed_parameters(table: ExtTable, parameters: Parameters, pe_translatio
         return pd.concat([fixed, pd.Series(True, index=ests.index.difference(fixed.index))])
 
 
-def simfit_results(model, model_path):
+def simfit_results(model, model_path, parse_error_messages=True):
     """Read in modelfit results from a simulation/estimation model"""
     nsubs = model.internals.control_stream.get_records('SIMULATION')[0].nsubs
     results = []
     for i in range(1, nsubs + 1):
-        res = parse_modelfit_results(model, model_path, subproblem=i)
+        res = parse_modelfit_results(
+            model, model_path, subproblem=i, parse_error_messages=parse_error_messages
+        )
         results.append(res)
     return results
 
@@ -1445,9 +1452,16 @@ def parse_modelfit_results(
     path: str | Path | None,
     strict=False,
     subproblem: int | None = None,
-    with_log: bool = True,
+    with_log: bool | None = None,
+    parse_error_messages: bool = True,
     lazy: bool = False,
 ):
+    if with_log is not None:
+        warnings.warn(
+            "The option `with_log` has been deprecated. Use option `parse_error_messages` instead to skip error/warning parsing",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
     name_map = create_name_map(model)
     name_map = {value: key for key, value in name_map.items()}
     res = _parse_modelfit_results(
@@ -1457,7 +1471,7 @@ def parse_modelfit_results(
         model,
         strict=strict,
         subproblem=subproblem,
-        with_log=with_log,
+        parse_error_messages=parse_error_messages,
         lazy=lazy,
     )
     return res
@@ -1513,7 +1527,7 @@ def override_minimization_successful(minimization_successful, pe_iterations):
     return new_minsucc
 
 
-def create_failed_results(model, log):
+def create_failed_results(model):
     ests = _create_failed_parameter_estimates(model.parameters)
     return ModelfitResults(
         minimization_successful=False,
@@ -1522,6 +1536,5 @@ def create_failed_results(model, log):
         parameter_estimates_sdcorr=ests,
         standard_errors=ests.rename("SE"),
         standard_errors_sdcorr=ests.rename("SE_sdcorr"),
-        log=log,
         significant_digits=np.nan,
     )

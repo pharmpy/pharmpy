@@ -25,7 +25,6 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools import fit
 from pharmpy.workflows import Context, ModelEntry
-from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
 
 PARENT_DIR = f'..{os.path.sep}'
@@ -142,8 +141,7 @@ def execute_model(model_entry, context, evaluate=False, path=None):
         txn.store_modelfit_results()
 
     res = parse_modelfit_results(model, path)
-    log = res.log if res else None
-    model_entry = model_entry.attach_results(modelfit_results=res, log=log)
+    model_entry = model_entry.attach_results(modelfit_results=res)
 
     context.store_model_entry(model_entry)
 
@@ -659,7 +657,6 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> ModelfitRe
         minimization_successful=True,  # FIXME: Parse minimization status
         parameter_estimates=pe,
         predictions=predictions,
-        log=Log(),
         warnings=[],  # FIXME : Parse warnings
     )
     return res

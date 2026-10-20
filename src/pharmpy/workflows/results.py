@@ -10,16 +10,13 @@ from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.immutable import Immutable
 from pharmpy.model import Model
-
-if TYPE_CHECKING:
-    from pharmpy.workflows import Log
 
 
 def mfr(res: ModelfitResults) -> ModelfitResults:
@@ -59,7 +56,6 @@ class ResultsJSONEncoder(json.JSONEncoder):
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
         # instance, or any custom class.
-        from pharmpy.workflows import Log
 
         if isinstance(o, Results):
             d = o.to_dict()
@@ -112,10 +108,6 @@ class ResultsJSONEncoder(json.JSONEncoder):
             from .hashing import ModelHash
 
             d['__hash__'] = str(ModelHash(o))
-            return d
-        elif isinstance(o, Log):
-            d: dict[Any, Any] = o.to_dict()
-            d['__class__'] = o.__class__.__qualname__
             return d
         elif isinstance(o, Path):
             d = {'path': str(o), '__class__': 'PosixPath'}
@@ -223,10 +215,6 @@ class ResultsJSONDecoder(json.JSONDecoder):
                 return Model.from_dict(obj)
             else:
                 return self._model_deserialization_func(obj, key)
-        elif cls == 'Log':
-            from pharmpy.workflows import Log
-
-            return Log.from_dict(obj)
 
         return obj
 
@@ -273,7 +261,11 @@ class Results(Immutable):
             'summary_individuals',  # NOTE: Was removed in 5873fe9
             'summary_individuals_count',  # NOTE: Was removed in 5873fe9
             'models',
+            'log',
         }
+        for key, value in d.items():
+            if isinstance(value, list):
+                d[key] = tuple(value)
         return cls(
             __version__=d.get('__version__', 'unknown'),  # NOTE: Override default version
             **{k: v for k, v in d.items() if k not in removed_keys},
@@ -473,12 +465,13 @@ class ModelfitResults(Results):
     significant_digits: float | None = None
     significant_digits_iterations: pd.Series | None = None
     log_likelihood: float | None = None
-    log: Log | None = None
+    warning_messages: tuple[str, ...] = ()
+    error_messages: tuple[str, ...] = ()
     evaluation: pd.Series | None = None
     covstep_successful: bool | None = None
     gradients: pd.Series | None = None
     gradients_iterations: pd.DataFrame | None = None
-    warnings: list[str] | None = None
+    warnings: tuple[str, ...] | None = None
     individual_eta_samples: pd.DataFrame | None = None
     condition_number: float | None = None
     eta_shrinkage: pd.DataFrame | None = None
@@ -488,7 +481,7 @@ class ModelfitResults(Results):
         sd = self.__dict__
         od = other.__dict__
         for key, value in sd.items():
-            if key == 'log':
+            if key in ('warning_messages', 'error_messages'):
                 continue
             if isinstance(value, (pd.Series, pd.DataFrame)):
                 if not value.equals(od[key]):
