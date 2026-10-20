@@ -786,7 +786,7 @@ def validate_input(
                 f'for models with BLQ transformation.'
             )
 
-        if dv:
+        if dv is not None:
             if 'DVID' not in model.dataset.columns and 'dvid' not in model.datainfo.types:
                 raise ValueError("No DVID column in dataset.")
             else:
@@ -794,7 +794,7 @@ def validate_input(
                     dvid_name = model.datainfo.typeix['dvid'][0].name
                 except IndexError:
                     dvid_name = 'DVID'
-                if dv not in set(model.dataset[dvid_name]):
+                if dv not in model.dataset[dvid_name].unique():
                     raise ValueError(f"No {dvid_name} = {dv} in dataset.")
 
         if Expr.symbol('TAD') in model.statements.lhs_symbols:
