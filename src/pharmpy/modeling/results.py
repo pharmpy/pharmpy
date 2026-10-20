@@ -856,7 +856,7 @@ def insert_ebes_into_dataset(
     >>> etcs = results.individual_estimates_covariance
     >>> model2 = insert_ebes_into_dataset(model, ebes, etcs)
     >>> model2.datainfo.names    # doctest: +ELLIPSIS
-    ['ID', 'TIME', 'AMT', 'WGT', ..., 'ET_1', 'ET_2', 'ETC_1_1', 'ETC_2_1', 'ETC_2_2']
+    ('ID', 'TIME', 'AMT', 'WGT', ..., 'ET_1', 'ET_2', 'ETC_1_1', 'ETC_2_1', 'ETC_2_2')
 
     """
 

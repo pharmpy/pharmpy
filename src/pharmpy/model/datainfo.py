@@ -1347,7 +1347,7 @@ class DataInfo(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.datainfo.typeix['covariate'].names
-        ['WGT', 'APGR']
+        ('WGT', 'APGR')
         """
         return TypeIndexer(self)
 
