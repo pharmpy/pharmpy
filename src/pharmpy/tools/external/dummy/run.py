@@ -11,7 +11,6 @@ from pharmpy.model import EstimationStep, Parameters, SimulationStep
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.modeling import create_rng, get_observations, write_dataset, write_model
 from pharmpy.workflows import ModelEntry, SimulationResults
-from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
 
 PARENT_DIR = f'..{os.path.sep}'
@@ -75,9 +74,8 @@ def execute_model(model_entry, context):
     else:
         simulation_results = None
 
-    log = modelfit_results.log if modelfit_results else None
     model_entry = model_entry.attach_results(
-        modelfit_results=modelfit_results, simulation_results=simulation_results, log=log
+        modelfit_results=modelfit_results, simulation_results=simulation_results
     )
 
     modelfit_results.to_json(path=model_path / f'{model.name}_results.json')
@@ -104,8 +102,6 @@ def create_dummy_modelfit_results(model, ref=None):
     except IndexError:
         id_name = 'ID'
     n_id = len(model.dataset[id_name].unique())
-
-    log = Log()
 
     h = hashlib.sha1(model.name.encode('utf-8')).hexdigest()
     seed = int(h, 16)
@@ -197,7 +193,6 @@ def create_dummy_modelfit_results(model, ref=None):
 
     results_dict = {
         'parameter_estimates': params,
-        'log': log,
         'ofv': ofv,
         'minimization_successful': True,
         'warnings': [],
@@ -215,6 +210,8 @@ def create_dummy_modelfit_results(model, ref=None):
         'parameter_estimates_sdcorr': pes,
         'standard_errors_sdcorr': ses,
         'derivatives': derivatives,
+        'warning_messages': (),
+        'error_messages': (),
     }
     modelfit_results = ModelfitResults(**results_dict)
     return modelfit_results

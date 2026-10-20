@@ -69,11 +69,8 @@ def create_model_entry(model, modelfit_results):
     # Currently no parent information can be retrieved
     if not isinstance(modelfit_results, ModelfitResults):
         modelfit_results = None
-        log = None
-    else:
-        log = modelfit_results.log
 
-    return ModelEntry(model=model, modelfit_results=modelfit_results, log=log)
+    return ModelEntry(model=model, modelfit_results=modelfit_results)
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):

@@ -100,7 +100,7 @@ def retrieve_from_database_or_execute_model_with_tool():
             and db_model_entry.modelfit_results is not None
             and model.has_same_dataset_as(db_model_entry.model)
         ):
-            me = model_entry.attach_results(db_model_entry.modelfit_results, db_model_entry.log)
+            me = model_entry.attach_results(db_model_entry.modelfit_results)
             context.store_key(model.name, ModelHash(model))
             context.store_annotation(model.name, model.description)
             return me
