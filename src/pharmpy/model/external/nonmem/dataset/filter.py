@@ -179,8 +179,6 @@ def mask_in_place(
     df.query(
         expr,
         parser="pandas",  # NOTE: Default, but it is better to be explicit.
-        engine="numexpr",  # NOTE: This is not guaranteed, but it is better to be explicit.
-        # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L341-L358
         local_dict={},  # NOTE: We do not allow access to locals.
         # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L172
         global_dict={},  # NOTE: We do not allow access to globals.

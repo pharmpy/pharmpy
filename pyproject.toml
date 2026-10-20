@@ -20,7 +20,6 @@ dependencies = [
     'sympy>=1.9',
     'symengine>=0.13.0',
     'pandas>=1.4, !=2.1.0',
-    'numexpr>=2.7.0',
     'altair>=6.0.0',
     'itables>=2.4.0',
     'jsonschema>=3.1.0',
