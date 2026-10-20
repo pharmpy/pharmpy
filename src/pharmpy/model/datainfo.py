@@ -1450,35 +1450,35 @@ class DataInfo(Sequence, Immutable):
         return self._set_column_type(name, 'idv')
 
     @property
-    def names(self) -> list[str]:
-        """All column names
+    def names(self) -> tuple[str, ...]:
+        """All column names in order
 
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.datainfo.names
-        ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
+        ('ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2')
         """
-        return [col.name for col in self._columns]
+        return tuple(col.name for col in self._columns)
 
     @property
-    def symbols(self) -> list[Expr]:
-        """Symbols for all columns
+    def symbols(self) -> tuple[Expr, ...]:
+        """Symbols for all columns in order
 
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.datainfo.symbols
-        [ID, TIME, AMT, WGT, APGR, DV, FA1, FA2]
+        (ID, TIME, AMT, WGT, APGR, DV, FA1, FA2)
         """
-        return [col.symbol for col in self._columns]
+        return tuple(col.symbol for col in self._columns)
 
     @property
-    def types(self) -> list[str]:
-        """All column types"""
-        return [col.type for col in self._columns]
+    def types(self) -> tuple[str, ...]:
+        """All column types in order"""
+        return tuple(col.type for col in self._columns)
 
     def set_types(self, value: list[str] | str) -> DataInfo:
         """Set types for all columns

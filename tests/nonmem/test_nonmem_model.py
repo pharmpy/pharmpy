@@ -1403,7 +1403,7 @@ $SIGMA 1
 $ESTIMATION METHOD=0
 """
     model = Model.parse_model_from_string(code)
-    assert model.datainfo.names == ['ID', 'DV', 'WGT']
+    assert model.datainfo.names == ('ID', 'DV', 'WGT')
     assert model.statements[0].expression == Expr.symbol("TV") * Expr.symbol("WGT")
 
     code = """$PROBLEM base model
@@ -1418,7 +1418,7 @@ $SIGMA 1
 $ESTIMATION METHOD=0
 """
     model = Model.parse_model_from_string(code)
-    assert model.datainfo.names == ['ID', 'DV', 'WGT']
+    assert model.datainfo.names == ('ID', 'DV', 'WGT')
     assert model.statements[0].expression == Expr.symbol("TV") * Expr.symbol("WGT")
 
 

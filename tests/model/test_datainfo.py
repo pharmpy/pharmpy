@@ -305,8 +305,8 @@ def test_get_column_label():
     di = DataInfo.create(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
     di = di.set_id_column('ID')
     di = di[0:3] + di[['WGT', 'APGR']].set_types('covariate')
-    assert di.typeix['id'].names == ['ID']
-    assert di.typeix['covariate'].names == ['WGT', 'APGR']
+    assert di.typeix['id'].names == ('ID',)
+    assert di.typeix['covariate'].names == ('WGT', 'APGR')
     with pytest.raises(IndexError):
         di.typeix['unknowntypeixq']
 
@@ -346,7 +346,7 @@ def test_path():
 def test_types():
     di = DataInfo.create(['ID', 'TIME', 'DV'])
     di = di.set_id_column('ID').set_dv_column('DV').set_idv_column('TIME')
-    assert di.types == ['id', 'idv', 'dv']
+    assert di.types == ('id', 'idv', 'dv')
 
 
 def test_repr():
@@ -558,9 +558,9 @@ def test_names_and_symbols():
     col2 = ColumnInfo.create("DV", datatype='float64')
     col3 = ColumnInfo.create("WGT")
     di = DataInfo.create([col1, col2, col3])
-    names = ["ID", "DV", "WGT"]
+    names = ("ID", "DV", "WGT")
     assert di.names == names
-    assert di.symbols == list(map(Expr.symbol, names))
+    assert di.symbols == tuple(map(Expr.symbol, names))
 
 
 def test_find_column_by_property():

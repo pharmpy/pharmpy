@@ -623,7 +623,7 @@ def get_covariate_baselines(model: Model) -> pd.DataFrame:
     """
     covariates = model.datainfo.typeix['covariate'].names
     idlab = model.datainfo.id_column.name
-    df = model.dataset[covariates + [idlab]]
+    df = model.dataset[list(covariates) + [idlab]]
     df = df.set_index(idlab)
     return df.groupby(idlab).nth(0)
 
@@ -658,7 +658,7 @@ def list_time_varying_covariates(model: Model) -> list[str]:
         return []
     else:
         time_var = (
-            model.dataset.groupby(by=model.datainfo.id_column.name)[cov_labels]
+            model.dataset.groupby(by=model.datainfo.id_column.name)[list(cov_labels)]
             .nunique()
             .gt(1)
             .any()

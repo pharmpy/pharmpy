@@ -203,7 +203,7 @@ def test_insert_ebes_into_dataset(load_example_model_for_test):
     ebes = results.individual_estimates
     etcs = results.individual_estimates_covariance
     model2 = insert_ebes_into_dataset(model, ebes, etcs)
-    names = [
+    names = (
         'ID',
         'TIME',
         'AMT',
@@ -217,10 +217,10 @@ def test_insert_ebes_into_dataset(load_example_model_for_test):
         'ETC_1_1',
         'ETC_2_1',
         'ETC_2_2',
-    ]
+    )
     di = model2.datainfo
     assert di.names == names
-    assert list(model2.dataset.columns) == names
+    assert tuple(model2.dataset.columns) == names
     new_names = set(model2.dataset.columns) - set(model.dataset.columns)
     assert all(AddColumn.create(name) in di.provenance for name in new_names)
     assert len(di.provenance) == len(new_names) + 1

@@ -323,13 +323,13 @@ def test_get_concentration_parameters_from_data(load_example_model_for_test):
 def test_drop_columns(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
     m = drop_columns(m, "APGR")
-    correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV', 'FA1', 'FA2']
+    correct = ('ID', 'TIME', 'AMT', 'WGT', 'DV', 'FA1', 'FA2')
     assert m.datainfo.names == correct
-    assert list(m.dataset.columns) == correct
+    assert tuple(m.dataset.columns) == correct
     assert m.datainfo.provenance[-1] == Drop.create('APGR')
     assert len(m.datainfo.provenance) == 2
     m = drop_columns(m, ['DV', 'ID'])  # DV still in because NONMEM model
-    assert m.datainfo.names == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
+    assert m.datainfo.names == ('TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV')
     assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
     assert all(Drop.create(col) in m.datainfo.provenance for col in ['ID', 'APGR', 'DV'])
     assert AddColumn.create('DV') in m.datainfo.provenance
@@ -896,7 +896,7 @@ def test_get_column_name(load_example_model_for_test):
 def test_remove_unused_columns(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     model = remove_unused_columns(model)
-    assert model.datainfo.names == ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
+    assert model.datainfo.names == ('ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV')
     assert all(Drop.create(col) in model.datainfo.provenance for col in ['FA1', 'FA2'])
     assert len(model.datainfo.provenance) == 3
 
