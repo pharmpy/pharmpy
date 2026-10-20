@@ -76,7 +76,8 @@ Strategy components
 ~~~~~~~~~~~~~~~~~~~
 
 For a description about the different model building strategies in AMD, see :ref:`Strategy<strategy_amd>`.
-This section will cover the aspects that are specific to drug metabolite models.
+This section will cover the aspects that are specific to drug metabolite models. Note in particular that the
+RSI strategy is not supported for building drug metabolite models.
 
 Structural
 ~~~~~~~~~~

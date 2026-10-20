@@ -1655,6 +1655,9 @@ def validate_input(
         if administration in ('oral', 'ivoral') and mat_init is None:
             raise ValueError("Initial estimate for MAT is needed")
 
+    if modeltype == 'drug_metabolite' and strategy == 'RSI':
+        raise ValueError("The RSI strategy is not supported for drug metabolite models")
+
     if search_space is not None:
         try:
             ss_mfl = ModelFeatures.create(search_space)
