@@ -535,6 +535,21 @@ def test_dict():
     assert col1 == col2
 
 
+def test_find_column_by_type():
+    var1 = DataVariable.create("ID", type='id')
+    col1 = ColumnInfo.create("ID", var1)
+    var2 = DataVariable.create("WGT", type='covariate')
+    col2 = ColumnInfo.create("WGT", var2)
+    var3 = DataVariable.create("AGE", type='covariate')
+    col3 = ColumnInfo.create("AGE", var3)
+    col4 = ColumnInfo.create("DVID")
+    di = DataInfo.create([col1, col2, col3, col4])
+    assert di.find_column_by_type("dvid") is None
+    assert di.find_column_by_type("id") == col1
+    with pytest.raises(ValueError):
+        di.find_column_by_type("covariate")
+
+
 def test_find_single_column_name():
     var1 = DataVariable.create("ID", type='id')
     col1 = ColumnInfo.create("ID", var1)

@@ -1516,6 +1516,28 @@ class DataInfo(Sequence, Immutable):
             newcols.append(newcol)
         return DataInfo.create(columns=newcols, path=self._path, separator=self._separator)
 
+    def find_column_by_type(self, type: str) -> ColumnInfo | None:
+        """Find a column given by type
+
+        Parameters
+        ----------
+        type : str
+
+        Return
+        ------
+        ColumnInfo | None
+            The column or None if no column with the given type exists
+        """
+        try:
+            cols = self.typeix[type]
+        except IndexError:
+            return None
+
+        if len(cols) > 1:
+            raise ValueError(f'More than one column found: {cols.names}')
+
+        return cols[0]
+
     def find_single_column_name(self, type: str, default: str | None = None) -> str:
         """Find name of single column given type
 
