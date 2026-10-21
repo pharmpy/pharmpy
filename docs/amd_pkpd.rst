@@ -24,9 +24,10 @@ The code to initiate the AMD tool for a PKPD model:
 
     from pharmpy.tools read_model, run_amd
 
+    model = read_model('path/to/pk_model')
     res = run_amd(
                 modeltype='pkpd',
-                input='path/to/dataset',
+                input=model,
                 search_space='DIRECTEFFECT(*)',
                 b_init=0.1,
                 emax_init=1.0,
@@ -74,14 +75,14 @@ The overall workflow looks as follows:
     digraph BST {
             node [fontname="Arial",shape="rect"];
             rankdir="LR";
-            base [label="Input PK model / dataset", shape="oval"]
-            s0 [label="AMD - basic_pk"]
+            base [label="Filtered dataset (PK)", shape="oval"]
+            s0 [label="AMD for PK"]
             s1 [label="Final model"]
-            s2 [label="Final model + pkpd dataset"]
-            s3 [label="AMD - pkpd"]
+            s2 [label="Full dataset"]
+            s3 [label="AMD for PKPD"]
             base -> s0
             s0 -> s1
-            s1 -> s2
+            s1 -> s3
             s2 -> s3
         }
 
@@ -105,7 +106,7 @@ Arguments
 .. _amd_pkpd_args:
 
 The AMD arguments used for PKPD models can be seen below. Some are mandatory for this type of model building while others are optional, and some AMD arguments are
-not used for this model type. If any of the mandatory arguments is missing, the program till raise an error.
+not used for this model type. If any of the mandatory arguments is missing, the program will raise an error.
 
 Mandatory
 ---------
@@ -138,21 +139,6 @@ This section will cover the aspects that are specific to PKPD models.
 
 Structural
 ~~~~~~~~~~
-
-.. graphviz::
-
-    digraph BST {
-            node [fontname="Arial",shape="rect"];
-            rankdir="LR";
-            base [label="Input", shape="oval"]
-            s0 [label="structsearch"]
-
-            base -> s0
-        }
-
-
-
-**Structsearch**
 
 For a PKPD model, structsearch is run to determine the best structural model. All input arguments are specified by
 the user when initializing AMD. For more information regarding how the search space is used in structsearch, please see 
@@ -189,20 +175,26 @@ IIVSearch
 
 The settings that the AMD tool uses for this subtool can be seen in the table below.
 
-+-------------------+---------------------------+------------------------------------------------------------------------+
-| Argument          | Setting                   |   Setting (rerun)                                                      |
-+===================+===========================+========================================================================+
-| ``algorithm``     | 'top_down_exhaustive'     |  'top_down_exhaustive'                                                 |
-+-------------------+---------------------------+------------------------------------------------------------------------+
-| ``iiv_strategy``  | 'pd_fullblock'            |  'no_add'                                                              |
-+-------------------+---------------------------+------------------------------------------------------------------------+
-| ``rank_type``     | 'mbic' (type: iiv)        |  'mbic' (type: iiv)                                                    |
-+-------------------+---------------------------+------------------------------------------------------------------------+
-| ``cutoff``        | None                      |  None                                                                  |
-+-------------------+---------------------------+------------------------------------------------------------------------+
-| ``keep``          | Clearance parameters      | Clearance parameters from input model                                  |
-|                   | from input model          |                                                                        |
-+-------------------+---------------------------+------------------------------------------------------------------------+
++---------------------------+---------------------------+------------------------------------------------------------------------+
+| Argument                  | Setting                   |   Setting (rerun)                                                      |
++===========================+===========================+========================================================================+
+| ``algorithm``             | 'top_down_exhaustive'     |  'top_down_exhaustive'                                                 |
++---------------------------+---------------------------+------------------------------------------------------------------------+
+| ``correlation_algorithm`` | 'top_down_exhaustive'     |  'top_down_exhaustive'                                                 |
++---------------------------+---------------------------+------------------------------------------------------------------------+
+| ``as_fullblock``          | 'True'                    |  'True'                                                                |
++---------------------------+---------------------------+------------------------------------------------------------------------+
+| ``rank_type``             | 'bic' (type: iiv)         |  'bic' (type: iiv)                                                     |
++---------------------------+---------------------------+------------------------------------------------------------------------+
+| ``cutoff``                | None                      |  None                                                                  |
++---------------------------+---------------------------+------------------------------------------------------------------------+
+
+If no search space is given for the IIVSearch tool (PK parameters will be extracted from the input model),
+then a default will be set to e.g.:
+
+.. code-block::
+
+    IIV([CL,MAT,VC],EXP);IIV?(@PD,EXP);COVARIANCE?(IIV,@PD_IIV);COVARIANCE(IIV,[CL,VC])
 
 Residual
 ~~~~~~~~
@@ -239,7 +231,7 @@ The settings that the AMD tool uses for this subtool can be seen in the table be
 | ``cutoff``              | None                                                                                         |
 +-------------------------+----------------------------------------------------------------------------------------------+
 | ``distribution``        | 'same-as-iiv'                                                                                |
-+------------------------+-----------------------------------------------------------------------------------------------+
++-------------------------+----------------------------------------------------------------------------------------------+
 
 Allometry
 ~~~~~~~~~
@@ -292,54 +284,10 @@ Structural covariate effects found in the search space are also added to the mod
 
 **Mechanisitic covariates**
 
-If any mechanistic covariates have been given as input to the AMD tool, the specified covariate effects for these
-covariates is run in a separate initial covsearch run when adding covariates. These covariate effects are extracted
+If any mechanistic covariates have been given as input to the AMD tool, the specified covariate effects
+will be run in a separate initial covsearch run when adding covariates. These covariate effects are extracted
 from the given search space
 
 **Exploratory covariates**
 
 The remaining covariate effects from the search space are now run in an exploratory search.
-
-~~~~~~~~
-Examples
-~~~~~~~~
-
-Minimal
-~~~~~~~
-
-A minimal example for running AMD with model type PKPD:
-
-.. pharmpy-code::
-
-    from pharmpy.tools import run_amd
-
-    start_model = read_model('path/to/model')
-
-    res = run_amd(
-                modeltype='pkpd',
-                input=start_model,
-                b_init=2.0,
-                emax_init=1.0,
-                ec50=0.1,
-                met_init=2.1
-    )
-
-Specifying search space
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. pharmpy-code::
-
-    from pharmpy.tools import run_amd
-
-    start_model = read_model('path/to/model')
-
-    res = run_amd(
-                modeltype='pkpd',
-                input=start_model,
-                search_space = "DIRECTEFFECT(linear)",
-                b_init=2.0,
-                emax_init=1.0,
-                ec50=0.1,
-                met_init=2.1
-    )
-
