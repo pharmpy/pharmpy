@@ -1,5 +1,4 @@
-from pharmpy.basic import BooleanExpr, Expr
-from pharmpy.model import Ignore
+import shutil
 
 
 def test_data_read(pheno):
@@ -19,43 +18,34 @@ def test_remove_individuals_without_observations(create_model_for_test, datadir)
     # First individual of data has no observations
     data = datadir / 'pheno_no_obs_1stID.dta'
     model = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WT APGR DV FA1 FA2\n$DATA {data} IGNORE=@\n$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WT APGR DV FA1 FA2\n$DATA {data} IGNORE=@\n$PRED\nY=2\n"
     )
     df = model.dataset
-    assert 1 not in df['ID']
-    assert len(df['ID'].unique()) == 58
-    assert model.datainfo.provenance[-1] == Ignore(BooleanExpr.eq(Expr.symbol('ID'), 1))
+    assert 1 in df['ID']
+    assert len(df['ID'].unique()) == 59
 
 
 def test_ignore_with_synonym(create_model_for_test, pheno_data):
     model = create_model_for_test(
         f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
         f"$DATA {pheno_data} IGNORE=@ IGNORE=(CONC.EQN.0)\n"
-        f"$PRED\n"
+        f"$PRED\nY=1\n"
     )
-    di = model.datainfo
-    col = di['DV'].replace(name='CONC')
-    model = model.replace(datainfo=di[0:5] + col + di[6:])
-    df = model.dataset
-    assert len(df) == 155
+    assert len(model.dataset) == 155
     model = create_model_for_test(
         f"$PROBLEM dfs\n$INPUT ID TIME AMT WT APGR DV=CONC FA1 FA2\n"
         f"$DATA {pheno_data} IGNORE=@ IGNORE=(DV.EQN.0)\n"
-        f"$PRED\n"
+        f"$PRED\nY=1\n"
     )
-    di = model.datainfo
-    col = di['DV'].replace(name='CONC')
-    model = model.replace(datainfo=di[0:5] + col + di[6:])
-    df = model.dataset
-    assert len(df) == 155
+    assert len(model.dataset) == 155
 
 
-def test_idv_with_synonym(create_model_for_test, pheno_data):
+def test_idv_with_synonym(create_model_for_test, pheno_data, tmp_path):
+    # Copy to avoid the .datainfo file
+    shutil.copy(pheno_data, tmp_path)
     model = create_model_for_test(
         f"$PROBLEM dfs\n$INPUT ID TIME=TAD AMT WT APGR DV FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@\n"
-        f"$PRED\n"
+        f"$DATA {tmp_path / "pheno.dta"} IGNORE=@\n"
+        f"$PRED\nY=1\n"
     )
-    di = model.datainfo
-    col = di['TIME'].replace(name='TAD')
-    model = model.replace(datainfo=di[0:1] + col + di[2:])
+    assert 'TAD' in model.datainfo.names

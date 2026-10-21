@@ -88,9 +88,9 @@ def test_empty_ext_file(load_model_for_test, testdata):
 
 
 def test_detection():
-    Model.parse_model_from_string("$PROBLEM this\n$PRED\n")
-    Model.parse_model_from_string("   \t$PROBLEM skld fjl\n$PRED\n")
-    Model.parse_model_from_string(" $PRO l907\n$PRED\n")
+    Model.parse_model_from_string("$PROBLEM this\n$PRED Y=1\n")
+    Model.parse_model_from_string("   \t$PROBLEM skld fjl\n$PRED Y=1\n")
+    Model.parse_model_from_string(" $PRO l907\n$PRED Y=1\n")
 
 
 def test_validate():
@@ -1244,6 +1244,7 @@ $SUBROUTINE ADVAN1 TRANS2
 
 $PK
 CL=THETA(1)
+V=1
 
 $ERROR
 Y=F+F*EPS(1)
@@ -1557,7 +1558,7 @@ def test_update_data_from_parsed_ignore_new_path(testdata):
 
 def test_update_input_no_change(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PRED\nY=1\n"
     )
     model = model_start.update_source()
     assert model.code.split('\n')[1] == model_start.code.split('\n')[1]
@@ -1566,7 +1567,7 @@ def test_update_input_no_change(create_model_for_test, pheno_data):
 
 def test_update_input_remove_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PRED\nY=1\n"
     )
     df = model_start.dataset.copy()
     df = df.drop('APGR', axis=1)
@@ -1580,7 +1581,7 @@ def test_update_input_remove_column(create_model_for_test, pheno_data):
 
 def test_update_input_drop_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PRED\nY=1\n"
     )
     di = model_start.datainfo
     ci = di['APGR'].replace(drop=True)
@@ -1593,7 +1594,7 @@ def test_update_input_drop_column(create_model_for_test, pheno_data):
 
 def test_update_input_change_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PRED\nY=1\n"
     )
     df = model_start.dataset.copy()
     df['FA1'] = 1
@@ -1607,7 +1608,7 @@ def test_update_input_change_column(create_model_for_test, pheno_data):
 
 def test_update_input_add_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PRED\nY=1\n"
     )
     df = model_start.dataset.copy()
     df['X'] = 1
@@ -1621,7 +1622,7 @@ def test_update_input_add_column(create_model_for_test, pheno_data):
 
 def test_update_input_remove_column_and_change_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PRED\nY=1\n"
     )
     df = model_start.dataset.copy()
     df = df.drop('APGR', axis=1)
@@ -1642,7 +1643,7 @@ def test_update_input_remove_column_and_change_column(create_model_for_test, phe
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_update_input_drop_column_with_anonymous(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV DROP FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV DROP FA2\n$DATA {pheno_data} IGNORE=@\n$PRED\nY=1\n"
     )
     di = model_start.datainfo
     ci = di['APGR'].replace(drop=True)
