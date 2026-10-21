@@ -189,14 +189,14 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: str | None = None) 
     return model.update_source()
 
 
-def _add_baseline_effect(model: Model):
+def _add_baseline_effect(model: Model) -> Model:
     b = model.statements.find_assignment("B")
     if b is None:
         model = add_individual_parameter(model, "B")
     return model
 
 
-def _handle_zero(model: Model, expr: Expr):
+def _handle_zero(model: Model, expr: Expr) -> Expr:
     idv = model.datainfo.idv_column.symbol
     if expr.is_piecewise():
         args = expr.piecewise_args
@@ -209,7 +209,7 @@ def _handle_zero(model: Model, expr: Expr):
     return expr
 
 
-def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
+def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True) -> Model:
     if expr == "linear":
         s = create_symbol(model, "SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
@@ -278,10 +278,10 @@ def _add_E(model: Model, effect: Expr) -> Model:
     return model
 
 
-def _get_x50(model, conc):
+def _get_x50(model: Model, conc) -> Expr:
     x50_name = "EC_50"
     conc_assign = model.statements.find_assignment(conc)
-    if conc_assign:
+    if conc_assign and model.statements.ode_system is not None:
         central = model.statements.ode_system.central_compartment
         elimination_rate = model.statements.ode_system.get_flow(central, output)
         amount = central.amount
@@ -352,7 +352,7 @@ def _add_dependent_variable(model: Model, expr: str):
     return model
 
 
-def _add_effect(model: Model, expr: str, conc, zero_handled=True):
+def _add_effect(model: Model, expr: str, conc: Expr, zero_handled=True):
     model = _add_baseline_effect(model)
     model = _add_drug_effect(model, expr, conc, zero_handled)
     model = _add_response(model, expr)
