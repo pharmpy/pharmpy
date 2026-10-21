@@ -6,13 +6,68 @@ AMD - PKPD
 
 Will develop the best PKPD model based on a PK model.
 
+~~~~~~~
+Running
+~~~~~~~
+
 The principle behind the PKPD model building follows PPP&D, which initially will fix the PK part of the model and only develop the PD part.
+This means that the the input model for the AMD tool is a PK model with a PKPD dataset (or just the dataset, however the start model
+will then be the simplest PK model).
 
-A complete PKPD workflow is hence currently only possible by first filtering the model dataset for PK information and running AMD for a 'basic_pk'
-model type. Then, given the resulting model from that workflow, the original dataset can be attached and another AMD run with model type 'PKPD' can 
-be run. This can be done using :py:func:`pharmpy.modeling.set_dataset`. 
+.. note::
+    It is only possible to run the AMD tool for the PD part of PKPD models. The tool expects a fully build PK model as
+    input. If a dataset is inputted, the simplest PK model is created and used as input, which is not recommended.
 
+The code to initiate the AMD tool for a PKPD model:
 
+.. pharmpy-code::
+
+    from pharmpy.tools read_model, run_amd
+
+    res = run_amd(
+                modeltype='pkpd',
+                input='path/to/dataset',
+                search_space='DIRECTEFFECT(*)',
+                b_init=0.1,
+                emax_init=1.0,
+                ec50_init=0.1,
+                met_init=0.4
+    )
+
+To run a full PKPD workflow:
+
+.. pharmpy-code::
+
+    from pharmpy.modeling import create_basic_pk_model, convert_model, filter_dataset, set_dataset
+    from pharmpy.tools import run_amd
+
+    original_model = create_basic_pk_model('oral', dataset_path='path/to/dataset')
+    original_model = convert_model(original_model, 'nonmem')
+    pk_model = filter_dataset(original_model, "DVID != 2")
+
+    res = run_amd(
+        input=pk_model,
+        modeltype='basic_pk',
+        administration='iv',
+        cl_init=2.0,
+        vc_init=5.0,
+        mat_init=3.0,
+        strategy='default',
+    )
+
+    pkpd_model = set_dataset(res.final_model, 'path/to/dataset')
+    res = run_amd(
+        input=pkpd_model,
+        modeltype='pkpd',
+        administration='iv',
+        search_space='DIRECTEFFECT(*)',
+        b_init=1.0,
+        emax_init=1.0,
+        ec50_init=0.1,
+        met_init=0.4
+    )
+
+The overall workflow looks as follows:
 
 .. graphviz::
 
@@ -31,8 +86,7 @@ be run. This can be done using :py:func:`pharmpy.modeling.set_dataset`.
         }
 
 
-
-Regarding the dataset, two DVIDs are required.
+Two DVIDs are required in the dataset.
 
 +------+--------------------------------+
 | DVID | Description                    |
@@ -44,33 +98,6 @@ Regarding the dataset, two DVIDs are required.
 |      | **PD** part of the model       |
 +------+--------------------------------+
 
-.. note::
-    Please note that it is only possible to run the AMD tool for the PD part of PKPD models. The tool
-    expects a fully build PK model as input.
-    If a dataset is inputed, a basic PK model is created and used as input, which is not recommended
-
-~~~~~~~
-Running
-~~~~~~~
-
-The code to initiate the AMD tool for a PKPD model:
-
-.. pharmpy-code::
-
-    from pharmpy.modeling import read_model
-    from pharmpy.tools read_model, run_amd
-
-    start_model = read_model('path/to/model')
-
-    res = run_amd(
-                modeltype='pkpd',
-                input=start_model,
-                search_space='DIRECTEFFECT(*)',
-                b_init=0.1,
-                emax_init=1.0,
-                ec50_init=0.1,
-                met_init=0.4
-    )
 
 Arguments
 ~~~~~~~~~
