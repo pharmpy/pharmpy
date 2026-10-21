@@ -10,6 +10,7 @@ from pharmpy.model import Model
 from pharmpy.modeling import (
     create_joint_distribution,
     fix_parameters,
+    get_individual_parameters,
     get_rv_parameters,
     set_initial_estimates,
     unfix_parameters,
@@ -846,7 +847,7 @@ def validate_input(
     parameter_uncertainty_method,
 ):
     try:
-        ModelFeatures.create(search_space)
+        mfl = ModelFeatures.create(search_space)
     except ValueError as e:
         raise ValueError(f'Could not parse `search_space`: {search_space}\n\t{e}')
 
@@ -893,6 +894,14 @@ def validate_input(
             raise ValueError(f'Value `E_p` must be denoted with `%`: got `{E_p}`')
         if isinstance(E_q, str) and not E_q.endswith('%'):
             raise ValueError(f'Value `E_q` must be denoted with `%`: got `{E_q}`')
+
+    if linearize:
+        params = {iiv.parameter for iiv in mfl.iiv if not iiv.optional}
+        model_params = get_individual_parameters(model)
+        if diff := set(model_params).difference(params):
+            raise ValueError(
+                f'Invalid `search_space` for linearization: cannot remove etas from base model ({sorted(diff)})'
+            )
 
 
 @dataclass(frozen=True)
