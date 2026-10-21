@@ -661,7 +661,9 @@ def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
                 doses += (
                     {
                         'comp_number': comp_number,
-                        'dose': _dosing(di, dataset.loc[dataset[admid_name] == admid], comp_number),
+                        'dose': _dosing(
+                            di, dataset.loc[dataset[admid_name] == admid], int(comp_number)
+                        ),
                         'admid': admid,
                     },
                 )
@@ -670,7 +672,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
             doses += (
                 {
                     'comp_number': dose_comp,
-                    'dose': _dosing(di, dataset.loc[dataset[admid_name] == admid], dose_comp),
+                    'dose': _dosing(di, dataset.loc[dataset[admid_name] == admid], int(dose_comp)),
                     'admid': admid,
                 },
             )
@@ -680,7 +682,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
             doses += (
                 {
                     'comp_number': comp_number,
-                    'dose': _dosing(di, cmt_dataset, comp_number),
+                    'dose': _dosing(di, cmt_dataset, int(comp_number)),
                     'admid': None,
                 },
             )
