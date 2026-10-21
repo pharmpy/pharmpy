@@ -94,7 +94,22 @@ def create_workflow(
         wb.insert_workflow(fitbase, predecessors=[start_task])
         base_output = wb.output_tasks
 
-    if algorithm == 'stepwise':
+    if type == "kpd":
+        de_task = Task(
+            'run_drug_effect_models',
+            run_drug_effect_models,
+            treatment_variable,
+            strictness,
+            parameter_uncertainty_method,
+            data_strategy,
+            type,
+        )
+        wb.add_task(de_task, predecessors=base_output)
+
+        postprocess_task = Task('postprocess', postprocess, data_strategy, None)
+        wb.add_task(postprocess_task, predecessors=de_task)
+
+    elif algorithm == 'stepwise':
         placebo_task = Task(
             'run_placebo_models_and_rank',
             run_placebo_models_and_rank,
