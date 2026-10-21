@@ -90,11 +90,11 @@ def convert_model(model):
     )
     code += '$DATA file.csv IGNORE=@\n'
     if model.statements.ode_system is None:
-        code += '$PRED\nY=X\n'
+        code += '$PRED\nY=1\n'
     else:
         code += '$SUBROUTINES ADVAN1\n'
-        code += '$PK\nY=X\n'
-        code += '$ERROR\nA=B\n'
+        code += '$PK\nK=1\n'
+        code += '$ERROR\nY=1\n'
     nm_model = parse_model(
         code, dataset=model.dataset, missing_data_token=model.datainfo.missing_data_token
     )
@@ -399,7 +399,11 @@ def make_model(
 
     parameters, rvs, name_map = parse_parameters(control_stream, statements, di)
 
-    subs_map = {Expr.symbol(key): Expr.symbol(val) for key, val in name_map.items()}
+    abbr_subs = {
+        Expr.symbol(key): Expr.symbol(name_map[val])
+        for key, val in control_stream.abbreviated.replace.items()
+    }
+    subs_map = {Expr.symbol(key): Expr.symbol(val) for key, val in name_map.items()} | abbr_subs
     # FIXME: Special case for DV synonym in $INPUT
     try:
         dv_symbol = di.dv_column.symbol
