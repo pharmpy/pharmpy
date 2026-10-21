@@ -9,7 +9,7 @@ distlib==0.4.3
 filelock==4.1.1
 packaging==26.3
 platformdirs==4.13.4
-pluggy==1.6.0
+pluggy==1.7.0
 pyproject-api==1.11.7
 virtualenv==21.14.8
 tomli==2.5.0
