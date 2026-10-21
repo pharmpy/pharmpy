@@ -49,12 +49,21 @@ def create_datainfo(path_or_df: str | Path | pd.DataFrame) -> DataInfo:
             di = di.replace(path=path)
             return di
 
-        colnames, separator = _read_dataset_header_and_separator(path)
+        _, separator = _read_dataset_header_and_separator(path)
 
     else:
-        colnames = path_or_df.columns
         separator = ","
         path = None
+
+    di = create_nonmem_annotation(path_or_df)
+    return di.replace(path=path, separator=separator)
+
+
+def create_nonmem_annotation(path_or_df):
+    if not isinstance(path_or_df, pd.DataFrame):
+        colnames, _ = _read_dataset_header_and_separator(path_or_df)
+    else:
+        colnames = path_or_df.columns
 
     column_info = []
     for colname in colnames:
@@ -109,8 +118,7 @@ def create_datainfo(path_or_df: str | Path | pd.DataFrame) -> DataInfo:
         else:
             info = ColumnInfo.create(colname)
         column_info.append(info)
-    di = DataInfo.create(column_info, path=path, separator=separator)
-    return di
+    return DataInfo.create(column_info)
 
 
 def read_datainfo(path: str | Path) -> DataInfo:

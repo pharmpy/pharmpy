@@ -30,7 +30,7 @@ from pharmpy.model import (
 )
 from pharmpy.model.model import update_datainfo
 
-from .datainfo import create_datainfo
+from .datainfo import create_datainfo, create_nonmem_annotation, read_datainfo
 from .evaluation import evaluate_expression
 from .expressions import get_dv_symbol
 from .iterators import resample_data
@@ -2183,9 +2183,14 @@ def set_dataset(
     model: Model,
     path_or_df: str | Path | pd.DataFrame,
     format: str | None = None,
+    annotate_using: str | None = None,
     datatype: Any = None,
 ) -> Model:
     """Load the dataset given datainfo
+
+    Option `annotate_using` will by default use the datainfo file (if available), otherwise the
+    information in the input model. If all or any columns have not been annotated, this option
+    will infer those.
 
     Parameters
     ----------
@@ -2195,6 +2200,8 @@ def set_dataset(
         Dataset path or dataframe
     format : str
         File format of dataset (default csv. Can also be set to 'nonmem')
+    annotate_using : str or None
+        How dataset should be annotated. Can be None (default), 'infer', or 'skip'.
     datatype : Any
         Deprecated. Use format instead
 
@@ -2243,17 +2250,33 @@ def set_dataset(
         df = None
         path = normalize_user_given_path(path_or_df)
 
-    if format == 'nonmem':
-        di = create_datainfo(path_or_df)
-    else:
-        columns = list(df.columns.values) if df is not None else None
-        di = DataInfo.create(columns=columns, path=path)
-
     if path:
+        di = create_datainfo(path)
         df, di = read_dataset_from_datainfo_update(di, datatype=format)
+        if len(df.columns) == 1:
+            warnings.warn('Could only find one column, should this be another file format?')
+    else:
+        di = DataInfo.create()
 
-    if len(df.columns) == 1:
-        warnings.warn('Could only find one column, should this be another file format?')
+    if annotate_using is None:
+        if path:
+            di_path = path.with_suffix('.datainfo')
+            di_model = read_datainfo(di_path) if di_path.is_file() else model.datainfo
+        else:
+            di_model = model.datainfo
+        di_nonmem = create_nonmem_annotation(path_or_df)
+        columns = [
+            di_model[colname]
+            if colname in di_model.names and di_model[colname].type != 'unknown'
+            else di_nonmem[colname]
+            for colname in df.columns.values
+        ]
+        di = di.replace(columns=columns)
+    elif annotate_using == 'infer':
+        di_nonmem = create_nonmem_annotation(path_or_df)
+        di = di.replace(columns=[ci for ci in di_nonmem])
+    else:
+        di = di.replace(columns=df.columns.values.tolist())
 
     model = model.replace(dataset=df, datainfo=di)
     return model.update_source()

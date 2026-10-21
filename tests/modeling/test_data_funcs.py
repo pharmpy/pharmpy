@@ -1,3 +1,4 @@
+import shutil
 from itertools import combinations
 from pathlib import Path
 
@@ -7,6 +8,7 @@ from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import AddColumn, AddRows, Drop, Ignore, ReadDataset
 from pharmpy.modeling import (
     add_admid,
@@ -675,13 +677,13 @@ def test_set_dataset(load_example_model_for_test, testdata):
     pheno_path = testdata / 'nonmem' / 'pheno.dta'
 
     assert model.datainfo.path.name == 'pheno.dta'
-    model = set_dataset(model, path_or_df=mox_path, format=None)
+    model = set_dataset(model, path_or_df=mox_path, format=None, annotate_using='skip')
     assert 'mox_simulated_normal.csv' in model.code
     assert model.dataset is not None
     assert all(col_type == 'unknown' for col_type in model.datainfo.types)
     assert len(model.datainfo.provenance) == 1
 
-    model = set_dataset(model, path_or_df=mox_path, format='nonmem')
+    model = set_dataset(model, path_or_df=mox_path, format='nonmem', annotate_using='infer')
     assert 'id' in model.datainfo.types
     assert len(model.datainfo.provenance) == 1
 
@@ -689,14 +691,14 @@ def test_set_dataset(load_example_model_for_test, testdata):
     assert model.datainfo.path.name == 'pheno.dta'
     dataset = pd.read_csv(pheno_path, sep='\\s+')
 
-    model = set_dataset(model, path_or_df=dataset, format=None)
+    model = set_dataset(model, path_or_df=dataset, format=None, annotate_using='skip')
     assert model.datainfo.path is None
     assert model.dataset is not None
     assert all(col_type == 'unknown' for col_type in model.datainfo.types)
     assert len(model.datainfo.provenance) == 0
 
     model = load_example_model_for_test("pheno")
-    model = set_dataset(model, path_or_df=dataset, format='nonmem')
+    model = set_dataset(model, path_or_df=dataset, format=None, annotate_using='infer')
     assert model.datainfo.path is None
     assert model.dataset is not None
     assert 'id' in model.datainfo.types
@@ -709,6 +711,84 @@ def test_set_dataset(load_example_model_for_test, testdata):
 
     with pytest.deprecated_call():
         set_dataset(model, pheno_filtered_path, datatype='nonmem')
+
+
+@pytest.mark.parametrize(
+    'dataset, format, covariate',
+    [
+        (
+            'nonmem/models/mox_simulated_normal.csv',
+            None,
+            'WT',
+        ),
+        (
+            'nonmem/pheno.dta',
+            'nonmem',
+            'WGT',
+        ),
+    ],
+)
+def test_set_dataset_from_path(testdata, tmp_path, dataset, format, covariate):
+    model_start = create_basic_pk_model('iv')
+    model_start = convert_model(model_start, 'nonmem')
+    dataset_path = testdata / dataset
+    model = set_dataset(model_start, path_or_df=dataset_path, format=format, annotate_using='skip')
+    assert model.datainfo.path == dataset_path
+    assert all(col_type == 'unknown' for col_type in model.datainfo.types)
+
+    model = set_dataset(model_start, path_or_df=dataset_path, format=format, annotate_using='infer')
+    assert model.datainfo.path == dataset_path
+    assert model.datainfo.typeix['dv'][0].name == 'DV'
+    assert model.datainfo[covariate].type == 'unknown'
+
+    model = set_dataset(model_start, path_or_df=dataset_path, format=format, annotate_using=None)
+    assert model.datainfo.path == dataset_path
+    assert model.datainfo.typeix['dv'][0].name == 'DV'
+    assert len(model.datainfo.typeix['covariate']) > 0
+    assert model.datainfo[covariate].type == 'covariate'
+
+    with chdir(tmp_path):
+        shutil.copy2(dataset_path, 'data.csv')
+        model = set_dataset(model_start, path_or_df='data.csv', format=format, annotate_using=None)
+        assert model.datainfo.path == tmp_path / 'data.csv'
+        assert model.datainfo.typeix['dv'][0].name == 'DV'
+        assert model.datainfo[covariate].type == 'unknown'
+
+
+def test_set_dataset_from_df(load_model_for_test, testdata, tmp_path):
+    model_start = create_basic_pk_model('iv')
+    model_start = convert_model(model_start, 'nonmem')
+    d = {
+        'ID': [1, 1, 2, 2, 3, 3],
+        'TIME': [0.0, 1.0] * 3,
+        'AMT': [5.0, 0.0] * 3,
+        'X': [1, 3, 2, 2, 1, 3],
+        'DV': [1.1, 3.1, 2.5, 2.7, 2.1, 6.0],
+    }
+    df = pd.DataFrame(d)
+
+    model = set_dataset(model_start, path_or_df=df, format=None, annotate_using='skip')
+    assert model.datainfo.path is None
+    assert all(col_type == 'unknown' for col_type in model.datainfo.types)
+
+    model = set_dataset(model_start, path_or_df=df, format=None, annotate_using='infer')
+    assert model.datainfo.path is None
+    assert model.datainfo.typeix['dv'][0].name == 'DV'
+    assert model.datainfo['X'].type == 'unknown'
+
+    model = set_dataset(model_start, path_or_df=df, format=None, annotate_using=None)
+    assert model.datainfo.path is None
+    assert model.datainfo.typeix['dv'][0].name == 'DV'
+    assert model.datainfo['X'].type == 'unknown'
+
+
+def test_set_dataset_after_filtering(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    model = set_covariates(model, ['WGT'])
+    model_filtered = filter_dataset(model, 'DVID == 1')
+    model = set_dataset(model, model_filtered.dataset, annotate_using=None)
+    assert model.datainfo.path is None
+    assert model_filtered.datainfo == model.datainfo
 
 
 def test_set_dataset_from_basic(load_example_model_for_test, testdata):
