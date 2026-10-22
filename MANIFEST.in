@@ -18,6 +18,7 @@ include CODE_OF_CONDUCT.rst
 include CHANGELOG.rst
 include LICENSE
 include LICENSE.LESSER
+include REUSE.toml
 include README.rst
 include TODO.rst
 
