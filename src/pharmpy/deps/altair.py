@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 import altair
 from altair.utils.execeval import eval_block
 

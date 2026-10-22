@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from .absorption import ABSORPTION_TYPES, Absorption
 from .allometry import Allometry
 from .covariance import COVARIANCE_TYPES, Covariance

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from lark import Lark, UnexpectedToken
 
 from .grammar import grammar

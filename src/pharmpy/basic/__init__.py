@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from .expr import BooleanExpr, Expr, TExpr, TSymbol, equals
 from .matrix import Matrix
 from .rng import RandomNumberGenerator, Seed

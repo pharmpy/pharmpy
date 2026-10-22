@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 # The modeling features language
 # A high level language to describe model features and ranges of model features
 
