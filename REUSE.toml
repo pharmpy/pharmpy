@@ -1,7 +1,13 @@
 version = 1
 
 [[annotations]]
-path = "tests/testdata/results/*.json"
+path = [
+  "tests/testdata/results/*.json",
+  "**/command.txt",
+  "**/meta.yaml",
+  "**/version_and_option_info.txt",
+  "**/scmlog.txt"
+]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
 SPDX-License-Identifier = "CC-1.0"
