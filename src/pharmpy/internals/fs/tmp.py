@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: PSF-2.0
+# SPDX-FileCopyrightText: Copyright © 2001–2026 Python Software Foundation; All Rights Reserved
+
 import os as _os
 import shutil as _shutil
 import time
