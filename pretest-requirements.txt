@@ -8,7 +8,7 @@ colorama==0.4.6
 distlib==0.4.4
 filelock==4.1.1
 packaging==26.3
-platformdirs==4.13.4
+platformdirs==4.13.5
 pluggy==1.7.0
 pyproject-api==1.11.7
 virtualenv==21.14.8
