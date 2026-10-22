@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: None
+# SPDX-License-Identifier: CC0-1.0
 alabaster==1.0.0
 altair==6.3.0
 appdirs==1.4.4

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: None
+# SPDX-License-Identifier: CC0-1.0
 # Direct dependencies
 check-manifest==0.51
 docutils==0.22.4
