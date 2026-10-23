@@ -12,7 +12,6 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.internals.fs.path import path_absolute
-from pharmpy.internals.immutable import frozenmapping
 from pharmpy.mfl import IIV, Covariance, Covariate, ModelFeatures, Ref
 from pharmpy.model import DataInfo, DatasetError, Ignore, Model, Provenance, ReadDataset
 from pharmpy.modeling import (
@@ -91,7 +90,7 @@ def create_workflow(
     mechanistic_covariates: list[str | tuple[str]] | None = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
-    units: Mapping[str, str] = frozenmapping({}),
+    units: Mapping[str, str] | None = None,
     ignore_datainfo_fallback: bool = False,
     initial_error_models: Mapping[int, str] | None = None,
     _E: dict[str, float | str] | None = None,
@@ -221,7 +220,7 @@ def run_amd_task(
     mechanistic_covariates: list[str | tuple[str]] | None = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
-    units: Mapping[str, str] = frozenmapping({}),
+    units: Mapping[str, str] | None = None,
     ignore_datainfo_fallback: bool = False,
     initial_error_models: dict[int, str] | None = None,
     _E: dict[str, float | str] | None = None,
@@ -280,8 +279,9 @@ def run_amd_task(
     model = add_predictions(model, ['PRED', 'CIPREDI'])
     model = add_residuals(model, ['CWRES'])
 
-    for variable, unit in units.items():
-        model = convert_unit(model, variable, unit, in_dataset=False)
+    if units is not None:
+        for variable, unit in units.items():
+            model = convert_unit(model, variable, unit, in_dataset=False)
 
     original_dataset = model.dataset.copy()
     if modeltype == "tmdd":
