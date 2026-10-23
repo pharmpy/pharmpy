@@ -27,6 +27,7 @@ from pharmpy.mfl import (
     ModelFeature,
     ModelFeatures,
     Peripherals,
+    Ref,
     Transits,
 )
 from pharmpy.model import Model
@@ -434,20 +435,31 @@ def _get_iiv_func(feature: IIV, include_add: bool, include_remove: bool):
 def _get_covariance_func(
     features: ModelFeatures, ies: pd.DataFrame | None, iivs: ModelFeatures | None = None
 ):
-    params_in_block = {param for cov in features.covariance for param in cov.parameters}
+    params_in_block = {
+        param
+        for cov in features.covariance
+        if isinstance(cov, Covariance) and not isinstance(cov.parameters, Ref)
+        for param in cov.parameters
+    }
     if iivs:
-        params = {iiv.parameter for iiv in iivs}
+        params = {
+            iiv.parameter
+            for iiv in iivs
+            if isinstance(iiv, IIV) and not isinstance(iiv.parameter, Ref)
+        }
     else:
         params = params_in_block
 
     funcs = []
 
     if diff := params.difference(params_in_block):
-        funcs.append(partial(split_joint_distribution, rvs=diff))
+        funcs.append(partial(split_joint_distribution, rvs=sorted(diff)))
 
     blocks = Covariance.get_covariance_blocks(features.covariance)
     for block in blocks:
-        func = partial(create_joint_distribution, rvs=block, individual_estimates=ies)
+        if isinstance(block, Ref):
+            continue
+        func = partial(create_joint_distribution, rvs=sorted(block), individual_estimates=ies)
         funcs.append(func)
 
     return funcs
