@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from .allometry import add_allometry
 from .basic_models import create_basic_kpd_model, create_basic_pd_model, create_basic_pk_model
 from .blq import transform_blq

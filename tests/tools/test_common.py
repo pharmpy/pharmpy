@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from pharmpy.deps import pandas as pd
 from pharmpy.modeling import set_name
 from pharmpy.tools.common import add_parent_column, concat_summaries, flatten_list

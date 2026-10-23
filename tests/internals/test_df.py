@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
 

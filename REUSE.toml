@@ -6,8 +6,12 @@ path = [
   "**/command.txt",
   "**/meta.yaml",
   "**/version_and_option_info.txt",
-  "**/scmlog.txt"
+  "**/scmlog.txt",
+  ".gitignore",
+  ".mailmap",
+  ".bumpversion.cfg",
+  ".coveragerc"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
-SPDX-License-Identifier = "CC-1.0"
+SPDX-License-Identifier = "CC0-1.0"

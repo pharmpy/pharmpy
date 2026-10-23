@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from .config import NONMEMConfiguration, conf
 from .results import parse_modelfit_results, parse_simulation_results
 

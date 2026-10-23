@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 """
 This module contain functions for checking the format of an nlmixr model conversion
 in order to inform the users of any errors or mistakes that can could be made.

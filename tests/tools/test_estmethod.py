@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 import pytest
 
 from pharmpy.tools.estmethod.algorithms import _create_base_model, _create_candidate_model

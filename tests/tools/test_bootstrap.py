@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from pharmpy.deps import pandas as pd
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.workflows.results import ModelfitResults, read_results

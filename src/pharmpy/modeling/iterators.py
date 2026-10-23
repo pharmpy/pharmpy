@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 """
 Iterators generating new datasets from a dataset. The dataset could either be stand alone
 or connected to a model. If a model is used the same model will be updated with different

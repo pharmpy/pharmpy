@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from pharmpy.model import Bolus, Infusion
 from pharmpy.modeling import create_basic_pk_model
 

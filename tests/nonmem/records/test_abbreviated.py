@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+
 def test_data_filename_set(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_abbr.mod')
     assert model.internals.control_stream.abbreviated.replace == {

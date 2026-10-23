@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 from pharmpy.basic import Expr
 from pharmpy.model import AddColumn, Drop, Ignore
 from pharmpy.tools import read_modelfit_results

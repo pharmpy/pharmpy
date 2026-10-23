@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 """
 Pretty printing of tree-structures. Inspired by the 'tree' command (Steve
 Baker). In development.

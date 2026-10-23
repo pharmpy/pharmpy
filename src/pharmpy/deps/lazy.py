@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 # Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+# SPDX-FileCopyrightText: Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
