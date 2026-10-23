@@ -571,6 +571,7 @@ def compare_to_input_model(
         summary_tool = add_parent_column(
             rank_res.summary_tool, [input_model_entry, best_model_entry]
         )
+        best_model_entry = input_model_entry
     else:
         summary_tool = None
 
