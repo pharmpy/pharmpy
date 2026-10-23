@@ -900,6 +900,7 @@ def _get_quantile(data, quantile, sort_by=None):
 def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', stratify_on=None):
     obs = get_observations(model, keep_index=True)
     idv = model.datainfo.idv_column.name
+    dv = model.datainfo.dv_column.name
     idname = model.datainfo.id_column.name
     data = model.dataset.loc[obs.index]
     if query is not None:
@@ -928,11 +929,11 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', 
                 scale=x_scale,
             ),
             y=alt.Y(
-                'DV',
-                title='DV',
-                scale=alt.Scale(domain=[data['DV'].min() * 0.9, data['DV'].max() * 1.05]),
+                dv,
+                title=dv,
+                scale=alt.Scale(domain=[data[dv].min() * 0.9, data[dv].max() * 1.05]),
             ),
-            tooltip=[idv, 'DV', idname],
+            tooltip=[idv, dv, idname],
         )
         .properties(width=700, height=500, title=title)
         .interactive()
