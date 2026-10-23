@@ -252,8 +252,10 @@ def task_results(context, strictness, parameter_uncertainty_method, retries):
         final_model_eta_shrinkage=eta_shrinkage,
     )
 
-    context.store_final_model_entry(rank_res.final_model)
-    context.log_info(f"Final model OFV: {res.final_results.ofv:.3f}")
+    if rank_res.final_model:
+        context.store_final_model_entry(res.final_model)
+        context.log_info(f"Final model OFV: {res.final_results.ofv:.3f}")
+
     context.log_info("Finishing tool retries")
 
     return res
