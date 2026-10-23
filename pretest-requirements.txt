@@ -8,7 +8,7 @@ cachetools==7.2.3
 chardet==7.6.0
 colorama==0.4.6
 distlib==0.4.4
-filelock==4.1.1
+filelock==4.2.4
 packaging==26.3
 platformdirs==4.13.5
 pluggy==1.7.0
