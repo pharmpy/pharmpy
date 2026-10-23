@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 import json
 import urllib.request
 import re

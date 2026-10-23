@@ -24,3 +24,13 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "None"
 SPDX-License-Identifier = "CC0-1.0"
+
+
+[[annotations]]
+path = [
+ "docs/Pharmpy_logo.svg",
+ "docs/Pharmpy_logo_dark.svg"
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2016 David Khai"
+SPDX-License-Identifier = ["CC-BY-SA-3.0", "OFL-1.1"]
