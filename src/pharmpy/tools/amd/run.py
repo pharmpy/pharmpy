@@ -1652,12 +1652,26 @@ def validate_input(
         if met_init is None:
             raise ValueError("Initial estimate for MET is needed")
     else:
-        if cl_init is None:
-            raise ValueError("Initial estimate for CL is needed")
-        if vc_init is None:
-            raise ValueError("Initial estimate for VC is needed")
-        if administration in ('oral', 'ivoral') and mat_init is None:
-            raise ValueError("Initial estimate for MAT is needed")
+        if isinstance(input, Model):
+            if cl_init is not None:
+                raise ValueError(
+                    "Initial estimate for CL cannot be specified when model is `input`"
+                )
+            if vc_init is not None:
+                raise ValueError(
+                    "Initial estimate for VC cannot be specified when model is `input`"
+                )
+            if mat_init is not None:
+                raise ValueError(
+                    "Initial estimate for MAT cannot be specified when model is `input`"
+                )
+        else:
+            if cl_init is None:
+                raise ValueError("Initial estimate for CL is needed")
+            if vc_init is None:
+                raise ValueError("Initial estimate for VC is needed")
+            if administration in ('oral', 'ivoral') and mat_init is None:
+                raise ValueError("Initial estimate for MAT is needed")
 
     if modeltype == 'drug_metabolite' and strategy == 'RSI':
         raise ValueError("The RSI strategy is not supported for drug metabolite models")

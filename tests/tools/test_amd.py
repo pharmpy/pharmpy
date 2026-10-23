@@ -87,9 +87,6 @@ def test_invalid_search_space_raises(load_model_for_test, testdata, search_space
             results=res,
             search_space=search_space,
             retries_strategy="skip",
-            cl_init=1.0,
-            vc_init=10.0,
-            mat_init=1.0,
         )
 
 
@@ -110,9 +107,6 @@ def test_skip_most(load_model_for_test, testdata):
         administration='oral',
         occasion=None,
         retries_strategy="skip",
-        cl_init=1.0,
-        vc_init=10.0,
-        mat_init=1.0,
     )
 
     order = get_subtool_order('default')
@@ -175,9 +169,6 @@ def test_raise_empty_search_space(load_model_for_test, testdata):
             modeltype='basic_pk',
             administration='oral',
             retries_strategy="skip",
-            cl_init=1.0,
-            vc_init=10.0,
-            mat_init=1.0,
         )
 
 
@@ -196,9 +187,6 @@ def test_skip_covsearch(load_model_for_test, testdata):
         occasion='VISI',
         allometric_variable='WT',
         retries_strategy="skip",
-        cl_init=1.0,
-        vc_init=10.0,
-        mat_init=1.0,
         ignore_datainfo_fallback=True,
     )
 
@@ -232,9 +220,6 @@ def test_skip_iovsearch_one_occasion(load_model_for_test, testdata):
         administration='oral',
         retries_strategy="skip",
         occasion='XAT2',
-        cl_init=1.0,
-        vc_init=10.0,
-        mat_init=1.0,
     )
 
     order = get_subtool_order('default')
@@ -283,9 +268,6 @@ def test_ignore_datainfo_fallback(load_model_for_test, testdata):
         administration='oral',
         retries_strategy="skip",
         ignore_datainfo_fallback=True,
-        cl_init=1.0,
-        vc_init=10.0,
-        mat_init=1.0,
     )
 
     to_be_skipped = check_skip(
@@ -907,7 +889,6 @@ def test_remove_added_covariates_from_search_space(
     'kwargs',
     [
         {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0},
-        {'modeltype': 'pkpd', 'b_init': 1.0, 'emax_init': 1.0, 'ec50_init': 1.0, 'met_init': 1.0},
         {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, 'search_space': 'ABSORPTION(FO)'},
         {
             'cl_init': 1.0,
@@ -915,11 +896,21 @@ def test_remove_added_covariates_from_search_space(
             'mat_init': 1.0,
             'search_space': 'ABSORPTION(FO);IIV(CL,exp)',
         },
-        {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, 'strictness': 'rse < 0.5'},
         {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, '_E': {'E_p': 0.5}},
     ],
 )
-def test_validate_input(load_example_model_for_test, kwargs):
+def test_validate_input_from_dataset(testdata, kwargs):
+    validate_input(input=testdata / 'nonmem' / 'pheno.dta', **kwargs)
+
+
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        {'modeltype': 'pkpd', 'b_init': 1.0, 'emax_init': 1.0, 'ec50_init': 1.0, 'met_init': 1.0},
+        {'strictness': 'rse < 0.5'},
+    ],
+)
+def test_validate_input_from_model(load_example_model_for_test, kwargs):
     model = load_example_model_for_test('pheno')
     validate_input(model, **kwargs)
 
@@ -1002,6 +993,58 @@ def test_validate_input(load_example_model_for_test, kwargs):
             'Initial estimate for MET',
         ),
         (
+            {'cl_init': 1.0},
+            ValueError,
+            'Initial estimate for CL cannot be specified',
+        ),
+        (
+            {'vc_init': 1.0},
+            ValueError,
+            'Initial estimate for VC cannot be specified',
+        ),
+        (
+            {'mat_init': 1.0},
+            ValueError,
+            'Initial estimate for MAT cannot be specified',
+        ),
+    ],
+)
+def test_validate_input_raises_from_model(load_example_model_for_test, kwargs, exception, match):
+    model = load_example_model_for_test('pheno')
+    model = remove_parameter_uncertainty_step(model)
+    with pytest.raises(exception, match=match):
+        validate_input(input=model, **kwargs)
+
+
+@pytest.mark.parametrize(
+    'kwargs, exception, match',
+    [
+        (
+            {'modeltype': 'x'},
+            ValueError,
+            'Invalid `modeltype`',
+        ),
+        (
+            {'administration': 'x'},
+            ValueError,
+            'Invalid `administration`',
+        ),
+        (
+            {'strategy': 'x'},
+            ValueError,
+            'Invalid `strategy`',
+        ),
+        (
+            {'retries_strategy': 'x'},
+            ValueError,
+            'Invalid `retries_strategy`',
+        ),
+        (
+            {'lloq_method': 'x'},
+            ValueError,
+            'Invalid `lloq_method`',
+        ),
+        (
             {'cl_init': None, 'vc_init': 1.0},
             ValueError,
             'Initial estimate for CL',
@@ -1015,17 +1058,6 @@ def test_validate_input(load_example_model_for_test, kwargs):
             {'administration': 'oral', 'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': None},
             ValueError,
             'Initial estimate for MAT',
-        ),
-        (
-            {
-                'cl_init': 1.0,
-                'vc_init': 1.0,
-                'mat_init': 1.0,
-                'parameter_uncertainty_method': None,
-                'strictness': 'rse < 0.5',
-            },
-            ValueError,
-            'Invalid `input` model',
         ),
         (
             {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, '_E': {'E_p': 0.0}},
@@ -1054,39 +1086,35 @@ def test_validate_input(load_example_model_for_test, kwargs):
             ValueError,
             'Option `lloq_method` is not supported for `modeltype`: drug_metabolite',
         ),
+        (
+            {
+                'modeltype': 'pkpd',
+                'lloq_method': 'm3',
+                'b_init': 1.0,
+                'emax_init': 1.0,
+                'ec50_init': 1.0,
+                'met_init': 1.0,
+            },
+            TypeError,
+            'Argument `input` must be a model',
+        ),
+        (
+            {
+                'modeltype': 'basic_pk',
+                'cl_init': 1.0,
+                'vc_init': 1.0,
+                'mat_init': 1.0,
+                'parameter_uncertainty_method': None,
+                'strictness': 'rse < 0.5',
+            },
+            ValueError,
+            '`parameter_uncertainty_method` not set',
+        ),
     ],
 )
-def test_validate_input_raises(load_example_model_for_test, kwargs, exception, match):
-    model = load_example_model_for_test('pheno')
-    model = remove_parameter_uncertainty_step(model)
+def test_validate_input_raises_from_dataset(testdata, kwargs, exception, match):
     with pytest.raises(exception, match=match):
-        validate_input(model, **kwargs)
-
-
-def test_validate_input_raises_pkpd_no_model(testdata):
-    dataset_path = testdata / 'nonmem' / 'pheno.dta'
-    with pytest.raises(TypeError, match='Argument `input` must be a model'):
-        validate_input(
-            dataset_path,
-            modeltype='pkpd',
-            b_init=1.0,
-            emax_init=1.0,
-            ec50_init=1.0,
-            met_init=1.0,
-        )
-
-
-def test_validate_input_raises_rse_dataset(testdata):
-    dataset_path = testdata / 'nonmem' / 'pheno.dta'
-    with pytest.raises(ValueError, match='`parameter_uncertainty_method` not set'):
-        validate_input(
-            dataset_path,
-            cl_init=1.0,
-            vc_init=1.0,
-            mat_init=1.0,
-            parameter_uncertainty_method=None,
-            strictness='rse < 0.5',
-        )
+        validate_input(input=testdata / 'nonmem' / 'pheno.dta', **kwargs)
 
 
 @pytest.mark.parametrize(
