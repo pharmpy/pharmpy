@@ -17,7 +17,9 @@ path = [
   "**/*.cor",
   "**/*.coi",
   "**/*.grd",
-  "**/*.msf"
+  "**/*.msf",
+  ".devcontainer/**",
+  "**/*.tflite",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
