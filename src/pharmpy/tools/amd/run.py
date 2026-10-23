@@ -545,6 +545,12 @@ def run_amd_task(
         elif subresults == "CRITICAL":
             # Substitute for abort_workflow
             return None
+        elif tool_name.endswith('retries') and subresults.final_model is None:
+            final_model = next_model.replace(name=f"final_{tool_name}")
+            final_model_entry = ModelEntry.create(
+                model=final_model, modelfit_results=next_res, parent=next_model_entry.parent
+            )
+            context.store_model_entry(final_model_entry)
         else:
             final_model = subresults.final_model.replace(name=f"final_{tool_name}")
             final_model_entry = ModelEntry.create(
