@@ -568,10 +568,10 @@ def compare_to_input_model(
                 f'Worse {rank_options.rank_type} in final model {best_model.name} '
                 f'than {input_model.name}, selecting input model'
             )
+            best_model_entry = input_model_entry
         summary_tool = add_parent_column(
             rank_res.summary_tool, [input_model_entry, best_model_entry]
         )
-        best_model_entry = input_model_entry
     else:
         summary_tool = None
 
