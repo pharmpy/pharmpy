@@ -10,7 +10,14 @@ path = [
   ".gitignore",
   ".mailmap",
   ".bumpversion.cfg",
-  ".coveragerc"
+  ".coveragerc",
+  "**/*.ext",
+  "**/*.phi",
+  "**/*.cov",
+  "**/*.cor",
+  "**/*.coi",
+  "**/*.grd",
+  "**/*.msf"
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
