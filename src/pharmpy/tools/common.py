@@ -134,7 +134,7 @@ def summarize_tool(
     return df_sorted
 
 
-def create_plots(model: Model, results: ModelfitResults):
+def create_plots(model: Model | None, results: ModelfitResults):
     if model is None:
         return {
             'dv_vs_pred': None,
