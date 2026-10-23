@@ -294,6 +294,7 @@ def generate_transformations(
     include_add: bool = True,
     include_remove: bool = True,
     individual_estimates: pd.DataFrame | None = None,
+    iivs: ModelFeatures | None = None,
 ) -> list[Callable]:
     if isinstance(model_features, Sequence):
         model_features = ModelFeatures.create(model_features)
@@ -308,10 +309,7 @@ def generate_transformations(
         funcs = _get_funcs(feature, include_add, include_remove)
         transformations.extend(funcs)
 
-    if covariances:
-        transformations.extend(
-            _get_covariance_func(covariances, include_add, include_remove, individual_estimates)
-        )
+    transformations.extend(_get_covariance_func(covariances, individual_estimates, iivs))
 
     return transformations
 
@@ -434,34 +432,24 @@ def _get_iiv_func(feature: IIV, include_add: bool, include_remove: bool):
 
 
 def _get_covariance_func(
-    features: ModelFeatures, include_add, include_remove, ies: pd.DataFrame | None
+    features: ModelFeatures, ies: pd.DataFrame | None, iivs: ModelFeatures | None = None
 ):
-    funcs = []
-    if include_add:
-        blocks = Covariance.get_covariance_blocks(features)
-        for block in blocks:
-            assert isinstance(block, tuple)
-            func_join = partial(
-                create_joint_distribution,
-                rvs=block,
-                individual_estimates=ies,
-            )
-            funcs.append(func_join)
-    if include_remove:
-        groups = defaultdict(list)
-        for feature in features:
-            assert isinstance(feature, Covariance)
-            param_1, param_2 = feature.expanded_parameters
-            groups[param_1].append(param_2)
-            groups[param_2].append(param_1)
+    params_in_block = {param for cov in features.covariance for param in cov.parameters}
+    if iivs:
+        params = {iiv.parameter for iiv in iivs}
+    else:
+        params = params_in_block
 
-        for key, values in groups.items():
-            if len(values) == len(groups) - 1:
-                func_split = partial(
-                    split_joint_distribution,
-                    rvs=[key],
-                )
-                funcs.append(func_split)
+    funcs = []
+
+    if diff := params.difference(params_in_block):
+        funcs.append(partial(split_joint_distribution, rvs=diff))
+
+    blocks = Covariance.get_covariance_blocks(features.covariance)
+    for block in blocks:
+        func = partial(create_joint_distribution, rvs=block, individual_estimates=ies)
+        funcs.append(func)
+
     return funcs
 
 
@@ -502,12 +490,16 @@ def transform_into_search_space(
 
     features_to_add, features_to_remove = _get_feature_diffs(search_space, model_features, type)
 
-    transformations = generate_transformations(
-        features_to_remove, include_add=False, individual_estimates=individual_estimates
-    )
-    transformations += generate_transformations(
-        features_to_add, include_remove=False, individual_estimates=individual_estimates
-    )
+    transformations = generate_transformations(features_to_remove, include_add=False)
+    transformations += generate_transformations(features_to_add, include_remove=False)
+    if type == 'covariance' or type is None:
+        forced_covariances = search_space.filter('forced').covariance
+        if forced_covariances != model_features.covariance:
+            transformations += generate_transformations(
+                search_space.filter('forced').covariance,
+                individual_estimates=individual_estimates,
+                iivs=get_model_features(model, type='iiv').iiv,
+            )
     model_transformed = model
     for func in transformations:
         try:
@@ -537,7 +529,7 @@ def _get_feature_diffs(search_space, model_features, type):
     # None of these are optional since all are in model_features
     features_not_in_search_space = model_features - search_space
     for feature in features_not_in_search_space:
-        if isinstance(feature, (Covariate, IIV, Covariance)):
+        if isinstance(feature, (Covariate, IIV)):
             features_to_remove.append(feature)
         else:
             types = search_space.get_feature_type(builtins.type(feature))

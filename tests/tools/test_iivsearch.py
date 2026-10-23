@@ -21,6 +21,7 @@ from pharmpy.modeling import (
 from pharmpy.modeling.mfl import expand_model_features, get_model_features
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
+    create_candidate,
     create_candidate_linearized,
     create_description,
     get_covariance_combinations,
@@ -179,8 +180,8 @@ def test_get_iiv_combinations(mfl, base_features, expected):
     'mfl, base_features, expected',
     [
         ('COVARIANCE?(IIV,[CL,MAT,VC])', 'COVARIANCE(IIV,[CL,MAT,VC])', 4),
-        ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC,MDT])', 11),
-        ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC])', 11),
+        ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC,MDT])', 14),
+        ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC])', 14),
         ('COVARIANCE?(IIV,[CL,MAT,VC])', [], 4),
         ('COVARIANCE(IIV,[CL,MAT]);COVARIANCE?(IIV,[VC,MDT])', 'COVARIANCE(IIV,[CL,MAT])', 1),
     ],
@@ -197,6 +198,58 @@ def test_get_covariance_combinations(mfl, base_features, expected):
     else:
         assert mfl_base not in combinations
         assert mf_empty in combinations if base_features else mf_empty not in combinations
+
+
+@pytest.mark.parametrize(
+    'func, mfl, type, as_fullblock, description, no_of_params',
+    [
+        (None, 'IIV([CL,MAT],exp)', 'iiv', False, '[CL]+[MAT]', 2),
+        (None, 'IIV([CL,MAT],exp)', 'iiv', True, '[CL,MAT]', 3),
+        (None, 'IIV([CL],exp)', 'iiv', False, '[CL]', 1),
+        (None, '', 'iiv', False, '', 1),
+        (add_lag_time, 'IIV([CL,VC,MDT],exp)', 'iiv', False, '[CL]+[MDT]+[VC]', 3),
+        (add_lag_time, 'IIV([CL,VC,MDT],exp)', 'iiv', True, '[CL,MDT,VC]', 6),
+        (None, 'COVARIANCE(IIV,[CL,VC,MAT])', 'covariance', True, '[CL,MAT,VC]', 6),
+        (None, 'COVARIANCE(IIV,[CL,VC])', 'covariance', True, '[CL,VC]+[MAT]', 4),
+        (add_lag_time, 'COVARIANCE(IIV,[CL,VC,MAT])', 'covariance', True, '[CL,MAT,VC]+[MDT]', 7),
+        (
+            add_lag_time,
+            'COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
+            'covariance',
+            True,
+            '[CL,VC]+[MAT,MDT]',
+            6,
+        ),
+        (create_joint_distribution, '', 'covariance', True, '[CL]+[MAT]+[VC]', 3),
+    ],
+)
+def test_create_candidate(
+    load_model_for_test,
+    model_entry_factory,
+    testdata,
+    func,
+    mfl,
+    type,
+    as_fullblock,
+    description,
+    no_of_params,
+):
+    input_model = load_model_for_test(testdata / "nonmem" / "models" / "mox2.mod")
+    if func:
+        input_model = func(input_model)
+        input_model = add_pk_iiv(input_model)
+    if as_fullblock:
+        input_model = create_joint_distribution(input_model)
+    input_model_entry = model_entry_factory([input_model])[0]
+
+    mfl = ModelFeatures.create(mfl)
+    candidate_model_entry = create_candidate('cand1', mfl, type, as_fullblock, input_model_entry)
+    assert candidate_model_entry.parent == input_model_entry.model
+    assert candidate_model_entry.modelfit_results is None
+
+    candidate_model = candidate_model_entry.model
+    assert candidate_model.description == description
+    assert len(candidate_model.random_variables.iiv.parameter_names) == no_of_params
 
 
 @pytest.mark.parametrize(

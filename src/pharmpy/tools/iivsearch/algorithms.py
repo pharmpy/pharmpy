@@ -6,7 +6,6 @@ import itertools
 from collections import defaultdict
 from collections.abc import Sequence
 
-from pharmpy.deps import numpy as np
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.mfl import IIV, Covariance, ModelFeatures
 from pharmpy.model import Model
@@ -310,21 +309,20 @@ def get_covariance_combinations(mfl, base_features):
 
 
 def _is_valid_block_combination(features: Sequence[Covariance]):
-    # FIXME: make more general
-    params = sorted({p for f in features for p in f.parameters})
+    param_to_block = {}
+    blocks = Covariance.get_covariance_blocks(features)
 
-    idx = {p: i for i, p in enumerate(params)}
-    adj = np.zeros((len(params), len(params)), dtype=bool)
+    for block_idx, block in enumerate(blocks):
+        for param in block:
+            param_to_block[param] = block_idx
 
     for feature in features:
         p1, p2 = feature.parameters
-        i, j = idx[p1], idx[p2]
-        adj[i, j] = True
-        adj[j, i] = True
-        adj[i, i] = True
-        adj[j, j] = True
 
-    return not (~adj).any()
+        if param_to_block[p1] != param_to_block[p2]:
+            return False
+
+    return True
 
 
 def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
@@ -343,7 +341,7 @@ def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
             candidate_model, mfl, type=type, individual_estimates=ies
         )
 
-    if as_fullblock:
+    if type == 'iiv' and as_fullblock:
         fixed_etas = get_fixed_etas(base_model)
         fixed_params = get_parameter_names(base_model, fixed_etas)
         rvs = [iiv.parameter for iiv in mfl.iiv if iiv.parameter not in fixed_params]

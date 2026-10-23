@@ -18,6 +18,7 @@ from pharmpy.modeling import (
     add_lag_time,
     add_metabolite,
     add_peripheral_compartment,
+    add_pk_iiv,
     create_joint_distribution,
     remove_covariate_effect,
     remove_iiv,
@@ -36,7 +37,6 @@ from pharmpy.modeling import (
     set_weibull_absorption,
     set_zero_order_absorption,
     set_zero_order_elimination,
-    split_joint_distribution,
 )
 from pharmpy.modeling.mfl import (
     expand_model_features,
@@ -399,11 +399,6 @@ def test_get_model_features_raises(load_model_for_test, testdata):
                 remove_iiv,
             ),
         ),
-        (
-            'COVARIANCE(IIV,[CL,MAT,VC])',
-            4,
-            (create_joint_distribution, split_joint_distribution),
-        ),
     ),
 )
 def test_generate_transformations(
@@ -429,6 +424,37 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
     model_start = add_metabolite(model_start)
     for func in transformations:
         func(model_start)
+
+
+@pytest.mark.parametrize(
+    'source, no_of_functions',
+    (
+        (
+            'IIV([CL,VC],EXP);COVARIANCE(IIV,[CL,VC])',
+            1,
+        ),
+        (
+            'IIV([CL,VC],EXP)',
+            1,
+        ),
+        (
+            'IIV([CL,VC,MAT,MDT],EXP);COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
+            2,
+        ),
+        (
+            'IIV([CL,VC,MAT,MDT],EXP);COVARIANCE(IIV,[CL,VC,MAT,MDT])',
+            1,
+        ),
+        (
+            'IIV([CL,VC,MAT,MDT],EXP);COVARIANCE(IIV,[CL,VC,MAT])',
+            2,
+        ),
+    ),
+)
+def test_generate_transformations_covariance(source, no_of_functions):
+    mfl = ModelFeatures.create(source)
+    transformations = generate_transformations(mfl.covariance, iivs=mfl.iiv)
+    assert len(transformations) == no_of_functions
 
 
 def test_generate_transformations_custom_covariate(load_model_for_test, testdata):
@@ -552,9 +578,19 @@ def test_generate_transformations_custom_covariate(load_model_for_test, testdata
                 partial(add_iiv, list_of_parameters=['QP1', 'VP1'], expression='exp'),
                 create_joint_distribution,
             ],
-            [],
+            '',
             'covariance',
             '',
+        ),
+        (
+            [
+                add_lag_time,
+                add_pk_iiv,
+                create_joint_distribution,
+            ],
+            'COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
+            'covariance',
+            'COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
         ),
     ),
 )

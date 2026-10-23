@@ -167,6 +167,10 @@ def test_lt(kwargs1, kwargs2, expected):
             (('CL', 'VC'),),
         ),
         (
+            (('CL', 'VC'), ('MAT', 'MDT')),
+            (('CL', 'VC'), ('MAT', 'MDT')),
+        ),
+        (
             (('CL', 'VC'), ('CL', 'MAT'), ('MAT', 'VC')),
             (('CL', 'MAT', 'VC'),),
         ),
@@ -221,6 +225,13 @@ def test_get_covariance_blocks(parameters, expected):
                 {'type': 'IIV', 'parameters': ('MAT', 'VC'), 'optional': False},
             ],
             'COVARIANCE(IIV,[CL,MAT,VC])',
+        ),
+        (
+            [
+                {'type': 'IIV', 'parameters': ('CL', 'VC'), 'optional': False},
+                {'type': 'IIV', 'parameters': ('MAT', 'MDT'), 'optional': False},
+            ],
+            'COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
         ),
         (
             [

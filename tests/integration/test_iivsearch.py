@@ -105,7 +105,7 @@ from pharmpy.workflows import LocalDirectoryContext
             'top_down_exhaustive',
             'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)',
             {'as_fullblock': True},
-            19,
+            22,
             5,
             6,
             'iivsearch_run7',
