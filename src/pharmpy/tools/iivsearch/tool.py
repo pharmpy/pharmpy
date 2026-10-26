@@ -901,7 +901,8 @@ def validate_input(
             raise ValueError(f'Value `E_q` must be denoted with `%`: got `{E_q}`')
 
     if linearize:
-        params = {iiv.parameter for iiv in mfl.iiv if not iiv.optional}
+        mfl = expand_model_features(model, mfl)
+        params = {iiv.parameter for iiv in mfl.iiv}
         model_params = get_individual_parameters(model)
         if diff := set(model_params).difference(params):
             raise ValueError(

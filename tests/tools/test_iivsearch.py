@@ -712,9 +712,11 @@ def test_validate_input_raises(
         validate_input(**kwargs)
 
 
-def test_validate_input_raises_linearize(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
-    search_space = 'IIV([V],EXP);IIV?(@PK,EXP)'
+def test_validate_input_linearize(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
+    search_space = 'IIV(CL,exp);IIV?(@PK,exp)'
+    validate_input(model=model, results=results, search_space=search_space, linearize=True)
+    search_space = 'IIV(VC,EXP);IIV?(MAT,EXP)'
     with pytest.raises(ValueError, match='Invalid `search_space` for linearization'):
         validate_input(model=model, results=results, search_space=search_space, linearize=True)
