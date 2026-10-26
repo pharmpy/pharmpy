@@ -1691,7 +1691,9 @@ def translate_nmtran_time(model: Model) -> Model:
         assert timecol is not None
         df = _translate_time_and_date_columns(df, timecol.name, datecol.name, idname)
         model = drop_columns(model, datecol.name)
-        timecol = timecol.replace(unit='h')
+        datavar = model.datainfo.find_variable(timecol.name)
+        datavar = datavar.set_property('unit', 'h')
+        timecol = timecol.replace(variable_mapping=datavar)
     timecol = timecol.replace(datatype='float64')
     prov_new = [Drop.create(timecol.name), AddColumn.create(timecol.name)]
     di = di.set_column(timecol).replace(provenance=di.provenance + prov_new)
