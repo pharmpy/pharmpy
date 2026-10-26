@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: None
 # SPDX-License-Identifier: CC0-1.0
 # Direct dependencies
-pip==26.2.1
+pip==26.2.2
 tox==4.67.1
 # Indirect dependencies
 cachetools==7.2.4
