@@ -12,6 +12,7 @@ from pharmpy.mfl import IIV, ModelFeatures
 from pharmpy.model import Ignore
 from pharmpy.modeling import (
     add_covariate_effect,
+    convert_model,
     create_basic_pk_model,
     create_joint_distribution,
     has_covariate_effect,
@@ -33,6 +34,7 @@ from pharmpy.tools.amd.run import (
     create_structural_covariates_model,
     determine_extra_tmdd_model,
     filter_drug_metabolite_dataset,
+    filter_start_dataset,
     filter_tmdd_dataset,
     get_dvid_name,
     get_search_space_covsearch,
@@ -508,6 +510,18 @@ def test_create_structural_covariates_model(load_model_for_test, pheno_path):
         assert has_covariate_effect(model_with_struct, param, covariate)
 
     assert model_with_struct.parameters['PTVCL'].init == res.parameter_estimates['PTVCL']
+
+
+def test_filter_start_dataset(testdata):
+    context = NullContext()
+    dataset_path = testdata / 'nonmem' / 'pheno.dta'
+    start_model = create_basic_pk_model('iv', dataset_path)
+    start_model = convert_model(start_model, 'nonmem')
+    model = filter_start_dataset(context, start_model, 'ID != 1')
+    assert 1 not in model.dataset['ID'].values
+
+    model = filter_start_dataset(context, start_model, 'x')
+    assert model is None
 
 
 def test_filter_tmdd_dataset(testdata):

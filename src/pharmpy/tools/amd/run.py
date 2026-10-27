@@ -93,6 +93,7 @@ def create_workflow(
     units: Mapping[str, str] | None = None,
     ignore_datainfo_fallback: bool = False,
     initial_error_models: Mapping[int, str] | None = None,
+    filter_data_records: str | None = None,
     _E: dict[str, float | str] | None = None,
 ):
     """Run Automatic Model Development (AMD) tool
@@ -156,6 +157,8 @@ def create_workflow(
         'additive' and 'combined'. If None or if any DVID is not specified, 'proportional'
         will be used. The error model will be applied for the start model for DVID == 1,
         if any other are provided they will be applied in the StructSearch tool
+    filter_data_records : str or None
+        Expression of which to filter dataset on. E.g. 'DVID == 1' will keep all data records where DVID is 1
     _E: dict
         EXPERIMENTAL FEATURE. Dictionary of different E-values used in mBIC.
 
@@ -223,6 +226,7 @@ def run_amd_task(
     units: Mapping[str, str] | None = None,
     ignore_datainfo_fallback: bool = False,
     initial_error_models: dict[int, str] | None = None,
+    filter_data_records: str | None = None,
     _E: dict[str, float | str] | None = None,
 ):
     context.log_info("Starting tool amd")
@@ -269,6 +273,9 @@ def run_amd_task(
 
         if initial_error_models:
             model = set_error_model(model, initial_error_models, skip=())
+
+    if filter_data_records:
+        model = filter_start_dataset(context, model, filter_data_records)
 
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
@@ -675,6 +682,14 @@ def create_start_model(input, modeltype, administration, cl_init, vc_init, mat_i
 
     model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
     return model
+
+
+def filter_start_dataset(context, model, expression):
+    try:
+        model = filter_dataset(model, expression)
+        return model
+    except ValueError:
+        context.abort_workflow(f'Invalid expression for `filter_data_records`: "{expression}"')
 
 
 def filter_tmdd_dataset(model):

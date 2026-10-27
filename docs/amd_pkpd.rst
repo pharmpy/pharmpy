@@ -39,24 +39,21 @@ To run a full PKPD workflow:
 
 .. pharmpy-code::
 
-    from pharmpy.modeling import create_basic_pk_model, convert_model, filter_dataset, set_dataset
+    from pharmpy.modeling import set_dataset
     from pharmpy.tools import run_amd
 
-    original_model = create_basic_pk_model('oral', dataset_path='path/to/dataset')
-    original_model = convert_model(original_model, 'nonmem')
-    pk_model = filter_dataset(original_model, "DVID != 2")
-
+    dataset_path = 'path/to/dataset'
     res = run_amd(
-        input=pk_model,
+        input=dataset_path,
         modeltype='basic_pk',
         administration='iv',
         cl_init=2.0,
         vc_init=5.0,
         mat_init=3.0,
-        strategy='default',
+        filter_data_records='DVID != 2',
     )
 
-    pkpd_model = set_dataset(res.final_model, 'path/to/dataset')
+    pkpd_model = set_dataset(res.final_model, dataset_path)
     res = run_amd(
         input=pkpd_model,
         modeltype='pkpd',
