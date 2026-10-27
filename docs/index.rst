@@ -1,3 +1,7 @@
+.. SPDX-FileCopyrightText: 2018-2026 The Pharmpy Contributors (see AUTHORS.rst)
+..
+.. SPDX-License-Identifier: CC-BY-4.0
+
 .. figure:: Pharmpy_logo.svg
    :class: only-light no-scaled-link
    :width: 400

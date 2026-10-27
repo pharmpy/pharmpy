@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 function INFO() {
     echo "$(tput bold; tput setaf 7)MESSAGE$(tput sgr0) $@"
 }

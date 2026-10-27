@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 if [ ! -e '.git' ] ; then
     >&2 printf 'Not at the root of the git repository!\n'
     >&2 printf 'Not doing anything.\n'
