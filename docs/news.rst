@@ -2,6 +2,22 @@
 News
 ====
 
+
+Pharmpy and pharmr 2.3.0 released
+---------------------------------
+
+*2026-10-27* --- Pharmpy 2.3.0 and pharmr 2.3.0 are now available. The highlights of the release are:
+
+* New class and concept :code:`Project` for running tools
+* Support multiple DVs in unit conversion in AMD
+* Support setting initial error models and filter expressions to AMD
+* Support unit conversion in modeling and in AMD
+* Various fixes to IIVSearch
+* Various bug fixes
+
+See :ref:`CHANGELOG<2.3.0>` for details.
+
+
 Pharmpy and pharmr 2.2.0 released
 ---------------------------------
 

@@ -2,17 +2,25 @@
 ..
 .. SPDX-License-Identifier: CC0-1.0
 
-next version
-------------
+.. _2.3.0:
+
+2.3.0 (2026-10-27)
+------------------
 
 New features
 ============
 
+* Add new class :code:`Project`
 * Add :code:`modeling.plot_iteration_trace`
 * Add :code:`modeling.get_derived_covariates`
 * Add :code:`modeling.get_symbolic_constraints`
 * Add option :code:`seed` to :code:`modeling.resample_data`
+* Add option :code:`annotate_using` to :code:`modeling.set_dataset`
+* Add option :code:`dv` to :code:`modeling.remove_error_model`
+* Add option :code:`initial_error_models` to :code:`run_amd`
+* Add option :code:`filter_data_records` to :code:`run_amd`
 * Support :code:`seed` in :code:`run_bootstrap`
+* Support multiple DVs in :code:`modeling.convert_unit` and :code:`run_amd`
 * Support renaming of datainfo/dataset columns with :code:`modeling.rename_symbols`
 
 Changes
@@ -20,11 +28,17 @@ Changes
 
 * Rename IPRED to CONC in :code:`create_basic_pk_model`
 * :code:`RandomNumberGenerator` no longer use context path when generated in :code:`Context`
+* If input to AMD is a model, initial estimate options are no longer allowed (initial estimates from input model will be used)
+* Replace :code:`ModelfitResults.log` with :code:`ModelfitResults.warning_messages` and :code:`ModelfitResults.error_messages`
 
 Bugfixes
 ========
 
 * Input :code:`seed` to QA in AMD
+* Fix issue in linearized IIVSearch when etas are added
+* Fix bug in IIVSearch when wrong model is selected when input is better than final model
+* Fix regression in IIVSearch where certain block structures are skipped
+* Fix crash in translate_nmtran_time for NONMEM datasets with a date-column
 
 .. _2.2.0:
 
