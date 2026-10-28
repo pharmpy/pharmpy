@@ -384,15 +384,14 @@ class NONMEMResultsFile:
                 index_col=0,
                 sep=r'\s+',
                 engine='c',
-                float_precision="round_trip",
             )
 
             columns = read.index.values
-            read.reset_index(drop=True, inplace=True)
+            read = read.reset_index(drop=True)
 
             df = read.T
             df.columns = columns
-            df.reset_index(drop=True, inplace=True)
+            df = df.reset_index(drop=True)
             return df
         except pd.errors.EmptyDataError:
             return None

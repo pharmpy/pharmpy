@@ -174,13 +174,13 @@ def mask_in_place(
     filters: Iterable[Filter],
     _map: Callable[[str], str],
     _reduce: Callable[[Iterable[str]], str],
-):
+) -> pd.DataFrame:
     expressions = map(_filter_to_expr, filters)
     expressions = map(_map, expressions)
 
     expr = _reduce(expressions)
 
-    df.query(
+    df = df.query(
         expr,
         parser="pandas",  # NOTE: Default, but it is better to be explicit.
         local_dict={},  # NOTE: We do not allow access to locals.
@@ -189,9 +189,8 @@ def mask_in_place(
         # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L177
         # NOTE: Some default "globals" are included anyway.
         # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L91-L100
-        inplace=True,  # NOTE: We update the input dataframe in place.
-        # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/frame.py#L4843-L4845
     )
+    return df
 
 
 @dataclass(frozen=True)

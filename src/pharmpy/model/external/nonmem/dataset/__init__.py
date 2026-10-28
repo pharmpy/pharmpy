@@ -228,7 +228,7 @@ def _filter_in_place(
                 tmp[list(map(character, block.convert))], str(null_value), missing_data_token
             )
 
-        mask_in_place(tmp, block.filters, _map, _reduce)
+        tmp = mask_in_place(tmp, block.filters, _map, _reduce)
 
     convert_done = set().union(*(block.convert for block in blocks)).intersection(convert_todo)
 

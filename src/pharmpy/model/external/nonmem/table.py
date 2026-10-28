@@ -254,7 +254,6 @@ class NONMEMTable:
                 quotechar='"',
                 quoting=csv.QUOTE_MINIMAL if _format.quoted else csv.QUOTE_NONE,
                 engine='c',
-                float_precision="round_trip",
             )
             assert isinstance(read_df, pd.DataFrame)
             self._df = read_df
@@ -270,7 +269,7 @@ class NONMEMTable:
     @property
     def content(self):
         df = self._df.copy(deep=True)
-        df.reset_index(inplace=True)
+        df = df.reset_index()
         df.insert(loc=0, column='SUBJECT_NO', value=np.arange(len(df)) + 1)
         fmt = '%13d%13d' + '%13.5E' * (len(df.columns) - 2)
 
@@ -305,7 +304,7 @@ class CovTable(NONMEMTable):
     @property
     def data_frame(self):
         df = self._df.copy(deep=True)
-        df.set_index('NAME', inplace=True)
+        df = df.set_index('NAME')
         df.index.name = None
         df = NONMEMTable.rename_index(df, ext=False)
         df = df.loc[(df != 0).any(axis=1), (df != 0).any(axis=0)]  # Remove FIX
@@ -319,7 +318,7 @@ class PhiTable(NONMEMTable):
         # Remove all zero lines. These are from individuals with no observations
         df = df.loc[df.iloc[:, 2:].any(axis=1)]
         iofv = df[['ID', 'OBJ']]
-        iofv.set_index('ID', inplace=True)
+        iofv = iofv.set_index('ID')
         iofv.columns = ['iOFV']
         return iofv['iOFV']
 
