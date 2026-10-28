@@ -79,12 +79,4 @@ def psn_simeval_results(path):
     original_results = parse_modelfit_results(original, path / 'm1' / 'original.mod')
     res = calculate_results(original, original_results, simfit_results)
 
-    # Add CWRES outliers as 2 in data_flag
-    # Reading PsN results for now
-    # df = pd.read_csv(path / 'summary_cwres.csv')
-    # outliers = df['OUTLIER'].fillna(0).astype(int)
-    # outliers.replace({1.0: 2}, inplace=True)
-    # outliers = outliers + res.data_flag
-    # outliers.replace({3: 1}, inplace=True)
-    # res.data_flag = outliers
     return res
