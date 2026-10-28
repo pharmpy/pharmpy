@@ -506,8 +506,8 @@ def evaluate_weighted_residuals(
     H = evaluate_epsilon_gradient(model, etas=etas, parameters=useparams, dataset=dataset)
     F = evaluate_population_prediction(model)
     index = df[model.datainfo.id_column.name]
-    G.set_index(index, inplace=True)
-    H.set_index(index, inplace=True)
+    G = G.set_index(index)
+    H = H.set_index(index)
     F.index = pd.Index(index)
     WRES = np.empty(0)
     for i in df[model.datainfo.id_column.name].unique():

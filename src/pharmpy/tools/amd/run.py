@@ -879,7 +879,7 @@ def _create_model_summary(summaries):
         df['tool'] = [tool_name] * len(df)
         if 'step' not in df.columns:
             df['step'] = [1] * len(df)
-        df.set_index(['tool', 'step', 'model'], inplace=True)
+        df = df.set_index(['tool', 'step', 'model'])
         dfs.append(df)
     model_summary = pd.concat(dfs, axis=0)
     return model_summary

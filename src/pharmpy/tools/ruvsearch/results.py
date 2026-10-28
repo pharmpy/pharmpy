@@ -88,8 +88,8 @@ def calculate_results(model_entries):
             iter_dfs.append(df)
 
     df_final = pd.concat(iter_dfs)
-    df_final.set_index(['model', 'dvid', 'iteration'], inplace=True)
-    df_final.sort_index(inplace=True)
+    df_final = df_final.set_index(['model', 'dvid', 'iteration'])
+    df_final = df_final.sort_index()
 
     return RUVSearchResults(cwres_models=df_final)
 
@@ -102,11 +102,11 @@ def psn_resmod_results(path):
     df = pd.read_csv(respath, names=range(40), skiprows=[0], engine='python')
     df[0] = df[0].fillna(1)
     df[1] = df[1].fillna(1)
-    df.dropna(how='all', axis=1, inplace=True)
+    df = df.dropna(how='all', axis=1)
     df2 = df[[0, 1, 2, 3]].copy()
     df2 = df2.astype({0: int})
     df2.columns = ['iteration', 'DVID', 'model', 'dOFV']
-    df2.set_index(['iteration', 'DVID', 'model'], inplace=True)
+    df2 = df2.set_index(['iteration', 'DVID', 'model'])
     parameters = pd.Series(name='parameters', index=df.index, dtype=object)
     for rowind, row in df.iterrows():
         d = {}

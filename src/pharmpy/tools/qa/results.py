@@ -83,7 +83,7 @@ def calculate_results(
             resmod_dofv,
         ]
     )
-    dofv_table.set_index(['section', 'run', 'dvid'], inplace=True)
+    dofv_table = dofv_table.set_index(['section', 'run', 'dvid'])
 
     return QAResults(
         dofv=dofv_table,
@@ -115,8 +115,8 @@ def outliers(simeval_res, cdd_res):
     outliers = list(iofv.loc[iofv['residual_outlier']].index)
     cases = cdd_res.case_results.copy()
     cases['skipped_individuals'] = cases['skipped_individuals'].transform(lambda x: int(x[0]))
-    cases.reset_index(inplace=True)
-    cases.set_index('skipped_individuals', inplace=True)
+    cases = cases.reset_index()
+    cases = cases.set_index('skipped_individuals')
     dofv = cases.loc[outliers].delta_ofv
     top_three = dofv.sort_values(ascending=False).iloc[:3]
     dofv_tab = pd.DataFrame(
@@ -175,12 +175,11 @@ def resmod(res):
         return None, dofv_tab
     df = res.cwres_models.copy()
     df = df.droplevel(0)
-    df.drop('sum', level='DVID', errors='ignore', inplace=True)
+    df = df.drop('sum', level='DVID', errors='ignore')
     df['dOFV'] = -df['dOFV']
-    df.drop(
+    df = df.drop(
         ['idv_varying_RUV', 'idv_varying_combined', 'idv_varying_theta'],
         level='model',
-        inplace=True,
     )
 
     # Select the best idv_varying cut for each DVID
@@ -191,10 +190,10 @@ def resmod(res):
         best_timevar_idx = subdf.loc[idvvar]['dOFV'].idxmax()
         for name in subdf.loc[idvvar].index:
             if name != best_timevar_idx:
-                df.drop((dvid, name), inplace=True)
+                df = df.drop((dvid, name))
         remaining_timevar.append(best_timevar_idx)
     for ind in remaining_timevar:
-        df.rename(index={ind: 'time_varying'}, level='model', inplace=True)
+        df = df.rename(index={ind: 'time_varying'}, level='model')
 
     df = df.groupby(level='DVID', sort=False).apply(
         lambda x: x.sort_values(['dOFV'], ascending=False)
@@ -331,7 +330,7 @@ def calc_scm_dofv(scm_results):
     table['coeff'] = [next(iter(coveff.values())) for coveff in table['covariate_effects']]
     table = table[['ofv_drop', 'coeff']]
     table.columns = ['dofv', 'coeff']
-    table.rename(mapper=lambda name: f'ETA({name[2:]})', level=0, inplace=True)
+    table = table.rename(mapper=lambda name: f'ETA({name[2:]})', level=0)
     dofv_tab = pd.DataFrame(
         {
             'section': ['covariates'],
@@ -531,7 +530,7 @@ def read_results_summary(path):
         )
         dfs.append(df)
     bias = pd.concat(dfs)
-    bias.set_index(['idv', 'dvid', 'binid'], inplace=True)
+    bias = bias.set_index(['idv', 'dvid', 'binid'])
     return bias
 
 

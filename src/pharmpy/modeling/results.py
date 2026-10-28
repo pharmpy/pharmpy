@@ -402,14 +402,14 @@ def calculate_individual_parameter_statistics(
             df.loc[case] = [mean, variance, stderr]
 
         df.index.name = 'covariates'
-        df.reset_index(inplace=True)
+        df = df.reset_index()
         if not name:
             name = f'unknown{i}'
             i += 1
         df['parameter'] = name
         table = pd.concat([table, df])
 
-    table.set_index(['parameter', 'covariates'], inplace=True)
+    table = table.set_index(['parameter', 'covariates'])
     table = table.astype('float64')
 
     return table

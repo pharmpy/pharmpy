@@ -756,7 +756,7 @@ def calculate_results_from_samples(
             'p95': p95_col,
         }
     )
-    df.set_index(['parameter', 'covariate', 'condition'], inplace=True)
+    df = df.set_index(['parameter', 'covariate', 'condition'])
     covariate_effects = df
 
     # Create id table

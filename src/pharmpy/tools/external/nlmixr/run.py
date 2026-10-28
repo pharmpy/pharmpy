@@ -382,8 +382,8 @@ def compare_models(
             pred = True
             p = "PRED"
             assert p in mod2_results.columns
-            mod1_results.rename(columns={p: f'PRED_{mod1_type}'}, inplace=True)
-            mod2_results.rename(columns={p: f'PRED_{mod2_type}'}, inplace=True)
+            mod1_results = mod1_results.rename(columns={p: f'PRED_{mod1_type}'})
+            mod2_results = mod2_results.rename(columns={p: f'PRED_{mod2_type}'})
         else:
             print("No PRED column found")
             return None
@@ -392,14 +392,14 @@ def compare_models(
             p = "IPRED"
             ipred = True
             assert p in mod2_results.columns
-            mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
-            mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
+            mod1_results = mod1_results.rename(columns={p: f'{p}_{mod1_type}'})
+            mod2_results = mod2_results.rename(columns={p: f'IPRED_{mod2_type}'})
         elif "CIPREDI" in mod1_results.columns:
             p = "CIPREDI"
             ipred = True
             assert p in mod2_results.columns
-            mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
-            mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
+            mod1_results = mod1_results.rename(columns={p: f'{p}_{mod1_type}'})
+            mod2_results = mod2_results.rename(columns={p: f'IPRED_{mod2_type}'})
         else:
             print("No IPRED (or CIPRED) column found")
             return None
@@ -408,22 +408,22 @@ def compare_models(
             p = "PRED"
             pred = True
             assert p in mod2_results.columns
-            mod1_results.rename(columns={p: f'PRED_{mod1_type}'}, inplace=True)
-            mod2_results.rename(columns={p: f'PRED_{mod2_type}'}, inplace=True)
+            mod1_results = mod1_results.rename(columns={p: f'PRED_{mod1_type}'})
+            mod2_results = mod2_results.rename(columns={p: f'PRED_{mod2_type}'})
         elif "IPRED" in mod1_results.columns:
             p = "IPRED"
             ipred = True
-            mod1_results.rename(columns={p: f'{p}_{mod1_type}'}, inplace=True)
+            mod1_results = mod1_results.rename(columns={p: f'{p}_{mod1_type}'})
             assert p in mod2_results.columns
-            mod2_results.rename(columns={p: f'{p}_{mod2_type}'}, inplace=True)
+            mod2_results = mod2_results.rename(columns={p: f'{p}_{mod2_type}'})
         elif "CIPREDI" in mod1_results.columns:
             p = "CIPREDI"
             ipred = True
-            mod1_results.rename(columns={p: f'IPRED_{mod1_type}'}, inplace=True)
+            mod1_results = mod1_results.rename(columns={p: f'IPRED_{mod1_type}'})
             if p not in mod2_results.columns:
-                mod2_results.rename(columns={"IPRED": f'IPRED_{mod2_type}'}, inplace=True)
+                mod2_results = mod2_results.rename(columns={"IPRED": f'IPRED_{mod2_type}'})
             else:
-                mod2_results.rename(columns={p: f'IPRED_{mod2_type}'}, inplace=True)
+                mod2_results = mod2_results.rename(columns={p: f'IPRED_{mod2_type}'})
 
     if not (pred or ipred):
         print("No comparable prediction value was found. Please use 'PRED' or 'IPRED")

@@ -136,7 +136,7 @@ def test_calc_pk_two_comp_bolus(load_model_for_test, testdata):
         seed=103,
     )
     # FIXME: Why doesn't random state handle this difference in stderr?
-    df.drop('stderr', inplace=True, axis=1)
+    df = df.drop('stderr', axis=1)
 
     correct = """parameter,covariates,mean,variance,stderr
 A,median,0.003785,0.0,0.052979
@@ -147,7 +147,7 @@ k_e,median,13.319584,2.67527,2.633615
 """
     correct = pd.read_csv(StringIO(correct), index_col=[0, 1])
     correct.index.set_names(['parameter', 'covariates'], inplace=True)
-    correct.drop('stderr', inplace=True, axis=1)
+    correct = correct.drop('stderr', axis=1)
     # pd.testing.assert_frame_equal(df, correct, atol=1e-4)
 
 

@@ -98,7 +98,7 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
             if final is not None:
                 final['is_backward'] = 'Final included'
                 df = pd.concat([df, final])
-        df.rename(columns={'is_backward': 'direction'}, inplace=True)
+        df = df.rename(columns={'is_backward': 'direction'})
         columns = ['direction', 'reduced_ofv', 'extended_ofv', 'ofv_drop']
         if 'pvalue' in steps.columns:
             columns.extend(['delta_df', 'pvalue', 'goal_pvalue'])
@@ -378,7 +378,7 @@ def step_data_frame(step, included_relations):
 
     df['directory'] = str(step['m1'])
     model = df['model']  # move to end
-    df.drop(columns=['model'], inplace=True)
+    df = df.drop(columns=['model'])
     df['model'] = model
 
     if step['stashed'] or step['readded']:
@@ -521,7 +521,7 @@ def split_merged_base_and_new_ofv(rawtable):
             raise ValueError
         # Save names and then drop last column. Names are unique so this drops 1 col
         column_names = list(rawtable.columns)
-        rawtable.drop(columns=column_names[-1], inplace=True)
+        rawtable = rawtable.drop(columns=column_names[-1])
 
         baseofvlength = int(max({len(x) for x in rawtable.base.values}) / 2)
         pattern = f'(?P<base>.{{{baseofvlength}}})' + r'\s*(?P<newfixed>\S*)'
@@ -536,7 +536,7 @@ def split_merged_base_and_new_ofv(rawtable):
         rawtable.insert(3, 'newfixed', subdf.newfixed)
         # Rename columns to get original labels at correct positions
         old = list(rawtable.columns)
-        rawtable.rename(columns=dict(zip(old, column_names)), inplace=True)
+        rawtable = rawtable.rename(columns=dict(zip(old, column_names)))
 
     return rawtable
 

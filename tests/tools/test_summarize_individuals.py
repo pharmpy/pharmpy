@@ -28,7 +28,7 @@ def test_summarize_individuals_count_table():
             'predicted_residual': [1.0, 1.0, 1.0, 4.0, 4.0, 1.0, 1.0, 1.0, 1.0],
         }
     )
-    df.set_index(['model', 'ID'], inplace=True)
+    df = df.set_index(['model', 'ID'])
 
     res = summarize_individuals_count_table(df=df)
     assert list(res['inf_selection']) == [0, 0, 0]

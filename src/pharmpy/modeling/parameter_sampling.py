@@ -363,6 +363,6 @@ def sample_individual_estimates(
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df['ID'] = idx
         id_df['sample'] = list(range(samples_per_id))
-        id_df.set_index(['ID', 'sample'], drop=True, inplace=True)
+        id_df = id_df.set_index(['ID', 'sample'], drop=True)
         samples = pd.concat((samples, id_df))
     return samples

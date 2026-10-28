@@ -140,7 +140,7 @@ def test_resampler_anonymization(testdata):
         df_newid = new_df.query(f'ID == {new_id}')
         df_oldid = df.query(f'ID == {old_id}')
         df_newid = df_newid.reset_index(drop=True)
-        df_oldid.reset_index(inplace=True, drop=True)
+        df_oldid = df_oldid.reset_index(drop=True)
         df_newid['ID'] = old_id
         pandas.testing.assert_frame_equal(df_newid, df_oldid)
 

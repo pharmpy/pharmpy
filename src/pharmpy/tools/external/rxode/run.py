@@ -142,7 +142,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> ModelfitRe
 
     dv = next(iter(model.dependent_variables.keys()))
     pred = rdata["res"][["id", "time", f"{dv}"]]
-    pred.rename(columns={f"{dv}": 'PRED', "id": "ID", "time": "TIME"}, inplace=True)
+    pred = pred.rename(columns={f"{dv}": 'PRED', "id": "ID", "time": "TIME"})
     pred = pred.set_index(["ID", "TIME"])
 
     # TODO: Extract thetas, omegas and sigmas
