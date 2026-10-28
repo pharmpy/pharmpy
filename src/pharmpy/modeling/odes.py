@@ -2087,7 +2087,7 @@ def _get_absorption_init(model, param_name) -> float:
         time_min = 1.0
     else:
         obs = _get_pk_observations(model)
-        time = obs.index.get_level_values(level=time_label)
+        time = obs.index.get_level_values(level=time_label).to_numpy()
         time_min = _get_min_value(time[time > 0])
 
     if param_name == 'MDT':
