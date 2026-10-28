@@ -47,4 +47,4 @@ SecretStorage==3.5.0
 tomli==2.5.0
 typing-extensions==4.16.0
 urllib3==2.8.0
-zipp==4.1.1
+zipp==4.1.2
