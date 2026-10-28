@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # This script will create a venv, install python and do pip freeze
 # (note that it doesn't work with virtualenv since it is not clean after installation)
 # The freeze will be compared with the current requirements.txt

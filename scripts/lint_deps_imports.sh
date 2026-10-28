@@ -1,5 +1,9 @@
 #!/usr/bin/env sh
 
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 matches () {
     grep -E \
         -e '^import altair($|\.| )' -e '^from altair( |\.)' \

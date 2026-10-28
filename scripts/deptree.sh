@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # Print the dependency tree of Pharmpy 
 # Actual dependencies will be used (i.e. not requirements.txt)
 

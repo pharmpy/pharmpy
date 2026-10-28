@@ -1,3 +1,7 @@
+.. SPDX-FileCopyrightText: Astropy Contributors and Contributor Covenant Authors
+..
+.. SPDX-License-Identifier: CC-BY-4.0
+
 .. _CODE_OF_CONDUCT:
 
 Pharmpy Community Code of Conduct

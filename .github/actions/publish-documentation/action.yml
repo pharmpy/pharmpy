@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 name: 'Publish documentation'
 description: 'Build and publish the Pharmpy documentation'
 inputs:

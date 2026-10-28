@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # This script will create a temporary directory and run tools there, then results.json will overwrite
 # each example tool results respectively
 

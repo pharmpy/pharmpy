@@ -21,7 +21,19 @@ path = [
   "**/*.msf",
   ".devcontainer/**",
   "**/*.tflite",
-  "docs/spelling_wordlist.txt"
+  "docs/spelling_wordlist.txt",
+  "tests/testdata/psn/frem_dir1/covariates_summary.csv",
+  "tests/testdata/psn/qa_dir1/results_summary.yaml",
+  "tests/testdata/psn/simeval_dir1/summary_cwres.csv",
+  "tests/testdata/psn/crossval_dir1/xv_result.csv",
+  "tests/testdata/nonmem/ruvsearch/mytab",
+  "tests/testdata/nonmem/cdd/pheno_real_bin10/skipped_individuals1.csv",
+  "tests/testdata/nonmem/minimal.mod",
+  "tests/testdata/nonmem/sdtab1",
+  "**/resmod_results.csv",
+  "src/pharmpy/internals/example_models/pheno_linear.mod",
+  "src/pharmpy/internals/example_models/pheno_linear.lst",
+  "src/pharmpy/internals/example_models/pheno.datainfo",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
@@ -56,3 +68,24 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "2016 David Khai"
 SPDX-License-Identifier = ["CC-BY-SA-3.0"]
+
+
+[[annotations]]
+path = [
+  "src/pharmpy/reporting/jupyter_sphinx/**"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = [
+  "Copyright (c) 2015-2016, Brian E. Granger and Jake Vanderplas",
+  "Copyright (c) 2016-2019, Project Jupyter Contributors"
+]
+SPDX-License-Identifier = ["BSD-3-Clause"]
+
+
+[[annotations]]
+path = [
+  "src/pharmpy/reporting/altairplot.py"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = ["Copyright (c) 2015-2023, Vega-Altair Developers"]
+SPDX-License-Identifier = ["BSD-3-Clause"]

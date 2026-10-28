@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: None
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # Use readme_renderer which is used by PyPI to render the package info
 # to generate and display html
 
