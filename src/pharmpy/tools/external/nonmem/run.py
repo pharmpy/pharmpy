@@ -257,7 +257,7 @@ def validate_dataset(model, path: Path):
     except Exception as e:
         raise ValueError('Could not parse FCON model to compare datasets') from e
     to_drop = [ci.name for ci in model.datainfo if ci.drop]
-    dataset = model.dataset.drop(to_drop, axis=1, inplace=False)
+    dataset = model.dataset.drop(to_drop, axis=1)
     fdata = fcon_model.dataset
     fdata = fdata[fdata.columns.intersection(dataset.columns)]
     fdata = fdata.astype(dataset.dtypes)
