@@ -328,7 +328,7 @@ def get_observations_and_exclusion_criteria(
         except ValueError:
             # TIME could not be converted to float (e.g. 10:15)
             pass
-        df.set_index([idcol, idvcol], inplace=True)
+        df = df.set_index([idcol, idvcol])
         df = df.squeeze()
     else:
         df = df[dvcol]
@@ -720,7 +720,7 @@ def get_doses(model: Model) -> pd.Series:
     except ValueError:
         # TIME could not be converted to float (e.g. 10:15)
         pass
-    df.set_index([idcol, idvcol], inplace=True)
+    df = df.set_index([idcol, idvcol])
     return df.squeeze()
 
 
@@ -761,35 +761,39 @@ def expand_additional_doses(model: Model, flag: bool = False) -> Model:
         df = df.assign(_RESETGROUP=df.groupby('ID')['_FLAG'].cumsum())
         df = df.drop('_FLAG', axis=1)
 
-    def fn(a):
-        if a[addl] == 0:
-            times = [a[idv]]
+    times_list = []
+    expanded_list = []
+
+    for val_idv, val_ii, val_addl in zip(df[idv], df[ii], df[addl]):
+        if val_addl == 0:
+            times = [val_idv]
             expanded = [False]
         else:
-            length = int(a[addl])
-            times = [a[ii] * x + a[idv] for x in range(length + 1)]
+            length = int(val_addl)
+            times = [val_ii * x + val_idv for x in range(length + 1)]
             expanded = [False] + [True] * length
-        a['_TIMES'] = times
-        a['_EXPANDED'] = expanded
-        return a
+        times_list.append(times)
+        expanded_list.append(expanded)
 
-    df = df.apply(fn, axis=1)
-    df = df.apply(lambda x: x.explode() if x.name in ['_TIMES', '_EXPANDED'] else x)
+    df["_TIMES"] = times_list
+    df["_EXPANDED"] = expanded_list
+    df = df.explode(["_TIMES", "_EXPANDED"])
+
     df = df.astype({'_EXPANDED': np.bool_})
     df = df.groupby([idcol, '_RESETGROUP'], group_keys=False)[df.columns].apply(
         lambda x: x.sort_values(by='_TIMES', kind='stable')
     )
     df[idv] = df['_TIMES'].astype(np.float64)
-    df.drop(['_TIMES', '_RESETGROUP'], axis=1, inplace=True)
+    df = df.drop(['_TIMES', '_RESETGROUP'], axis=1)
 
     df = reset_index(df)
     added_rows = df[df['_EXPANDED']]
     add = [AddRows.create(added_rows.index.tolist())]
     if flag:
-        df.rename(columns={'_EXPANDED': 'EXPANDED'}, inplace=True)
+        df = df.rename(columns={'_EXPANDED': 'EXPANDED'})
         add.append(AddColumn.create('EXPANDED'))
     else:
-        df.drop([addl, ii, '_EXPANDED'], axis=1, inplace=True)
+        df = df.drop([addl, ii, '_EXPANDED'], axis=1)
     di = di.replace(provenance=di.provenance + add)
     model = model.replace(dataset=df, datainfo=di)
     return model.update_source()
@@ -1254,9 +1258,9 @@ def add_time_after_dose(model: Model) -> Model:
     df[tad_name] = df.groupby([idlab, '_DOSEID'])[tad_name].cumsum()
     if addl:
         df = df[~df['EXPANDED']].reset_index(drop=True)
-        df.drop(columns=['EXPANDED'], inplace=True)
+        df = df.drop(columns=['EXPANDED'])
 
-    df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
+    df = df.drop(columns=['_NEWTIME', '_DOSEID'])
 
     # FIXME: Temp workaround, should be canonicalized in Model.replace
     di = update_datainfo(model.datainfo, df)
@@ -1319,7 +1323,7 @@ def get_concentration_parameters_from_data(model: Model) -> pd.DataFrame:
     idx = df.groupby([idlab, 'DOSEID'])[dv].idxmax()
     params = df.loc[idx].set_index([idlab, 'DOSEID'])
     params = params[[dv, 'TAD']]
-    params.rename(columns={dv: 'Cmax', 'TAD': 'Tmax'}, inplace=True)
+    params = params.rename(columns={dv: 'Cmax', 'TAD': 'Tmax'})
     params.loc[noobs] = np.nan
 
     grpind = df.groupby(['ID', 'DOSEID']).indices
@@ -1332,7 +1336,7 @@ def get_concentration_parameters_from_data(model: Model) -> pd.DataFrame:
     minidx = df.iloc[keep].groupby([idlab, 'DOSEID'])[dv].idxmin()
     params2 = df.loc[minidx].set_index([idlab, 'DOSEID'])
     params2 = params2[[dv, 'TAD']]
-    params2.rename(columns={dv: 'Cmin', 'TAD': 'Tmin'}, inplace=True)
+    params2 = params2.rename(columns={dv: 'Cmin', 'TAD': 'Tmin'})
     res = params.join(params2)
     return res
 
@@ -1676,7 +1680,7 @@ def translate_nmtran_time(model: Model) -> Model:
     Model
         Updated Pharmpy model
     """
-    if model.dataset is None:
+    if model.dataset is None or model.dataset.empty:
         return model
     timecol, datecol = _find_time_and_date_columns(model)
     df = model.dataset.copy()
@@ -2048,7 +2052,6 @@ def read_dataset_from_datainfo_update(datainfo: DataInfo | Path | str, datatype:
             datainfo.path,
             sep=datainfo.separator,
             dtype=datainfo.get_dtype_dict(),
-            float_precision='round_trip',
         )
     return df, di
 
