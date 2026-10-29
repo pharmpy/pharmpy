@@ -89,3 +89,20 @@ path = [
 precedence = "aggregate"
 SPDX-FileCopyrightText = ["Copyright (c) 2015-2023, Vega-Altair Developers"]
 SPDX-License-Identifier = ["BSD-3-Clause"]
+
+
+[[annotations]]
+# Created from
+# "Neonatal population pharmacokinetics of phenobarbital derived from routine clinical data"
+# T H Grasela Jr and S M Donn
+# https://doi.org/10.1159/000457062
+path = [
+  "src/pharmpy/internals/example_models/pheno.mod",
+  "src/pharmpy/internals/example_models/pheno.dta",
+  "src/pharmpy/internals/example_models/pheno.tab",
+  "src/pharmpy/internals/example_models/pheno_linear.dta",
+  "src/pharmpy/internals/example_models/pheno.lst",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "None"
+SPDX-License-Identifier = "CC0-1.0"

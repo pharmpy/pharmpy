@@ -232,7 +232,7 @@ def print_model_code(model: Model) -> None:
     >>> from pharmpy.modeling import print_model_code, load_example_model
     >>> model = load_example_model("pheno")
     >>> print_model_code(model)
-    $PROBLEM PHENOBARB SIMPLE MODEL
+    $PROBLEM Phenobarbital PK
     $DATA pheno.dta IGNORE=@
     $INPUT ID TIME AMT WGT APGR DV FA1 FA2
     $SUBROUTINE ADVAN1 TRANS2
@@ -319,10 +319,10 @@ def set_description(model: Model, new_description: str) -> Model:
     >>> from pharmpy.modeling import set_description, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.description
-    'PHENOBARB SIMPLE MODEL'
-    >>> model = set_description(model, "PHENOBARB run 2")
+    'Phenobarbital PK'
+    >>> model = set_description(model, "Phenobarbital PK run 2")
     >>> model.description
-    'PHENOBARB run 2'
+    'Phenobarbital PK run 2'
 
     """
     model = model.replace(description=new_description)

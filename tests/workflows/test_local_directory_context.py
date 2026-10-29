@@ -180,7 +180,7 @@ def test_key(tmp_path, load_example_model_for_test):
     name = ctx.retrieve_name(key)
     assert name == "pheno"
     annotation = ctx.retrieve_annotation("pheno")
-    assert annotation.startswith("PHENOBARB")
+    assert annotation.startswith("Phenobarbital")
 
 
 def test_create_rng(tmp_path):
