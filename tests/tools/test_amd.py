@@ -908,6 +908,13 @@ def test_remove_added_covariates_from_search_space(
             'cl_init': 1.0,
             'vc_init': 1.0,
             'mat_init': 1.0,
+            'administration': 'oral',
+            'search_space': 'COVARIATE?(@IIV,@CONTINUOUS,[LIN,EXP])',
+        },
+        {
+            'cl_init': 1.0,
+            'vc_init': 1.0,
+            'mat_init': 1.0,
             'search_space': 'ABSORPTION(FO);IIV(CL,exp)',
         },
         {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, '_E': {'E_p': 0.5}},

@@ -1704,7 +1704,7 @@ def validate_input(
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
         if len(ss_mfl) == 0:
             raise ValueError(f'`search_space` evaluated to be empty : "{search_space}')
-        if administration == "oral" and not ss_mfl.absorption:
+        if administration == "oral" and ss_mfl.filter(filter_on='pk') and not ss_mfl.absorption:
             raise ValueError(
                 'The given search space does not have absorption'
                 ' which is not allowed with ´oral´ administration.'
