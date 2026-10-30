@@ -15,10 +15,6 @@ $ERROR
       W=F
       Y=F+W*EPS(1)
 
-      IPRED=F         ;  individual-specific prediction
-      IRES=DV-IPRED   ;  individual-specific residual
-      IWRES=IRES/W    ;  individual-specific weighted residual
-
 $THETA  (0,0.0105) ; CL
 $THETA  (0,1.0500) ; V
 $OMEGA  .4  ;       IVCL

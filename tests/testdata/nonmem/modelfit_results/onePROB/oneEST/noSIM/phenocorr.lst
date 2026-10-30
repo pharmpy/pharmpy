@@ -15,19 +15,12 @@ $ERROR
       W=F
       Y=F+W*EPS(1)
 
-      IPRED=F         ;  individual-specific prediction
-      IRES=DV-IPRED   ;  individual-specific residual
-      IWRES=IRES/W    ;  individual-specific weighted residual
-
 $THETA  (0,0.0105) ; CL; unit
 $THETA  (0,1.0500) ; V; unit
 $OMEGA  .4  STANDARD  ;       IVCL
  .25  STANDARD  ;        IVV
 $SIGMA  .04
 $ESTIMATION MAXEVALS=9997 SIGDIGITS=4 POSTHOC
-;$TABLE ID TIME IPRED IWRES NOPRINT ONEHEADER FILE=sdtab5.dat
-;$TABLE ID CL ETA1 ETA2 NOPRINT NOAPPEND ONEHEADER FILE=patab5.dat
-;$TABLE ID WGT APGR NOPRINT NOAPPEND ONEHEADER FILE=cotab5.dat
 $COVARIANCE
 
 
