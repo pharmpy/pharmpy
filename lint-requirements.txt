@@ -8,7 +8,7 @@ flake8-pyproject==1.2.4
 pydoclint==0.11.1
 pyright==1.1.414
 readme-renderer==46.0
-ruff==0.17.2
+ruff==0.17.3
 twine==7.0.0 
 # Indirect dependencies
 build==1.6.1
