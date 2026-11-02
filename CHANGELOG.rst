@@ -9,6 +9,7 @@ New features
 ============
 
 * Add :code:`modeling.read_dataset`
+* Add :code:`modeling.load_example_dataset`
 
 .. _2.3.0:
 

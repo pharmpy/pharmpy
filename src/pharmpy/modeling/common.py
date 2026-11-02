@@ -38,6 +38,8 @@ from pharmpy.model import (
 )
 from pharmpy.model.statements import Output
 
+from .data import read_dataset
+
 
 def read_model(path: str | Path, missing_data_token: str | None = None) -> Model:
     """Read model from file
@@ -384,7 +386,7 @@ def load_example_model(name: str) -> Model:
     Parameters
     ----------
     name : str
-        Name of the model. Currently available models are "pheno" and "pheno_linear"
+        Name of the model. Currently available models are "pheno", "pheno_linear", and "moxo"
 
     Returns
     -------
@@ -423,6 +425,61 @@ def load_example_model(name: str) -> Model:
     path = Path(__file__).resolve().parent.parent / 'internals' / 'example_models' / (name + '.mod')
     model = read_model(path)
     return model
+
+
+def load_example_dataset(name: str) -> pandas.DataFrame:
+    """Load an example dataset
+
+    Load an example dataset from dataset built into Pharmpy
+
+    Parameters
+    ----------
+    name : str
+        Name of the model of the dataset. Currently available models are "pheno", "pheno_linear", and "moxo"
+
+    Returns
+    -------
+    pd.DataFrame
+        The dataset
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_dataset
+    >>> df = load_example_dataset("pheno")
+    >>> df
+         ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
+    1     1    0.0  25.0  1.4   7.0   0.0  1.0  1.0
+    2     1    2.0   0.0  1.4   7.0  17.3  0.0  0.0
+    3     1   12.5   3.5  1.4   7.0   0.0  1.0  1.0
+    4     1   24.5   3.5  1.4   7.0   0.0  1.0  1.0
+    5     1   37.0   3.5  1.4   7.0   0.0  1.0  1.0
+    ..   ..    ...   ...  ...   ...   ...  ...  ...
+    740  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
+    741  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
+    742  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
+    743  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
+    744  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
+    <BLANKLINE>
+    [744 rows x 8 columns]
+
+    """
+    available = ('moxo', 'pheno', 'pheno_linear')
+    if name not in available:
+        raise ValueError(f'Unknown example model {name}. Available examples: {available}')
+
+    if name == 'moxo':
+        file_extension = '.csv'
+    else:
+        file_extension = '.dta'
+
+    path = (
+        Path(__file__).resolve().parent.parent
+        / 'internals'
+        / 'example_models'
+        / (name + file_extension)
+    )
+    df = read_dataset(path, format='nonmem')
+    return df
 
 
 def get_model_covariates(model: Model, strings: bool = False) -> list[str] | list[Expr]:

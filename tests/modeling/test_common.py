@@ -25,6 +25,7 @@ from pharmpy.modeling import (
     get_model_code,
     get_model_covariates,
     get_nested_model,
+    load_example_dataset,
     load_example_model,
     read_model,
     read_model_from_string,
@@ -118,6 +119,21 @@ def test_load_example_model_moxo():
 def test_load_example_model_error():
     with pytest.raises(ValueError):
         load_example_model("grekztalb23=")
+
+
+def test_load_example_dataset_pheno():
+    df = load_example_dataset("pheno")
+    assert len(df) == 744
+
+
+def test_load_example_dataset_moxo():
+    df = load_example_dataset("moxo")
+    assert len(df) == 1148
+
+
+def test_load_example_dataset_error():
+    with pytest.raises(ValueError):
+        load_example_model("x")
 
 
 def test_get_model_covariates_pheno(pheno):

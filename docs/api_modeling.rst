@@ -22,6 +22,7 @@ General functions
     get_model_code
     get_model_covariates
     get_nested_model
+    load_example_dataset
     load_example_model
     print_model_code
     print_model_symbols
