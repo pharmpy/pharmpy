@@ -8,7 +8,8 @@
 Dataset
 =======
 
-Datasets in Pharmpy are represented using the :py:class:`pd.DataFrame` class and a separate
+Datasets in Pharmpy are represented using the :py:class:`pd.DataFrame` class (which becomes a regular
+:code:`data.frame` in pharmr) and a separate
 :py:class:`pharmpy.model.DataInfo` class that provides additional information about the dataset. This could contain
 for example a description of how the columns are used in the model or the units used for the data.
 
@@ -16,7 +17,7 @@ for example a description of how the columns are used in the model or the units 
 Retrieving the dataset from a model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The dataset connected to a model can be retrieved from the `dataset` attribute.
+The dataset connected to a model can be retrieved via the :code:`dataset` attribute.
 
 .. pharmpy-execute::
    :hide-output:
@@ -52,16 +53,17 @@ Note that all values here are strings
 Update the dataset of a model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since the Pharmpy dataset is a pandas dataframe, it can be manipulated as such. A new or updated dataset can be set to
+Since the Pharmpy dataset is a dataframe, it can be manipulated as such. A new or updated dataset can be set to
 a model like this:
 
 .. pharmpy-execute::
    :hide-output:
 
    import numpy as np
+   from pharmpy.modeling import set_dataset
 
    df['DV'] = np.log(df['DV'], where=(df['DV'] != 0).values)
-   model = model.replace(dataset=df)
+   model = set_dataset(model, df)
 
 The :py:mod:`pharmpy.modeling` module has several functions to examine and modify the dataset, see the user guide for
 :ref:`dataset modeling<modeling_dataset>`.
@@ -72,7 +74,7 @@ The :py:mod:`pharmpy.modeling` module has several functions to examine and modif
 DataInfo
 ~~~~~~~~
 
-Every model has a `DataInfo` object that describes the dataset.
+Every model has a :py:class:`DataInfo <pharmpy.model.DataInfo>` object that describes the dataset.
 
 .. note::
     A datainfo file can be created for .csv-files `here <https://pharmpy.github.io/amdui/datainfo>`_.
@@ -108,11 +110,41 @@ the read in dataset to the current dataset.
 ColumnInfo
 ==========
 
-Each column of the dataset can here be given some additional information.
+Each column of the dataset is described by a :py:class:`ColumnInfo <pharmpy.model.ColumnInfo>` object which contains information on the datatype, if the column is droped or not and which variable or variables are contained in this column.
 
 .. pharmpy-execute::
 
     model.datainfo['AMT']
+
+drop
+----
+
+A boolean that is set to `True` if the column is not going to be used by the model or `False` otherwise.
+
+datatype
+--------
+
+The datatype of the column data. This describes the low level encoding of the data. See :attr:`pharmpy.ColumnInfo.datatype` for a list of all supported datatypes.
+
+variable_id
+-----------
+
+If the column holds data for multiple variables (e.g. `DV` for datasets with multiple types of observations) :code:`variable_id` will be set to the name of the column acting as the selector (e.g. `DVID`).
+
+variables
+---------
+
+Description of the variable if only one or a mapping from selector values to variable if more than one.
+
+
+DataVariable
+============
+
+Each column describes one or more :py:class:`data variables <pharmpy.model.DataVariable>`.
+
+.. pharmpy-execute::
+
+    model.datainfo['AMT'].variables
 
 type
 ----
@@ -126,11 +158,15 @@ scale
 
 The ``scale`` of a column is the statistical scale of measurement of its data using "Stevens' typology" (see https://en.wikipedia.org/wiki/Level_of_measurement). The scale can be one of ``nominal`` for non-ordered categorical data, ``ordinal`` for ordered categorical data, ``interval`` for numeric data were ratios cannot be taken and ``ratio`` for general numeric data. Note that ``nominal`` and ``ordinal`` data is always discrete, but ``interval`` and ``ratio`` data can be both discrete and continuous.
 
-continuous
+count
+-----
+
+If this is ``True`` the data is count.
+
+properties
 ----------
 
-If this is ``True`` the data is continuous and if it is ``False`` it is discrete. Note that ratio data can be seen as discrete for example
-if it has been rounded to whole numbers and cannot take on any real number.
+Various metadata for the data variable.
 
 categories
 ----------
@@ -142,55 +178,41 @@ unit
 
 The physical unit of the column data. Units can be input as a string, e.g. "kg" or "mg/L."
 
-drop
-----
-
-A boolean that is set to `True` if the column is not going to be used by the model or `False` otherwise.
-
-datatype
---------
-
-The datatype of the column data. This describes the low level encoding of the data. See :attr:`pharmpy.ColumnInfo.datatype` for a list of all supported datatypes.
-
 descriptor
 ----------
 
 The descriptor can provide a high level understanding of the data in a machine readable way. See :attr:`pharmpy.ColumnInfo.descriptor` for a list of all supported descriptors.
 
+molar_mass
+----------
+
+The molar mass in of the substance in g/mol.
+
 datainfo file
 =============
 
-If a dataset file has an accompanying file with the same name and the extension ``.datainfo`` this will be read in when handling the dataset in Pharmpy. This file is a representation (a serialization) of a ``DataInfo`` object and its content can be created manually, with an external tool or by Pharmpy. Here is an example of the content:
+If a dataset file has an accompanying file with the same name and the extension ``.datainfo`` this will be read in when handling the dataset in Pharmpy. This file is a representation (i.e. a serialization) of a ``DataInfo`` object and its content can be created manually, with an external tool or by Pharmpy. Here is an example of the content:
 
 .. pharmpy-execute::
 
     di.to_json()
 
-It is a json file with the following top level structure:
-
-.. csv-table::
-   :header: "Name", "Type"
-
-      ``columns``, array of columns
-      ``path``, string
-      ``separator``, string
-
-And the columns structure:
-
-.. csv-table::
-    :header: Name, Type
-
-        ``type``, string
-        ``scale``, string
-        ``continuous``, boolean
-        ``categories``, array of numbers or string-number map
-        ``unit``, string
-        ``drop``, boolean
-        ``datatype``, string
-        ``descriptor``, string
-
 
 .. _nonmem_dataset:
+
+Working with DataInfo
+=====================
+
+There are functions to create and manipulate ``DataInfo`` objects either inside models or stand alone.
+
+.. pharmpy-execute::
+
+    from pharmpy.modeling import annotate_unit, set_property
+
+    model = annotate_unit(model, "WGT", "kg")
+    di = set_property(model.datainfo, "APGR", "categories", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+For a list of available functions see the :ref:`reference documentation <dataset_api>`.
 
 ~~~~~~~~~~~~~~
 NONMEM dataset

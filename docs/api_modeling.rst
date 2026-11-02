@@ -45,6 +45,8 @@ Creating basic models
     create_basic_pd_model
     create_basic_pk_model
 
+.. _dataset_api:
+
 Dataset handling
 ----------------
 
