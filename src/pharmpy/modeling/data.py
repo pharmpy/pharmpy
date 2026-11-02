@@ -34,10 +34,59 @@ from pharmpy.model import (
 )
 from pharmpy.model.model import update_datainfo
 
-from .datainfo import create_datainfo, create_nonmem_annotation, read_datainfo
+from .datainfo import (
+    create_datainfo,
+    create_nonmem_annotation,
+    read_datainfo,
+    read_dataset_header_and_separator,
+)
 from .evaluation import evaluate_expression
 from .expressions import get_dv_symbol
 from .iterators import resample_data
+
+
+def read_dataset(path: str | Path, format: str | None = None) -> pd.DataFrame:
+    """Read a dataset given a path to a dataset file
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to dataset
+    format : str
+        File format of dataset (default csv. Can also be set to 'nonmem')
+
+    Returns
+    -------
+    pd.DataFrame
+        The dataset
+
+    Example
+    -------
+    >>> from pharmpy.modeling import read_dataset
+    >>> model = read_dataset("/home/run1.csv")    # doctest: +SKIP
+    """
+    if format != 'nonmem' and format is not None:
+        raise ValueError(f'Format not supported: {format}')
+
+    path = normalize_user_given_path(path)
+
+    colnames, separator = read_dataset_header_and_separator(path)
+    if format == 'nonmem':
+        from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
+
+        df = read_nonmem_dataset(
+            path,
+            ignore_character='@',
+            drop=None,
+            colnames=colnames,
+        )
+    else:
+        df = pd.read_csv(
+            path,
+            sep=separator,
+        )
+        df = reset_index(df)
+    return df
 
 
 def get_ids(model: Model) -> list[int]:

@@ -11,7 +11,7 @@ from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.model import ColumnInfo, DataInfo, DataVariable, Model
 
 
-def _read_dataset_header_and_separator(path) -> tuple[list[str], str]:
+def read_dataset_header_and_separator(path) -> tuple[list[str], str]:
     with open(path) as file:
         first_line = file.readline()
         if ',' not in first_line:
@@ -53,7 +53,7 @@ def create_datainfo(path_or_df: str | Path | pd.DataFrame) -> DataInfo:
             di = di.replace(path=path)
             return di
 
-        _, separator = _read_dataset_header_and_separator(path)
+        _, separator = read_dataset_header_and_separator(path)
 
     else:
         separator = ","
@@ -65,7 +65,7 @@ def create_datainfo(path_or_df: str | Path | pd.DataFrame) -> DataInfo:
 
 def create_nonmem_annotation(path_or_df):
     if not isinstance(path_or_df, pd.DataFrame):
-        colnames, _ = _read_dataset_header_and_separator(path_or_df)
+        colnames, _ = read_dataset_header_and_separator(path_or_df)
     else:
         colnames = path_or_df.columns
 

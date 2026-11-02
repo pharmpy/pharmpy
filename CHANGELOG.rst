@@ -2,6 +2,14 @@
 ..
 .. SPDX-License-Identifier: CC0-1.0
 
+next version
+------------
+
+New features
+============
+
+* Add :code:`modeling.read_dataset`
+
 .. _2.3.0:
 
 2.3.0 (2026-10-29)

@@ -49,6 +49,7 @@ from pharmpy.modeling import (
     list_time_varying_covariates,
     load_dataset,
     read_datainfo,
+    read_dataset,
     remove_loq_data,
     remove_unused_columns,
     reset_dataset,
@@ -64,6 +65,21 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.data import get_observations_and_exclusion_criteria
 from pharmpy.modeling.datainfo import create_datainfo
+
+
+def test_read_dataset(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    dataset_path = testdata / 'nonmem' / 'pheno.dta'
+    df_nonmem = read_dataset(dataset_path, format='nonmem')
+    assert df_nonmem.equals(model.dataset)
+    df_csv = read_dataset(dataset_path, format=None)
+    assert df_csv.astype(df_nonmem.dtypes).equals(df_nonmem)
+
+    with pytest.raises(ValueError):
+        read_dataset(dataset_path, 'x')
+
+    with pytest.raises(FileNotFoundError):
+        read_dataset('x')
 
 
 def test_get_ids(load_example_model_for_test):

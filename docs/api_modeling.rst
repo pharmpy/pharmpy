@@ -25,6 +25,7 @@ General functions
     load_example_model
     print_model_code
     print_model_symbols
+    read_dataset
     read_model
     read_model_from_string
     remove_unused_parameters_and_rvs
