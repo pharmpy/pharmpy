@@ -24,6 +24,7 @@ from pharmpy.modeling import (
     set_peripheral_compartments,
     set_zero_order_absorption,
 )
+from pharmpy.modeling.datainfo import create_nonmem_annotation
 from pharmpy.tools import read_results
 from pharmpy.tools.amd.run import (
     _create_model_summary,
@@ -49,8 +50,8 @@ from pharmpy.tools.amd.run import (
     remove_added_covariates_from_search_space,
     split_structural_search_space,
     update_iiv_search_space,
+    validate_dataset,
     validate_input,
-validate_dataset,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.run import read_modelfit_results
@@ -1190,20 +1191,63 @@ def test_later_input_validation_empty(load_example_model_for_test):
 
 
 def test_validate_dataset_basic_pk(testdata):
-    model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno.dta')
+    model = create_basic_pk_model('iv', testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv')
+    di = create_nonmem_annotation(model.dataset)
+    model = model.replace(datainfo=di)
 
     validate_dataset(model, 'basic_pk', 'iv', None)
     validate_dataset(model, 'basic_pk', 'oral', None)
     validate_dataset(model, 'basic_pk', 'ivoral', None)
 
-
+    columns = ['ID', 'TIME', 'DV', 'CMT', 'AMT']
+    for col_name in columns:
+        datavar = model.datainfo.find_variable(col_name).replace(type='unknown')
+        ci = model.datainfo[col_name].replace(variable_mapping=datavar)
+        di = model.datainfo.set_column(ci)
+        model_new = model.replace(datainfo=di)
+        with pytest.raises(ValueError, match='Could not find column of type'):
+            validate_dataset(model_new, 'basic_pk', 'ivoral', None)
 
 
 @pytest.mark.parametrize(
-    'model_path, modeltype, administration, dv_types, match',
-    [
-        ('pheno.mod', 'basic_pk', 'iv', None, 'Invalid `search_space`'),
-    ],
+    'modeltype',
+    ['pkpd', 'tmdd', 'drug_metabolite'],
 )
-def test_validate_dataset_raises_basic_pk(load_model_for_test, testdata, model_path, modeltype, administration, dv_types, match):
-    pass
+def test_validate_dataset_multiple_dvs(load_model_for_test, testdata, modeltype):
+    model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno_pd.csv')
+
+    validate_dataset(model, modeltype, 'iv', None)
+
+    datavar = model.datainfo.find_variable('DVID').replace(type='unknown')
+    ci = model.datainfo['DVID'].replace(variable_mapping=datavar)
+    di = model.datainfo.set_column(ci)
+    model_new = model.replace(datainfo=di)
+    with pytest.raises(ValueError, match='Could not find column of type `dvid`'):
+        validate_dataset(model_new, modeltype, 'iv', None)
+
+
+def test_validate_dataset_raises_drug_metabolite(load_model_for_test, testdata):
+    model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno_pd.csv')
+    df = model.dataset.copy()
+    df['DVID'] = df['DVID'] - 1
+    model = model.replace(dataset=df)
+
+    with pytest.raises(ValueError, match='Invalid values in column `DVID`'):
+        validate_dataset(model, 'drug_metabolite', 'iv', None)
+
+
+def test_validate_dataset_raises_tmdd(load_model_for_test, testdata):
+    model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno_pd.csv')
+
+    with pytest.raises(ValueError, match='Invalid values in column `DVID`'):
+        validate_dataset(model, 'tmdd', 'iv', {'drug': 2, 'target': 3})
+
+
+def test_validate_dataset_multiple_dvs_dvid_float(load_model_for_test, testdata):
+    model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno_pd.csv')
+    df = model.dataset.copy()
+    df['DVID'] = df['DVID'].astype(float)
+    model = model.replace(dataset=df)
+
+    validate_dataset(model, 'drug_metabolite', 'iv', None)
+    validate_dataset(model, 'tmdd', 'iv', {'drug': 1, 'target': 2})

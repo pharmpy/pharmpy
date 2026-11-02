@@ -279,9 +279,14 @@ def run_amd_task(
 
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
-    later_input_validation(
-        model, search_space, allometric_variable, occasion, mechanistic_covariates
-    )
+
+    try:
+        later_input_validation(
+            model, search_space, allometric_variable, occasion, mechanistic_covariates
+        )
+        validate_dataset(model, modeltype, administration, dv_types)
+    except ValueError as e:
+        context.abort_workflow(str(e))
 
     model = add_predictions(model, ['PRED', 'CIPREDI'])
     model = add_residuals(model, ['CWRES'])
@@ -1819,6 +1824,42 @@ def later_input_validation(
                         f' search_space: got `{cov}`,'
                         f' must be in {sorted(allowed_covariates)}.'
                     )
+
+
+def validate_dataset(model, modeltype, administration, dv_types):
+    di = model.datainfo
+
+    mandatory_column_types = ['id', 'idv', 'dv', 'dose']
+    for col_type in mandatory_column_types:
+        if not di.find_column_by_type(col_type):
+            raise ValueError(f'Could not find column of type `{col_type}`')
+
+    if modeltype in ('pkpd', 'tmdd', 'drug_metabolite'):
+        dvid_col = di.find_column_by_type('dvid')
+        if not dvid_col:
+            raise ValueError(
+                f'Could not find column of type `dvid` (needed for model type {modeltype})'
+            )
+        dvid_values = set(model.dataset[dvid_col.name])
+        if modeltype == 'drug_metabolite' and dvid_values != {1, 2}:
+            raise ValueError(
+                f'Invalid values in column `{dvid_col.name}` for model type {modeltype}: got {sorted(dvid_values)} (valid values are 1 & 2)'
+            )
+        if modeltype == 'tmdd' and dv_types:
+            diff = dvid_values - set(dv_types.values())
+            if diff:
+                raise ValueError(
+                    f'Invalid values in column `{dvid_col.name}` for model type {modeltype}: values {sorted(diff)} not in `dv_types` ({sorted(dv_types.values())})'
+                )
+
+    if (
+        administration == 'ivoral'
+        and not di.find_column_by_type('compartment')
+        and not di.find_column_by_type('admid')
+    ):
+        raise ValueError(
+            f'Could not find column of type `compartment` or `admid` (needed for administration {administration})'
+        )
 
 
 def get_subtool_order(strategy):
