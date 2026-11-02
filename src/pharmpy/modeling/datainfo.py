@@ -98,6 +98,9 @@ def create_nonmem_annotation(path_or_df):
         elif colname == 'AMT':
             var = DataVariable.create(colname, type='dose', scale='ratio')
             info = ColumnInfo.create(colname, var)
+        elif colname == 'CMT':
+            var = DataVariable.create(colname, type='compartment', scale='nominal')
+            info = ColumnInfo.create(colname, var)
         elif colname == 'RATE':
             var = DataVariable.create(colname, type='rate', scale='ratio')
             info = ColumnInfo.create(colname, var)

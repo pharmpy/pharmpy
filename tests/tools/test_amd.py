@@ -50,6 +50,7 @@ from pharmpy.tools.amd.run import (
     split_structural_search_space,
     update_iiv_search_space,
     validate_input,
+validate_dataset,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.run import read_modelfit_results
@@ -1186,3 +1187,23 @@ def test_later_input_validation_empty(load_example_model_for_test):
         occasion=None,
         mechanistic_covariates=None,
     )
+
+
+def test_validate_dataset_basic_pk(testdata):
+    model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno.dta')
+
+    validate_dataset(model, 'basic_pk', 'iv', None)
+    validate_dataset(model, 'basic_pk', 'oral', None)
+    validate_dataset(model, 'basic_pk', 'ivoral', None)
+
+
+
+
+@pytest.mark.parametrize(
+    'model_path, modeltype, administration, dv_types, match',
+    [
+        ('pheno.mod', 'basic_pk', 'iv', None, 'Invalid `search_space`'),
+    ],
+)
+def test_validate_dataset_raises_basic_pk(load_model_for_test, testdata, model_path, modeltype, administration, dv_types, match):
+    pass
