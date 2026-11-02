@@ -507,5 +507,8 @@ def rank_models(
 
 def get_best_model_entry(model_entries, final_model):
     best_model_entry = [me for me in model_entries if me.model == final_model]
-    assert len(best_model_entry) == 1
+    if len(best_model_entry) != 1:
+        raise AssertionError(
+            f'Unexpected number of best models found: got {len(best_model_entry)} (out of {len(model_entries)} model entries)'
+        )
     return best_model_entry[0]
