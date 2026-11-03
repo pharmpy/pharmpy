@@ -26,7 +26,7 @@ def pytest_runtest_setup(item):
 
 @pytest.fixture(scope="session", autouse=True)
 def configure_pandas_display():
-    """This must be in sync with docs/conf.py"""
+    # This must be in sync with docs/conf.py
     import pandas as pd
 
     pd.set_option('display.width', 1000)

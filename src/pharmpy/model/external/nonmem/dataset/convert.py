@@ -45,8 +45,8 @@ _dD = re.compile(r"[dD]")
 
 @lru_cache(maxsize=4096)
 def convert_fortran_number(number_string: str):
-    """This function will try to convert the number_string from the general fortran exponential format
-    into an np.float64. It covers "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will
+    """Try to convert the number_string from the general fortran exponential format
+    into an np.float64. Cover "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will
     return None to signal that the number_string is not of the special form.
 
     Move somewhere else. Will be used in output parsing as well

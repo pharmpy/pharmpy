@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 """
-This module contain functions for checking the format of an nlmixr model conversion
+Functions for checking the format of an nlmixr model conversion
 in order to inform the users of any errors or mistakes that can could be made.
 
 It serves purpose in catching known errors that are not yet solved, or limitations
