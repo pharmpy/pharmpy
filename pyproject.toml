@@ -109,8 +109,8 @@ convention = "numpy"
 "src/pharmpy/tools/**/?[!o]*" = ["ANN"]
 "src/pharmpy/internals/parse/treeprint.py" = ["T201"]
 "src/pharmpy/tools/external/nlmixr/run.py" = ["T201"]
-"src/pharmpy/reporting/jupyter_sphinx/*" = ["RUF012"]
-"src/pharmpy/reporting/altairplot.py" = ["RUF012"]
+"src/pharmpy/reporting/jupyter_sphinx/*" = ["RUF012", "D"]
+"src/pharmpy/reporting/altairplot.py" = ["RUF012", "D"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = [

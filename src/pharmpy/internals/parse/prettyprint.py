@@ -55,7 +55,8 @@ def transform(ast_tree_or_token: Tree | Leaf, content: bool | Literal['full'] = 
     Args:
         content: If True, include text preview (or all if 'full') on each node.
 
-    Returns:
+    Returns
+    -------
         Multiline string, ready for the printing press.
     """
 

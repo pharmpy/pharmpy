@@ -83,7 +83,8 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
 
     Created in :meth:`GenericParser.parse` by :meth:`transform`, from :class:`lark.Tree`.
 
-    Attributes:
+    Attributes
+    ----------
         self.rule: Name, in common with :class:`.AttrToken`.
         self.rules: Names of children.
         self.eval: Transformed data type, in common with :class:`.AttrToken`.
@@ -108,7 +109,8 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
             rule: Name of root tree (__ANON_0 if False).
             items: Child (tree) nodes or content (token) nodes.
 
-        Raises:
+        Raises
+        ------
             TypeError: 'items' not iterable or instance of 'str' (only leaves shall contain 'str').
             ValueError: 'items' empty (trees can't be empty).
 
@@ -359,7 +361,8 @@ class GenericParser(ABC):
     1. Lex and parse a 'buffer' using Lark_ (from :attr:`grammar` file). Builds AST.
     2. Convert to :class:`AttrTree` for immutability and convenience traversal.
 
-    Attributes:
+    Attributes
+    ----------
         self.buffer: Buffer parsed by :meth:`parse`.
         self.grammar: Path to grammar file.
         self.root: Root of final tree. Instance of :class:`AttrTree`.
