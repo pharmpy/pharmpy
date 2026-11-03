@@ -676,7 +676,7 @@ def create_start_model(input, modeltype, administration, cl_init, vc_init, mat_i
     else:
         model = create_basic_pk_model(
             administration,
-            dataset_path=dataset_path,
+            input=dataset_path,
             cl_init=cl_init,
             vc_init=vc_init,
             mat_init=mat_init,

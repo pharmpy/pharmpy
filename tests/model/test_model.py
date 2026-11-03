@@ -193,7 +193,7 @@ def test_dict(load_model_for_test, testdata):
 
 def test_dict_generic(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
-    model = create_basic_pk_model('iv', dataset_path=path)
+    model = create_basic_pk_model('iv', input=path)
     assert model.code
 
 

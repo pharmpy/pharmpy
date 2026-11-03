@@ -1063,7 +1063,7 @@ def test_convert_model_iv(testdata, tmp_path):
     # FIXME: Move to unit test for amd?
     with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_rate.dta', '.')
-        start_model = create_basic_pk_model(administration='iv', dataset_path='pheno_rate.dta')
+        start_model = create_basic_pk_model(administration='iv', input='pheno_rate.dta')
         assert 'RATE' in start_model.datainfo.names
         convert_model(start_model)
 

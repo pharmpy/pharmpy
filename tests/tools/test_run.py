@@ -711,7 +711,7 @@ def test_strictness_parameters(testdata, load_model_for_test):
     ],
 )
 def test_mbic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs, penalties):
-    base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
+    base_model = create_basic_pk_model('oral', input=testdata / 'nonmem' / 'pheno.dta')
     for func in base_funcs:
         base_model = func(base_model)
     if 'base_model' in kwargs:
@@ -757,7 +757,7 @@ def test_mbic_penalty(testdata, base_funcs, search_space, kwargs, candidate_func
     ],
 )
 def test_mbic_penalty_raises(testdata, kwargs, error):
-    model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
+    model = create_basic_pk_model('oral', input=testdata / 'nonmem' / 'pheno.dta')
     with pytest.raises(ValueError, match=error):
         calculate_mbic_penalty(model, **kwargs)
 

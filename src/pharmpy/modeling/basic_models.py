@@ -8,10 +8,12 @@
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Literal
 
 from pharmpy.basic import BooleanExpr, Expr
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     Assignment,
@@ -45,10 +47,11 @@ from .parameters import set_initial_estimates
 
 def create_basic_pk_model(
     administration: str = 'iv',
-    dataset_path: str | Path | None = None,
+    input: str | Path | pd.DataFrame | None = None,
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
+    dataset_path: str | Path | None = None,
 ) -> Model:
     """
     Creates a basic pk model of given type. The model will be a one compartment model, with first
@@ -59,14 +62,16 @@ def create_basic_pk_model(
     ----------
     administration : str
         Type of PK model to create. Supported are 'iv', 'oral' and 'ivoral'
-    dataset_path : str or Path
-        Optional path to a dataset
+    input : str, Path, or dataframe
+        Optional path to a dataset or the dataset itself
     cl_init : float
         Initial estimate of the clearance parameter
     vc_init : float
         Initial estimate of the central volume parameter
     mat_init : float
         Initial estimate of the mean absorption time parameter (if applicable)
+    dataset_path : str or Path
+        Deprecated. Use input instead
 
     Return
     ------
@@ -80,17 +85,13 @@ def create_basic_pk_model(
 
     """
     if dataset_path is not None:
-        dataset_path = normalize_user_given_path(dataset_path)
-        di = create_datainfo(dataset_path)
-        df, di = read_dataset_from_datainfo_update(di, datatype='nonmem')
-    else:
-        di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
-        di_ci = [
-            ColumnInfo.create(key, DataVariable.create(key, type=value))
-            for key, value in di_col_dict.items()
-        ]
-        di = DataInfo.create(di_ci)
-        df = None
+        input = dataset_path
+        warnings.warn(
+            "The option 'dataset_path' for create_basic_pk_model is deprecated. Use 'input' instead",
+            DeprecationWarning,
+        )
+
+    df, di = prepare_dataset_and_datainfo(input)
 
     if administration not in [
         'iv',
@@ -259,7 +260,28 @@ def create_basic_pk_model(
     return model
 
 
+def prepare_dataset_and_datainfo(input):
+    if isinstance(input, (str, Path)):
+        dataset_path = normalize_user_given_path(input)
+        di = create_datainfo(dataset_path)
+        df, di = read_dataset_from_datainfo_update(di, datatype='nonmem')
+    elif isinstance(input, pd.DataFrame):
+        df = input
+        di = create_datainfo(df)
+    else:
+        di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
+        di_ci = [
+            ColumnInfo.create(key, DataVariable.create(key, type=value))
+            for key, value in di_col_dict.items()
+        ]
+        di = DataInfo.create(di_ci)
+        df = None
+
+    return df, di
+
+
 def create_basic_pd_model(
+    input: str | Path | pd.DataFrame | None = None,
     dataset_path: str | Path | None = None,
 ) -> Model:
     """
@@ -270,8 +292,10 @@ def create_basic_pd_model(
 
     Parameters
     ----------
+    input : str, Path, or dataframe
+        Optional path to a dataset or the dataset itself
     dataset_path : str or Path
-        Optional path to a dataset
+        Deprecated. Use input instead
 
     Return
     ------
@@ -284,19 +308,14 @@ def create_basic_pd_model(
     >>> model = create_basic_pd_model()
 
     """
-
     if dataset_path is not None:
-        dataset_path = normalize_user_given_path(dataset_path)
-        di = create_datainfo(dataset_path)
-        df, di = read_dataset_from_datainfo_update(di, datatype='nonmem')
-    else:
-        di_col_dict = {'ID': 'id', 'TIME': 'idv', 'DV': 'dv'}
-        di_ci = [
-            ColumnInfo.create(key, DataVariable.create(key, type=value))
-            for key, value in di_col_dict.items()
-        ]
-        di = DataInfo.create(di_ci)
-        df = None
+        input = dataset_path
+        warnings.warn(
+            "The option 'dataset_path' for create_basic_pk_model is deprecated. Use 'input' instead",
+            DeprecationWarning,
+        )
+
+    df, di = prepare_dataset_and_datainfo(input)
 
     pop_b = Parameter.create('POP_B', init=0.1)
     sigma = Parameter.create('sigma', init=0.1)
@@ -339,7 +358,9 @@ def create_basic_pd_model(
 
 
 def create_basic_kpd_model(
-    dataset_path: str | Path | None = None, driver: Literal['ir', 'amount'] = 'ir'
+    input: str | Path | pd.DataFrame | None = None,
+    driver: Literal['ir', 'amount'] = 'ir',
+    dataset_path: str | Path | None = None,
 ) -> Model:
     """
     Creates a basic kpd model. The model will be a one compartment model.
@@ -347,11 +368,13 @@ def create_basic_kpd_model(
 
     Parameters
     ----------
-    dataset_path : str or Path
-        Optional path to a dataset
+    input : str, Path, or dataframe
+        Optional path to a dataset or the dataset itself
     driver : str
         Driver variable of the KPD model. Can either be 'ir' (virtual infusion
         rate) or 'amount'.
+    dataset_path : str or Path
+        Deprecated. Use input instead
 
     Return
     ------
@@ -370,17 +393,13 @@ def create_basic_kpd_model(
         )
 
     if dataset_path is not None:
-        dataset_path = normalize_user_given_path(dataset_path)
-        di = create_datainfo(dataset_path)
-        df, di = read_dataset_from_datainfo_update(di, datatype='nonmem')
-    else:
-        di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
-        di_ci = [
-            ColumnInfo.create(key, DataVariable(key, type=value))
-            for key, value in di_col_dict.items()
-        ]
-        di = DataInfo.create(di_ci)
-        df = None
+        input = dataset_path
+        warnings.warn(
+            "The option 'dataset_path' for create_basic_pk_model is deprecated. Use 'input' instead",
+            DeprecationWarning,
+        )
+
+    df, di = prepare_dataset_and_datainfo(input)
 
     pop_b = Parameter.create('POP_B', init=0.1)
     pop_ke = Parameter('POP_KE', init=0.1, lower=0)

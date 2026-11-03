@@ -14,6 +14,7 @@ from pharmpy.modeling import (
     create_basic_pd_model,
     create_basic_pk_model,
     drop_columns,
+    load_example_dataset,
     set_zero_order_absorption,
 )
 
@@ -28,7 +29,7 @@ def test_create_basic_pk_model(testdata, tmp_path):
 
     dataset_path = testdata / 'nonmem/pheno.dta'
     model = create_basic_pk_model(
-        administration='oral', dataset_path=dataset_path, cl_init=0.01, vc_init=1.0, mat_init=0.1
+        administration='oral', input=dataset_path, cl_init=0.01, vc_init=1.0, mat_init=0.1
     )
     model = convert_model(model, 'nonmem')
     run1 = set_zero_order_absorption(model)
@@ -64,7 +65,7 @@ def test_create_basic_pk_model(testdata, tmp_path):
 
     dataset_path = testdata / 'nonmem/pheno_pd.csv'
     model = create_basic_pk_model(
-        administration='oral', dataset_path=dataset_path, cl_init=0.01, vc_init=1.0, mat_init=0.1
+        administration='oral', input=dataset_path, cl_init=0.01, vc_init=1.0, mat_init=0.1
     )
     assert not model.dataset.empty
     assert model.datainfo._separator == r'\s+'
@@ -73,7 +74,7 @@ def test_create_basic_pk_model(testdata, tmp_path):
     pheno_filtered_path = testdata / 'nonmem' / 'pheno_no_obs_1stID.dta'
     model = create_basic_pk_model(
         administration='oral',
-        dataset_path=pheno_filtered_path,
+        input=pheno_filtered_path,
         cl_init=0.01,
         vc_init=1.0,
         mat_init=0.1,
@@ -81,7 +82,38 @@ def test_create_basic_pk_model(testdata, tmp_path):
     assert len(model.datainfo.provenance) == 2
 
     with pytest.raises(ValueError):
-        create_basic_pk_model(administration='oral', dataset_path=testdata / 'nonmem' / 'file.csv')
+        create_basic_pk_model(administration='oral', input=testdata / 'nonmem' / 'file.csv')
+
+
+def test_create_basic_pk_model_from_df():
+    df = load_example_dataset('pheno')
+
+    model = create_basic_pk_model('iv', input=df)
+    assert len(model.parameters) == 6
+    assert len(model.datainfo.provenance) == 0
+    assert model.dataset.equals(df)
+    assert model.datainfo.find_column_by_type('dv') is not None
+
+    model = create_basic_pk_model('oral', input=df)
+    assert len(model.parameters) == 8
+    assert len(model.datainfo.provenance) == 0
+    assert model.dataset.equals(df)
+    assert model.datainfo.find_column_by_type('dv') is not None
+
+    df = model.dataset.copy()
+    df['CMT'] = np.random.randint(1, 3, size=len(df))
+
+    model = create_basic_pk_model('ivoral', input=df)
+    assert len(model.statements.ode_system.dosing_compartments) == 2
+    assert len(model.datainfo.provenance) == 1
+    assert not model.dataset.equals(df)
+    assert model.datainfo.find_column_by_type('dv') is not None
+    assert model.datainfo.find_column_by_type('admid') is not None
+
+
+def test_create_basic_pk_model_deprecated(testdata):
+    with pytest.deprecated_call():
+        create_basic_pk_model('iv', dataset_path=testdata / 'nonmem' / 'pheno.dta')
 
 
 def test_create_basic_pk_model_raises():
@@ -97,6 +129,21 @@ def test_create_basic_pd_model(testdata):
     dataset_path = testdata / 'nonmem/pheno.dta'
     model = create_basic_pd_model(dataset_path)
     assert len(model.datainfo.provenance) == 1
+
+
+def test_create_basic_pd_model_from_df():
+    df = load_example_dataset('pheno')
+
+    model = create_basic_pd_model(df)
+    assert len(model.parameters) == 2
+    assert len(model.datainfo.provenance) == 0
+    assert model.dataset.equals(df)
+    assert model.datainfo.find_column_by_type('dv') is not None
+
+
+def test_create_basic_pd_model_deprecated(testdata):
+    with pytest.deprecated_call():
+        create_basic_pd_model(dataset_path=testdata / 'nonmem' / 'pheno.dta')
 
 
 def test_create_basic_kpd_model(testdata):
@@ -122,3 +169,28 @@ def test_create_basic_kpd_model(testdata):
 
     with pytest.raises(ValueError):
         create_basic_kpd_model(dataset_path, driver='x')
+
+
+def test_create_basic_kpd_model_from_df():
+    df = load_example_dataset('pheno')
+
+    model = create_basic_kpd_model(df, driver='ir')
+    assert len(model.parameters) == 4
+    assert len(model.datainfo.provenance) == 0
+    assert model.dataset.equals(df)
+    assert model.datainfo.find_column_by_type('dv') is not None
+    kpd_assign = model.statements.after_odes.find_assignment('KPD')
+    assert kpd_assign.expression == Expr.function('A_CENTRAL', Expr.symbol('t')) * Expr.symbol('KE')
+
+    model = create_basic_kpd_model(df, driver='amount')
+    assert len(model.parameters) == 4
+    assert len(model.datainfo.provenance) == 0
+    assert model.dataset.equals(df)
+    assert model.datainfo.find_column_by_type('dv') is not None
+    kpd_assign = model.statements.after_odes.find_assignment('KPD')
+    assert kpd_assign.expression == Expr.function('A_CENTRAL', Expr.symbol('t'))
+
+
+def test_create_basic_kpd_model_deprecated(testdata):
+    with pytest.deprecated_call():
+        create_basic_kpd_model(dataset_path=testdata / 'nonmem' / 'pheno.dta')

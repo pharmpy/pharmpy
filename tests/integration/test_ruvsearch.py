@@ -121,7 +121,7 @@ def test_ruvsearch_dummy(tmp_path, testdata, kwargs, no_of_steps, no_of_models):
 def test_ruvsearch_dv(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         dataset = testdata / "nonmem/pheno_pd.csv"
-        model = create_basic_pk_model("iv", dataset_path=dataset)
+        model = create_basic_pk_model("iv", input=dataset)
         model = convert_model(model, 'nonmem')
 
         pkpd_model = fix_parameters(model, model.parameters.names)

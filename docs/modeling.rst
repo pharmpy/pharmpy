@@ -101,7 +101,7 @@ As a starting point for this user guide, we will create a basic PK model using t
 
     dataset_path = path / 'pheno.dta'
     model_start = create_basic_pk_model(administration='oral',
-                                        dataset_path=dataset_path,
+                                        input=dataset_path,
                                         cl_init=0.01,
                                         vc_init=1.0,
                                         mat_init=0.1)

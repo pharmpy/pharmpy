@@ -11,6 +11,12 @@ New features
 * Add :code:`modeling.read_dataset`
 * Add :code:`modeling.load_example_dataset`
 
+Changes
+=======
+
+* Support dataframes as input to :code:`modeling.create_basic_pk_model`, :code:`modeling.create_basic_pk_model`, and
+  :code:`modeling.create_basic_pk_model` (deprecate option :code:`dataset_path` in favor of :code:`input`)
+
 .. _2.3.0:
 
 2.3.0 (2026-10-29)

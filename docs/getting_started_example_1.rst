@@ -47,7 +47,7 @@ Lets create a basic IV PK model:
 
     dataset_path = 'tests/testdata/nonmem/pheno.dta'
     model = create_basic_pk_model(administration='iv',
-                                        dataset_path=dataset_path,
+                                        input=dataset_path,
                                         cl_init=0.01,
                                         vc_init=1.0,
                                         mat_init=0.1)

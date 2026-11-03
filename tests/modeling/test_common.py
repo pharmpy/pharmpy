@@ -271,7 +271,7 @@ def test_dvid_column(testdata, load_model_for_test):
     ],
 )
 def test_get_nested_model(testdata, funcs, model):
-    model_base = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno_pd.csv')
+    model_base = create_basic_pk_model('oral', input=testdata / 'nonmem' / 'pheno_pd.csv')
     model_1 = set_name(model_base, 'model_1')
     model_2 = set_name(model_base, 'model_2')
     for func in funcs:

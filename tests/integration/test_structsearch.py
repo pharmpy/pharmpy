@@ -22,7 +22,7 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
     if os.name == 'nt' or sys.platform == 'darwin':  # needs to be fixed. Issue #1967
         pytest.skip("TODO Fails on Windows and Mac, temporarily skipping.")
     with chdir(tmp_path):
-        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = create_basic_pk_model('iv', input=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
         pk_model = filter_dataset(model, "DVID != 2")
         pk_res = fit(pk_model)
@@ -50,7 +50,7 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
 
 def test_pkpd_additive(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
-        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = create_basic_pk_model('iv', input=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
         pk_model = filter_dataset(model, "DVID != 2")
         pk_res = fit(pk_model, esttool='dummy')
@@ -73,7 +73,7 @@ def test_pkpd_additive(tmp_path, load_model_for_test, testdata):
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_drug_metabolite(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
-        model = create_basic_pk_model('oral', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = create_basic_pk_model('oral', input=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
         modelres = fit(model)
 
@@ -114,7 +114,7 @@ def test_drug_metabolite(tmp_path, load_model_for_test, testdata):
 )
 def test_tmdd_dummy(tmp_path, load_model_for_test, testdata, kwargs, no_of_cands, best_model):
     with chdir(tmp_path):
-        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = create_basic_pk_model('iv', input=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
         pk_res = fit(model, esttool='dummy')
         res = run_structsearch(
@@ -157,7 +157,7 @@ def test_drug_metabolite_dummy(
     tmp_path, load_model_for_test, testdata, kwargs, as_mfl, no_of_cands, best_model
 ):
     with chdir(tmp_path):
-        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = create_basic_pk_model('iv', input=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
         pk_res = fit(model, esttool='dummy')
 
