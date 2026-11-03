@@ -514,7 +514,8 @@ def natural_order(string, _nsre=re.compile(r'([0-9]+)')):
 def _create_thetas(model, parameter, effect, covariate, template, _ctre=re.compile(r'theta\d*')):
     """Creates theta parameters and adds to parameter set of model.
 
-    Number of parameters depends on how many thetas have been declared."""
+    Number of parameters depends on how many thetas have been declared.
+    """
     new_thetas = {sym for sym in map(str, template.expression.free_symbols) if _ctre.match(sym)}
     no_of_thetas = len(new_thetas)
 
@@ -558,7 +559,8 @@ def _count_categorical(model, covariate):
 
 def _calculate_mean(model, covariate, baselines=False):
     """Calculate mean. Can be set to use baselines, otherwise it is
-    calculated first per individual, then for the group."""
+    calculated first per individual, then for the group.
+    """
     if baselines:
         return get_baselines(model)[str(covariate)].mean()
     else:
@@ -568,7 +570,8 @@ def _calculate_mean(model, covariate, baselines=False):
 
 def _calculate_median(model, covariate, baselines=False):
     """Calculate median. Can be set to use baselines, otherwise it is
-    calculated first per individual, then for the group."""
+    calculated first per individual, then for the group.
+    """
     if baselines:
         return get_baselines(model)[str(covariate)].median()
     else:
@@ -578,7 +581,8 @@ def _calculate_median(model, covariate, baselines=False):
 
 def _calculate_std(model, covariate, baselines=False):
     """Calculate median. Can be set to use baselines, otherwise it is
-    calculated first per individual, then for the group."""
+    calculated first per individual, then for the group.
+    """
     if baselines:
         return get_baselines(model)[str(covariate)].std()
     else:
@@ -588,7 +592,8 @@ def _calculate_std(model, covariate, baselines=False):
 
 def _choose_param_inits(effect, model, covariate, index=None):
     """Chooses inits for parameters. If the effect is exponential, the
-    bounds need to be dynamic."""
+    bounds need to be dynamic.
+    """
     df = model.dataset
     init_default = 0.001
 
@@ -757,7 +762,8 @@ class CovariateEffect:
         """Creates statement for addition or multiplication of covariate
         to parameter, e.g. (if parameter is CL and covariate is WGT):
 
-            CL = CLWGT + TVCL*EXP(ETA(1))"""
+            CL = CLWGT + TVCL*EXP(ETA(1))
+        """
         operation = self._get_operation(operation_str)
 
         symbol = statement_original.symbol
@@ -823,7 +829,8 @@ class CovariateEffect:
     @classmethod
     def piecewise_linear(cls) -> Self:
         """Piecewise linear ("hockey-stick") template (for continuous
-        covariates)."""
+        covariates).
+        """
         symbol = Expr.symbol('symbol')
         values = [
             1 + Expr.symbol('theta1') * (Expr.symbol('cov') - Expr.symbol('median')),

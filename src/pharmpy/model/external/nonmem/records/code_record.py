@@ -525,7 +525,8 @@ def _index_statements_diff(
     it: Iterator[tuple[Literal[-1, 0, 1], Statement]],
 ):
     """This function reorders and groups a diff of statements according to the
-    given index mapping"""
+    given index mapping
+    """
 
     index_index = 0
 

@@ -801,7 +801,8 @@ class RandomVariables(CollectionsSequence, Immutable):
     ) -> np.ndarray:
         """Sample from the distribution of expr
 
-        parameters in the distributions will first be replaced"""
+        parameters in the distributions will first be replaced
+        """
 
         sympified_expr = parse_expr(expr)
         xreplace_parameters = {} if parameters is None else xreplace_dict(parameters)

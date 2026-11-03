@@ -763,7 +763,8 @@ class Model(Immutable):
 
     def update_source(self) -> Model:
         """Update source code of the model. If any paths need to be changed or added (e.g. for a
-        NONMEM model with an updated dataset) they will be replaced with DUMMYPATH"""
+        NONMEM model with an updated dataset) they will be replaced with DUMMYPATH
+        """
         return self
 
     def write_files(self, path: Path | str | None = None, force: bool = False) -> Model:

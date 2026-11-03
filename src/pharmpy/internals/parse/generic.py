@@ -200,7 +200,8 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
         """Partition children into (head, item, tail).
 
         Search for child item 'rule' and return the part before it (head), the item, and the part
-        after it (tail). If 'rule' is not found, return (children, [], [])."""
+        after it (tail). If 'rule' is not found, return (children, [], []).
+        """
 
         i = self.first_index(rule)
         return (
