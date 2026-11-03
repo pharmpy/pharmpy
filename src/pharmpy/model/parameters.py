@@ -334,6 +334,7 @@ class Parameters(CollectionsSequence, Immutable):
 
         Return
         ------
+
         Parameters
             An update Parameters object
         """
@@ -361,6 +362,7 @@ class Parameters(CollectionsSequence, Immutable):
 
         Return
         ------
+
         Parameters
             An update Parameters object
         """

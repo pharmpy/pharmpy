@@ -29,6 +29,7 @@ def get_thetas(model: Model) -> Parameters:
 
     Returns
     -------
+
     Parameters
         All theta parameters
 
@@ -62,6 +63,7 @@ def get_omegas(model: Model) -> Parameters:
 
     Returns
     -------
+
     Parameters
         All omega parameters
 
@@ -93,6 +95,7 @@ def get_sigmas(model: Model) -> Parameters:
 
     Returns
     -------
+
     Parameters
         All sigma parameters
 
