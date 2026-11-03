@@ -85,11 +85,17 @@ include-package-data = true
 line-length = 100
 target-version = "py312"
 
+[tool.ruff.lint]
+explicit-preview-rules = true
+
 [tool.ruff.format]
 quote-style = "preserve"
 
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+ 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ANN", "B015", "PLR0124", "B018"]
+"tests/*" = ["D", "ANN", "B015", "PLR0124", "B018"]
 "src/pharmpy/internals/*" = ["ANN"]
 "src/pharmpy/mfl/*" = ["ANN"]
 "src/pharmpy/reporting/*" = ["ANN"]
