@@ -276,7 +276,7 @@ def add_covariate_effect(
     operation: OperationType = '*',
     allow_nested: bool = False,
 ) -> Model:
-    """Adds covariate effect to :class:`pharmpy.model`.
+    r"""Add covariate effect to :class:`pharmpy.model`.
 
     The following effects have templates:
 
