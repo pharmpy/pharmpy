@@ -367,10 +367,5 @@ def print_warning(warning: str) -> None:
     warning : str
         warning description to be printed
 
-    Returns
-    -------
-    None
-        Prints warning to console
-
     """
     warnings.warn(f'{warning}')
