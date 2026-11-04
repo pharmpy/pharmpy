@@ -39,8 +39,8 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False) 
     presystemic : bool
         Decide wether or not to add metabolite as a presystemetic fixed drug.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -161,8 +161,8 @@ def has_presystemic_metabolite(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         Whether a model has presystemic metabolite
 

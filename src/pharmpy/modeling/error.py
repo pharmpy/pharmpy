@@ -54,8 +54,8 @@ def remove_error_model(model: Model, dv: Expr | str | int | None = None) -> Mode
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -113,8 +113,8 @@ def set_additive_error_model(
         Number of terms to use for the series expansion approximation for data
         transformation.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -406,8 +406,8 @@ def set_combined_error_model(
         A data transformation expression or None (default) to use the transformation
         specified by the model.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -541,8 +541,8 @@ def has_additive_error_model(model: Model, dv: Expr | str | int | None = None) -
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if the model has an additive error model and False otherwise
 
@@ -582,8 +582,8 @@ def has_proportional_error_model(model: Model, dv: Expr | str | int | None = Non
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if the model has a proportional error model and False otherwise
 
@@ -651,8 +651,8 @@ def has_combined_error_model(model: Model, dv: Expr | str | int | None = None) -
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if the model has a combined error model and False otherwise
 
@@ -695,8 +695,8 @@ def use_thetas_for_error_stdev(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -740,8 +740,8 @@ def set_weighted_error_model(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -792,8 +792,8 @@ def has_weighted_error_model(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if the model has a weighted error model and False otherwise
 
@@ -857,8 +857,8 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False) -> Model:
     fix_to_log : Boolean
         Set to True to fix lambda and zeta to 0, i.e. emulating log-transformed data
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -931,8 +931,8 @@ def set_time_varying_error_model(
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1000,8 +1000,8 @@ def set_power_on_ruv(
     zero_protection : bool
         Set to True to add code protecting from IPRED=0
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1192,8 +1192,8 @@ def set_iiv_on_ruv(
     eta_names : str, list
         Custom names of new etas. Must be equal to the number epsilons or 1 if same eta.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 

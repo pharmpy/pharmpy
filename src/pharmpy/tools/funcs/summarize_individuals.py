@@ -41,8 +41,8 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
     models_res : list[ModelfitResults]
         Input results
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame | None
         The summary as a dataframe
 

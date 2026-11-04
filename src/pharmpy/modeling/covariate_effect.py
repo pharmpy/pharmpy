@@ -192,8 +192,8 @@ def has_covariate_effect(model: Model, parameter: str, covariate: str) -> bool:
     covariate : str
         Name of covariate.
 
-    Return
-    ------
+    Returns
+    -------
     bool
         Whether input model has a covariate effect of the input covariate on
         the input parameter.
@@ -225,8 +225,8 @@ def remove_covariate_effect(
     keep_fixed : bool
         Whether to keep fixed effects (e.g. allometry) or not. Default is True
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -402,8 +402,8 @@ def add_covariate_effect(
         Whether to allow adding a covariate effect when one already exists for
         the input parameter-covariate pair.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 

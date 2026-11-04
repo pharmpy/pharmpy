@@ -59,8 +59,8 @@ def set_tmdd(
         For dv = 1 the only allowed keys are 'drug' and 'drug_tot'. If no DV for drug is specified then (free) drug
         will have dv = 1.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 

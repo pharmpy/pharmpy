@@ -104,8 +104,8 @@ class Assignment(Statement):
         substitutions : dict
             old-new pairs
 
-        Return
-        ------
+        Returns
+        -------
         Assignment
             Updated assignment object
 
@@ -2381,8 +2381,8 @@ class Statements(Sequence, Immutable):
         expression : Expr or str
             The new expression to assign to symbol
 
-        Return
-        ------
+        Returns
+        -------
         Statements
             Updated statements
 
@@ -2551,8 +2551,8 @@ class Statements(Sequence, Immutable):
         expression : expression or str
             Expression to expand. A string will be converted to an expression.
 
-        Return
-        ------
+        Returns
+        -------
         expression
             Expanded expression
 

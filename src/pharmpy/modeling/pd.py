@@ -71,8 +71,8 @@ def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
     expr : {'linear', 'emax', 'sigmoid', 'step', 'loglin'}
         Name of the PD effect function.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -151,8 +151,8 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: str | None = None) 
     variable : str
         Name of variable to use (if None concentration will be used)
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -408,8 +408,8 @@ def add_indirect_effect(
     variable : str
         Name of variable to use (if None concentration will be used)
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -540,8 +540,8 @@ def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
     expr : str
         Name of baseline function.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -606,8 +606,8 @@ def set_placebo_model(
     operator : str
         Operator to use for combining the baseline with the placebo/disease progression
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 

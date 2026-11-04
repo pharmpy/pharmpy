@@ -61,8 +61,8 @@ def calculate_eta_shrinkage(
         Calculate shrinkage on the standard deviation scale (default is to calculate on the
         variance scale)
 
-    Return
-    ------
+    Returns
+    -------
     Series
         Shrinkage for each eta
 
@@ -118,8 +118,8 @@ def calculate_individual_shrinkage(
     individual_estimates_covariance : pd.DataFrame
         Uncertainty covariance matrices of individual estimates
 
-    Return
-    ------
+    Returns
+    -------
     DataFrame
         Shrinkage for each eta and individual
 

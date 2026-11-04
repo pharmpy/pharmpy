@@ -1492,8 +1492,8 @@ class DataInfo(Sequence, Immutable):
         value : list or str
             Types to set. If only one this will be broadcast
 
-        Return
-        ------
+        Returns
+        -------
         DataInfo
             Updated datainfo
         """
@@ -1527,8 +1527,8 @@ class DataInfo(Sequence, Immutable):
         ----------
         type : str
 
-        Return
-        ------
+        Returns
+        -------
         ColumnInfo | None
             The column or None if no column with the given type exists
         """
@@ -1556,8 +1556,8 @@ class DataInfo(Sequence, Immutable):
         default : Optional[str]
             Default if column type is not found
 
-        Return
-        ------
+        Returns
+        -------
         str
             Name of column
         """
@@ -1695,8 +1695,8 @@ class DataInfo(Sequence, Immutable):
         s : str
             JSON string
 
-        Return
-        ------
+        Returns
+        -------
         DataInfo
             Created DataInfo object
         """
@@ -1715,8 +1715,8 @@ class DataInfo(Sequence, Immutable):
         path : Path or str
             Path to JSON datainfo file
 
-        Return
-        ------
+        Returns
+        -------
         DataInfo
             Created DataInfo object
         """

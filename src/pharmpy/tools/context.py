@@ -104,8 +104,8 @@ def retrieve_model(context: Context, name: str) -> Model:
         Name of the model or a qualified name with a subcontext path, e.g.
         :code:`"iivsearch/@final"`.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Pharmpy model
 
@@ -167,8 +167,8 @@ def retrieve_modelfit_results(context: Context, name: str) -> ModelfitResults:
         Name of the model or a qualified name with a subcontext path, e.g.
         :code:`"iivsearch/@final"`.
 
-    Return
-    ------
+    Returns
+    -------
     ModelfitResults
         The results object
 
@@ -197,8 +197,8 @@ def list_models(context: Context, recursive: bool = False) -> list[str]:
     recursive : bool
         Only top level or all levels recursively down.
 
-    Return
-    ------
+    Returns
+    -------
     list[str]
         A list of the model names
     """

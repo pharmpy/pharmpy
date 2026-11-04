@@ -17,8 +17,8 @@ def calculate_se_from_cov(cov: pd.DataFrame) -> pd.Series:
     cov : pd.DataFrame
         Input covariance matrix
 
-    Return
-    ------
+    Returns
+    -------
     pd.Series
         Standard errors
 
@@ -67,8 +67,8 @@ def calculate_se_from_prec(precision_matrix: pd.DataFrame) -> pd.Series:
     precision_matrix : pd.DataFrame
         Input precision matrix
 
-    Return
-    ------
+    Returns
+    -------
     pd.Series
         Standard errors
 
@@ -119,8 +119,8 @@ def calculate_corr_from_cov(cov: pd.DataFrame) -> pd.DataFrame:
     cov : pd.DataFrame
         Covariance matrix
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         Correlation matrix
 
@@ -170,8 +170,8 @@ def calculate_cov_from_prec(precision_matrix: pd.DataFrame) -> pd.DataFrame:
     precision_matrix : pd.DataFrame
         Precision matrix
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         Covariance matrix
 
@@ -227,8 +227,8 @@ def calculate_cov_from_corrse(corr: pd.DataFrame, se: pd.Series) -> pd.DataFrame
     se : pd.Series
         Standard errors
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         Covariance matrix
 
@@ -281,8 +281,8 @@ def calculate_prec_from_cov(cov: pd.DataFrame) -> pd.DataFrame:
     cov : pd.DataFrame
         Covariance matrix
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         Precision matrix
 
@@ -334,8 +334,8 @@ def calculate_prec_from_corrse(corr: pd.DataFrame, se: pd.Series) -> pd.DataFram
     se : pd.Series
         Standard errors
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         Precision matrix
 
@@ -388,8 +388,8 @@ def calculate_corr_from_prec(precision_matrix: pd.DataFrame) -> pd.DataFrame:
     precision_matrix : pd.DataFrame
         Precision matrix
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         Correlation matrix
 

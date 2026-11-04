@@ -121,8 +121,8 @@ def add_individual_parameter(
     lower : float
         Lower bound for the population parameter
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -159,8 +159,8 @@ def set_first_order_elimination(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -254,8 +254,8 @@ def add_bioavailability(
     logit_transform : bool
         Logit transform the added bioavailability parameter.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -320,8 +320,8 @@ def remove_bioavailability(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -360,8 +360,8 @@ def set_zero_order_elimination(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -430,8 +430,8 @@ def has_michaelis_menten_elimination(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if model has describes Michaelis-Menten elimination
 
@@ -467,8 +467,8 @@ def has_zero_order_elimination(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if model has describes zero order elimination
 
@@ -504,8 +504,8 @@ def has_mixed_mm_fo_elimination(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if model has describes Michaelis-Menten elimination
 
@@ -541,8 +541,8 @@ def has_first_order_elimination(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if model has describes first order elimination
 
@@ -575,8 +575,8 @@ def set_michaelis_menten_elimination(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -629,8 +629,8 @@ def set_mixed_mm_fo_elimination(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -837,8 +837,8 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True) -> Model:
     keep_depot : bool
         False to convert depot compartment into a transit compartment
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -956,8 +956,8 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True) -> M
     keep_depot : bool
         False to convert depot compartment into a transit compartment
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1189,8 +1189,8 @@ def add_lag_time(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1256,8 +1256,8 @@ def remove_lag_time(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1300,8 +1300,8 @@ def set_zero_order_absorption(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1389,8 +1389,8 @@ def set_first_order_absorption(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1476,8 +1476,8 @@ def set_instantaneous_absorption(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1552,8 +1552,8 @@ def set_seq_zo_fo_absorption(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1687,8 +1687,8 @@ def set_weibull_absorption(model: Model) -> Model:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1794,8 +1794,8 @@ def has_zero_order_absorption(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         Whether the model has zero order absorption or not
 
@@ -2114,8 +2114,8 @@ def set_peripheral_compartments(model: Model, n: int, name: str | None = None) -
     name : Optional[str]
         Name of compartment to add peripheral to.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -2195,8 +2195,8 @@ def add_peripheral_compartment(model: Model, name: str | None = None) -> Model:
     name : Optional[str]
         Name of compartment to add peripheral to.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -2347,8 +2347,8 @@ def remove_peripheral_compartment(model: Model, name: str | None = None) -> Mode
     name : str
         Name of compartment to remove peripheral compartment from.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -2463,8 +2463,8 @@ def set_ode_solver(
     solver : {'CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'}
         Solver to use or None for no preference
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -2492,8 +2492,8 @@ def find_clearance_parameters(model: Model) -> list[str]:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     list
         A list of clearance parameters
 
@@ -2532,8 +2532,8 @@ def find_volume_parameters(model: Model) -> list[str]:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     list
         A list of volume parameters
 
@@ -2627,8 +2627,8 @@ def has_odes(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if model has an ODE system
 
@@ -2657,8 +2657,8 @@ def has_linear_odes(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if model has an ODE system that is linear
 
@@ -2692,8 +2692,8 @@ def has_linear_odes_with_real_eigenvalues(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if model has an ODE system that is linear
 
@@ -2772,8 +2772,8 @@ def get_initial_conditions(model: Model, dosing: bool = False) -> Mapping[Expr, 
     dosing : bool
         Set to True to add dosing as initial conditions
 
-    Return
-    ------
+    Returns
+    -------
     dict
         Initial conditions
 
@@ -2837,8 +2837,8 @@ def set_initial_condition(
     time : Union[str, Expr]
         Time point. Default 0
 
-    Return
-    ------
+    Returns
+    -------
     model
         Updated Pharmpy model
 
@@ -2887,8 +2887,8 @@ def get_zero_order_inputs(model: Model) -> Matrix:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     Matrix
         Vector of inputs
 
@@ -2919,8 +2919,8 @@ def set_zero_order_input(model: Model, compartment: str, expression: TExpr) -> M
     expression : Union[str, Expr]
         The expression of the zero order input
 
-    Return
-    ------
+    Returns
+    -------
     model
         Updated Pharmpy model
 
@@ -2986,8 +2986,8 @@ def display_odes(model: Model) -> ODEDisplayer:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     ODEDisplayer
         A displayable object
 

@@ -105,8 +105,8 @@ def transform_blq(
     lloq : float, optional
         LLOQ limit to use, if None Pharmpy will use the BLQ/LLOQ column in the dataset
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 

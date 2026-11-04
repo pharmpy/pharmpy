@@ -69,8 +69,8 @@ def create_basic_pk_model(
     dataset_path : str or Path
         Deprecated. Use input instead
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Pharmpy model
 
@@ -293,8 +293,8 @@ def create_basic_pd_model(
     dataset_path : str or Path
         Deprecated. Use input instead
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Pharmpy model
 
@@ -372,8 +372,8 @@ def create_basic_kpd_model(
     dataset_path : str or Path
         Deprecated. Use input instead
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Pharmpy model
 

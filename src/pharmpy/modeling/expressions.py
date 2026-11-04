@@ -859,8 +859,8 @@ def get_individual_parameters(
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for all (default)
 
-    Return
-    ------
+    Returns
+    -------
     list[str]
         A list of the parameter names as strings
 
@@ -1243,8 +1243,8 @@ def has_random_effect(
     level : {'iiv', 'iov', 'all'}
         The variability level to look for: 'iiv', 'iov', or 'all' (default)
 
-    Return
-    ------
+    Returns
+    -------
     bool
         Whether the given parameter has a random effect
 
@@ -1281,8 +1281,8 @@ def get_rv_parameters(model: Model, rv: str) -> list[str]:
     rv : str
         Name of random variable to retrieve
 
-    Return
-    ------
+    Returns
+    -------
     list[str]
         A list of parameter names for the given random variable
 
@@ -1329,8 +1329,8 @@ def get_parameter_rv(
     var_type: {'iiv', 'iov'}
         Variability type: iiv (default) or iov
 
-    Return
-    ------
+    Returns
+    -------
     list[str]
         A list of random variable names for the given parameter
 
@@ -1665,8 +1665,8 @@ def get_pk_parameters(
         The type of parameter to retrieve: 'absorption', 'distribution',
         'elimination', or 'all' (default).
 
-    Return
-    ------
+    Returns
+    -------
     list[str]
         A list of the PK parameter names of the given model
 
@@ -1745,8 +1745,8 @@ def get_pd_parameters(model: Model) -> list[str]:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     list[str]
         A list of the PD parameter names of the given model
 
@@ -2037,8 +2037,8 @@ def is_real(model: Model, expr: TExpr) -> bool | None:
     expr : str or expression
         Expression to test
 
-    Return
-    ------
+    Returns
+    -------
     bool or None
         True if expression is real, False if not and None if unknown
 
@@ -2062,8 +2062,8 @@ def is_linearized(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if model has been linearized and False otherwise
 
@@ -2118,8 +2118,8 @@ def get_dv_symbol(model: Model, dv: Expr | str | int | None = None) -> Expr:
         Either a dv symbol, str or dvid. If None (default) return the
         only or first dv.
 
-    Return
-    ------
+    Returns
+    -------
     Expr
         DV symbol
 
@@ -2227,8 +2227,8 @@ def cholesky_decompose(model: Model, rvs: Collection[str] | None = None) -> Mode
     rvs : Optional[Collection[str]]
         Names of random variables to decompose. None means all etas and is the default
 
-    Return
-    ------
+    Returns
+    -------
     Model
         An updated Pharmpy model
 

@@ -88,8 +88,8 @@ def add_iiv(
     eta_names : str, list, optional
         Custom name/names of new eta
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -207,8 +207,8 @@ def add_iov(
         distribution, 'explicit' for an explicit mix of joint and disjoint
         distributions, and 'same-as-iiv' for copying the distribution of IIV etas.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -445,8 +445,8 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09) -> Model:
     initial_estimate : float
         Value of initial estimate of parameter. Default is 0.09
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -490,8 +490,8 @@ def add_pd_iiv(model: Model, initial_estimate: float = 0.09) -> Model:
     initial_estimate : float
         Value of initial estimate of parameter. Default is 0.09
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -640,8 +640,8 @@ def remove_iiv(model: Model, to_remove: list[str] | str | None = None) -> Model:
         Name/names of etas and/or name/names of individual parameters to remove.
         If None, all etas that are IIVs will be removed. None is default.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -722,8 +722,8 @@ def remove_iov(model: Model, to_remove: list[str] | str | None = None) -> Model:
         Name/names of IOV etas to remove, e.g. 'ETA_IOV_1_1'.
         If None, all etas that are IOVs will be removed. None is default.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -797,8 +797,8 @@ def transform_etas_boxcox(model: Model, list_of_etas: list[str] | str | None = N
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -835,8 +835,8 @@ def transform_etas_tdist(model: Model, list_of_etas: list[str] | str | None = No
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -879,8 +879,8 @@ def transform_etas_john_draper(model: Model, list_of_etas: list[str] | str | Non
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1047,8 +1047,8 @@ def create_joint_distribution(
     individual_estimates : pd.DataFrame
         Optional individual estimates to use for calculation of initial estimates
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 
@@ -1120,8 +1120,8 @@ def split_joint_distribution(model: Model, rvs: Sequence[str] | str | None = Non
         Name/names of etas or individual parameters to separate. If None, all etas that are IIVs and
         non-fixed will become single. None is default.
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 

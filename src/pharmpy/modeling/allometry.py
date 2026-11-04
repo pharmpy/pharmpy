@@ -52,8 +52,8 @@ def add_allometry(
     fixed : bool
         Whether the exponents should be fixed
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Updated Pharmpy model
 

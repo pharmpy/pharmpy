@@ -142,8 +142,8 @@ class Context(ABC):
     def retrieve_results(self) -> Results:
         """Retrieve tool results.
 
-        Return
-        ------
+        Returns
+        -------
         Results
             Tool results object
         """

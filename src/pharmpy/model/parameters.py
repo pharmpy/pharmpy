@@ -332,8 +332,8 @@ class Parameters(CollectionsSequence, Immutable):
         inits : dict
             A dictionary of parameter names to initial estimates
 
-        Return
-        ------
+        Returns
+        -------
 
         Parameters
             An update Parameters object
@@ -360,8 +360,8 @@ class Parameters(CollectionsSequence, Immutable):
         fix : dict
             A dictionary of parameter names to boolean fix state
 
-        Return
-        ------
+        Returns
+        -------
 
         Parameters
             An update Parameters object

@@ -84,8 +84,8 @@ def fit(
     project : Project
         Which project if any to run fit in
 
-    Return
-    ------
+    Returns
+    -------
     ModelfitResults | list[ModelfitResults]
         ModelfitResults for the model or models
 
@@ -160,8 +160,8 @@ def read_results(path: str | Path) -> Results:
     path : str, Path
         Path to results file
 
-    Return
-    ------
+    Returns
+    -------
     Results
         Results object for tool
 
@@ -422,8 +422,8 @@ def resume_tool(path: str):
     path : str
         The path to the tool database
 
-    Return
-    ------
+    Returns
+    -------
     Results
         Results object for tool
 
@@ -774,8 +774,8 @@ def retrieve_models(
     names : list
         List of names of the models to retrieve or None for all
 
-    Return
-    ------
+    Returns
+    -------
     list
         List of retrieved Pharmpy models
 
@@ -805,8 +805,8 @@ def retrieve_final_model(res: Results) -> Model:
     res : Results
         A results object
 
-    Return
-    ------
+    Returns
+    -------
     Model
         Pharmpy model
 
@@ -926,8 +926,8 @@ def summarize_errors(context: Context) -> pd.DataFrame:
     context : Context
         Context in which models were run
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         A DataFrame of errors with model name, category (error or warning), and an int as index,
         an empty DataFrame if there were no errors or warnings found.
@@ -1036,8 +1036,8 @@ def rank_models(
     kwargs
         Arguments to pass to calculate BIC (such as `mult_test_p` and `mult_test_p`)
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         DataFrame of the ranked models
 
@@ -1189,8 +1189,8 @@ def is_strictness_fulfilled(
     strictness : str
         A strictness expression
 
-    Return
-    ------
+    Returns
+    -------
     bool
         A bool indicating whether the strictness criteria are fulfilled or not.
 
@@ -1345,8 +1345,8 @@ def summarize_modelfit_results(
     include_all_execution_steps : bool
         Whether to include all estimation steps, default is False
 
-    Return
-    ------
+    Returns
+    -------
     pd.DataFrame
         A DataFrame of modelfit results with model name and estimation step as index.
 
