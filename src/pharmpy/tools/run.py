@@ -1478,8 +1478,8 @@ def read_modelfit_results(path: str | Path, esttool: str | None = None) -> Model
     esttool : str
         Set if other than the default estimation tool is to be used
 
-    Return
-    ------
+    Returns
+    -------
     ModelfitResults
         Results object
     """
