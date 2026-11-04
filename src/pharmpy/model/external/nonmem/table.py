@@ -439,7 +439,7 @@ class ExtTable(NONMEMTable):
 
     @property
     def fixed(self):
-        """What parameters were fixed?"""
+        """Fixed parameters."""
         fix = self._get_parameters(-1000000006)
         return fix.apply(bool)
 

@@ -2,10 +2,6 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-"""
-:meta private:
-"""
-
 from __future__ import annotations
 
 import math
@@ -759,8 +755,9 @@ class CovariateEffect:
             self.statistic_statements.append(s)
 
     def create_effect_statement(self, operation_str, statement_original):
-        """Creates statement for addition or multiplication of covariate
-        to parameter, e.g. (if parameter is CL and covariate is WGT):
+        """Create statement for addition or multiplication of covariate effect to parameter.
+
+        E.g. (if parameter is CL and covariate is WGT):
 
             CL = CLWGT + TVCL*EXP(ETA(1))
         """

@@ -2,10 +2,6 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-"""Common modeling pipeline elements
-:meta private:
-"""
-
 from __future__ import annotations
 
 import importlib

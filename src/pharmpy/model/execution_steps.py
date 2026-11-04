@@ -330,6 +330,7 @@ class EstimationStep(ExecutionStep):
     @property
     def parameter_uncertainty_method(self) -> str | None:
         """Method to use when estimating parameter uncertainty.
+
         Supported methods and their corresponding NMTRAN code:
 
         +-------------------------------+-----------------------+

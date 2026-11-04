@@ -18,7 +18,10 @@ def triangular(n: int):
 
 
 def triangular_root(x):
-    """Calculate the triangular root of x. I.e. if x is a triangular number T_n what is n?"""
+    """Calculate the triangular root of x.
+
+    I.e. if x is a triangular number T_n what is n?
+    """
     return math.floor(math.sqrt(2 * x))
 
 
