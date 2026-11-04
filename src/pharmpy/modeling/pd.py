@@ -356,7 +356,7 @@ def _add_dependent_variable(model: Model, expr: str):
     return model
 
 
-def _add_effect(model: Model, expr: str, conc: Expr, zero_handled=True):
+def _add_effect(model: Model, expr: str, conc: Expr, zero_handled: bool = True):
     model = _add_baseline_effect(model)
     model = _add_drug_effect(model, expr, conc, zero_handled)
     model = _add_response(model, expr)

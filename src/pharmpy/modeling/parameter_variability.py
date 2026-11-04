@@ -301,18 +301,18 @@ def add_iov(
     first_iov_name = create_symbol(model, 'IOV_', force_numbering=True).name
     first_iov_number = int(first_iov_name.split('_')[-1])
 
-    def eta_name(i, k):
+    def eta_name(i: int, k: int):
         return (
             eta_names[(i - 1) * len(categories) + k - 1] if eta_names else f'ETA_{iov_name(i)}_{k}'
         )
 
-    def omega_iov_name(i, j):
+    def omega_iov_name(i: int, j: int):
         return f'OMEGA_{iov_name(i)}' if i == j else f'OMEGA_{iov_name(i)}_{j}'
 
-    def iov_name(i):
+    def iov_name(i: int):
         return f'IOV_{first_iov_number + i - 1}'
 
-    def etai_name(i):
+    def etai_name(i: int):
         return f'ETAI{first_iov_number + i - 1}'
 
     rvs, pset, iovs = _add_iov_explicit(
