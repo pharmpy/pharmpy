@@ -14,7 +14,7 @@ from pharmpy.workflows.contexts.baseclass import FINAL_MODEL_NAME, INPUT_MODEL_N
 
 
 def open_context(name: str, ref: str | Path | None = None):
-    """Open a context from a tool run
+    """Open a context from a tool run.
 
     Parameters
     ----------
@@ -35,7 +35,7 @@ def open_context(name: str, ref: str | Path | None = None):
 
 
 def open_project(name: str, ref: str | Path | None = None):
-    """Open or create a project (with model database)
+    """Open or create a project (with model database).
 
     Parameters
     ----------
@@ -56,7 +56,7 @@ def open_project(name: str, ref: str | Path | None = None):
 
 
 def print_log(context: Context) -> None:
-    """Print the log of a context
+    """Print the log of a context.
 
     Parameters
     ----------
@@ -68,7 +68,7 @@ def print_log(context: Context) -> None:
 
 
 def broadcast_log(context: Context, broadcaster: str | None = None) -> None:
-    """Broadcast the log of a context
+    """Broadcast the log of a context.
 
     Default is to use the same broadcaster, but optionally another broadcaster could
     be used.
@@ -91,7 +91,7 @@ def broadcast_log(context: Context, broadcaster: str | None = None) -> None:
 
 
 def retrieve_model(context: Context, name: str) -> Model:
-    """Retrieve a model from a context
+    """Retrieve a model from a context.
 
     Any models created and run by the tool can be
     retrieved.
@@ -147,7 +147,7 @@ def _split_subcontext_and_model(context: Context, ctx_path: str) -> tuple[Contex
 
 
 def _present_string_array(a):
-    """Create a user presentable string from array of strings"""
+    """Create a user presentable string from array of strings."""
     a = [f'"{e}"' for e in a]
     if len(a) == 1:
         return f'{a[0]}'
@@ -157,7 +157,7 @@ def _present_string_array(a):
 
 
 def retrieve_modelfit_results(context: Context, name: str) -> ModelfitResults:
-    """Retrieve the modelfit results of a model
+    """Retrieve the modelfit results of a model.
 
     Parameters
     ----------
@@ -184,7 +184,7 @@ def retrieve_modelfit_results(context: Context, name: str) -> ModelfitResults:
 
 
 def list_models(context: Context, recursive: bool = False) -> list[str]:
-    """List names of all models in a context
+    """List names of all models in a context.
 
     Will by default list only models in the top level, but can list
     all recursively using the recursive option. This will add the context

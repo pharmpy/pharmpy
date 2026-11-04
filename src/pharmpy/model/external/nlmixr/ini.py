@@ -10,7 +10,7 @@ from .name_mangle import name_mangle
 
 def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     """
-    Add THETAs to code generator when converting a model
+    Add THETAs to code generator when converting a model.
 
     Parameters
     ----------
@@ -30,7 +30,7 @@ def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
 
 def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list=False) -> None:
     """
-    Add ETAs to code generator when converting a model
+    Add ETAs to code generator when converting a model.
 
     Parameters
     ----------

@@ -15,14 +15,14 @@ from pharmpy.workflows import Results
 
 @dataclass(frozen=True)
 class CrossvalResults(Results):
-    """Crossval results class"""
+    """Crossval results class."""
 
     runs: Any | None = None
     prediction_ofv_sum: Any | None = None
 
 
 def calculate_results(estimation_results, prediction_results):
-    """Calculate crossval results"""
+    """Calculate crossval results."""
     est_ofvs = [res.ofv for res in estimation_results]
     pred_ofvs = [res.ofv for res in prediction_results]
     runs = pd.DataFrame(

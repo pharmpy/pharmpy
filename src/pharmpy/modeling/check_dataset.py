@@ -248,7 +248,7 @@ def check_dataset(
 def check_dataset(
     model: Model, dataframe: bool = False, verbose: bool = False
 ) -> pd.DataFrame | None:
-    """Check dataset for consistency across a set of rules
+    """Check dataset for consistency across a set of rules.
 
     Parameters
     ----------

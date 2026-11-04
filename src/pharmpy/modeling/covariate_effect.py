@@ -39,7 +39,7 @@ OperationType = Literal['*', '+']
 
 
 def get_covariate_effects(model: Model) -> dict:
-    """Return a dictionary of all used covariates within a model
+    """Return a dictionary of all used covariates within a model.
 
     The dictionary will have parameter name as key with a connected value as
     a list of tuple(s) with (covariate, effect type, operator)
@@ -775,7 +775,7 @@ class CovariateEffect:
 
     @staticmethod
     def _get_operation(operation_str) -> Any:
-        """Gets sympy operation based on string"""
+        """Gets sympy operation based on string."""
         if operation_str == '*':
             return mul
         elif operation_str == '+':
@@ -889,7 +889,7 @@ def get_covariates_allowed_in_covariate_effect(model: Model) -> set[str]:
 
 
 def get_derived_covariates(model: Model) -> list[str]:
-    """Get all derived covariates in a model
+    """Get all derived covariates in a model.
 
     A derived covariate is a covariate calculated in the model by
     only using variables from the dataset and constants.

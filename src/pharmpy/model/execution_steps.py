@@ -48,7 +48,7 @@ class ExecutionStep(Immutable):
     @property
     def solver(self) -> str | None:
         """Numerical solver to use when numerically solving the ODE system
-        Supported solvers and their corresponding NONMEM ADVAN
+        Supported solvers and their corresponding NONMEM ADVAN.
 
         +----------------------------+------------------+
         | Solver                     | NONMEM ADVAN     |
@@ -70,22 +70,22 @@ class ExecutionStep(Immutable):
 
     @property
     def solver_rtol(self) -> int | None:
-        """Relative tolerance for numerical ODE system solver"""
+        """Relative tolerance for numerical ODE system solver."""
         return self._solver_rtol
 
     @property
     def solver_atol(self) -> int | None:
-        """Absolute tolerance for numerical ODE system solver"""
+        """Absolute tolerance for numerical ODE system solver."""
         return self._solver_atol
 
     @property
     def tool_options(self) -> frozenmapping[str, Any]:
-        """Dictionary of tool specific options"""
+        """Dictionary of tool specific options."""
         return self._tool_options
 
     @property
     def variables(self) -> tuple[str, ...]:
-        """Variables to table"""
+        """Variables to table."""
         return self._variables
 
     def _add_to_dict(self, d):
@@ -134,7 +134,7 @@ class ExecutionStep(Immutable):
 
 
 class EstimationStep(ExecutionStep):
-    """Definition of one estimation operation"""
+    """Definition of one estimation operation."""
 
     """Supported estimation methods
     """
@@ -269,7 +269,7 @@ class EstimationStep(ExecutionStep):
         )
 
     def replace(self, **kwargs) -> EstimationStep:
-        """Derive a new EstimationStep with new properties"""
+        """Derive a new EstimationStep with new properties."""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
         new = EstimationStep.create(**d)
@@ -309,22 +309,22 @@ class EstimationStep(ExecutionStep):
 
     @property
     def method(self) -> str:
-        """Name of the estimation method"""
+        """Name of the estimation method."""
         return self._method
 
     @property
     def maximum_evaluations(self) -> int | None:
-        """Maximum allowable number of evaluations of the objective function"""
+        """Maximum allowable number of evaluations of the objective function."""
         return self._maximum_evaluations
 
     @property
     def interaction(self) -> bool:
-        """Preserve eta-epsilon interaction in the computation of the objective function"""
+        """Preserve eta-epsilon interaction in the computation of the objective function."""
         return self._interaction
 
     @property
     def evaluation(self) -> bool:
-        """Only perform model evaluation"""
+        """Only perform model evaluation."""
         return self._evaluation
 
     @property
@@ -353,52 +353,52 @@ class EstimationStep(ExecutionStep):
 
     @property
     def laplace(self) -> bool:
-        """Use the laplacian method"""
+        """Use the laplacian method."""
         return self._laplace
 
     @property
     def isample(self) -> int | None:
-        """Number of samples per subject (or similar) for EM methods"""
+        """Number of samples per subject (or similar) for EM methods."""
         return self._isample
 
     @property
     def niter(self) -> int | None:
-        """Number of iterations for EM methods"""
+        """Number of iterations for EM methods."""
         return self._niter
 
     @property
     def auto(self) -> bool | None:
-        """Let estimation tool automatically add settings"""
+        """Let estimation tool automatically add settings."""
         return self._auto
 
     @property
     def keep_every_nth_iter(self) -> int | None:
-        """Keep results for every nth iteration"""
+        """Keep results for every nth iteration."""
         return self._keep_every_nth_iter
 
     @property
     def residuals(self) -> Sequence[str]:
-        """List of residuals to calculate"""
+        """List of residuals to calculate."""
         return self._residuals
 
     @property
     def predictions(self) -> Sequence[str]:
-        """List of predictions to estimate"""
+        """List of predictions to estimate."""
         return self._predictions
 
     @property
     def derivatives(self) -> Sequence[Sequence[Expr]]:
-        """List of derivates to calculate when running"""
+        """List of derivates to calculate when running."""
         return self._derivatives
 
     @property
     def individual_eta_samples(self) -> bool:
-        """Should individual eta samples be generated"""
+        """Should individual eta samples be generated."""
         return self._individual_eta_samples
 
     @property
     def tool_options(self) -> frozenmapping[str, Any]:
-        """Dictionary of tool specific options"""
+        """Dictionary of tool specific options."""
         return self._tool_options
 
     def __eq__(self, other):
@@ -486,7 +486,7 @@ class EstimationStep(ExecutionStep):
 
 
 class SimulationStep(ExecutionStep):
-    """Definition of one simulation operation"""
+    """Definition of one simulation operation."""
 
     def __init__(
         self,
@@ -532,7 +532,7 @@ class SimulationStep(ExecutionStep):
         )
 
     def replace(self, **kwargs) -> SimulationStep:
-        """Derive a new SimulationStep with new properties"""
+        """Derive a new SimulationStep with new properties."""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
         new = SimulationStep.create(**d)
@@ -540,12 +540,12 @@ class SimulationStep(ExecutionStep):
 
     @property
     def n(self) -> int:
-        """Number of simulation replicates"""
+        """Number of simulation replicates."""
         return self._n
 
     @property
     def seed(self) -> int:
-        """Random seed"""
+        """Random seed."""
         return self._seed
 
     def __eq__(self, other):
@@ -578,7 +578,7 @@ class SimulationStep(ExecutionStep):
 
 
 class ExecutionSteps(Sequence, Immutable):
-    """A sequence of estimation steps
+    """A sequence of estimation steps.
 
     Parameters
     ----------
@@ -656,7 +656,7 @@ class ExecutionSteps(Sequence, Immutable):
         return cls(steps=tuple(steps))
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Convert to DataFrame
+        """Convert to DataFrame.
 
         Use this to create an overview of all estimation steps
 

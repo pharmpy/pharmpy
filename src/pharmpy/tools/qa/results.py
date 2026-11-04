@@ -344,7 +344,7 @@ def calc_scm_dofv(scm_results):
 
 
 def calc_frem_dofv(base_model_entry, fullblock_model_entry, frem_results):
-    """Calculate the dOFV for the frem model"""
+    """Calculate the dOFV for the frem model."""
     dofv_tab = pd.DataFrame(
         {
             'section': ['covariates'],
@@ -389,7 +389,7 @@ def calc_frem_dofv(base_model_entry, fullblock_model_entry, frem_results):
 
 
 def calc_transformed_etas(original_model_entry, new_model_entry, transform_name, parameter_name):
-    """Retrieve new and old parameters of boxcox"""
+    """Retrieve new and old parameters of boxcox."""
     dofv_tab = pd.DataFrame(
         {
             'section': ['parameter_variability'],
@@ -461,7 +461,7 @@ def _filter_nonfixed_etas(model):
 
 
 def calc_fullblock(original_model_entry, fullblock_model_entry):
-    """Retrieve new and old parameters of full block"""
+    """Retrieve new and old parameters of full block."""
     dofv_tab = pd.DataFrame(
         {
             'section': ['parameter_variability'],
@@ -535,7 +535,7 @@ def read_results_summary(path):
 
 
 def psn_qa_results(path):
-    """Create qa results from a PsN qa run
+    """Create qa results from a PsN qa run.
 
     :param path: Path to PsN qa run directory
     :return: A :class:`QAResults` object

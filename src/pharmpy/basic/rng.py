@@ -10,7 +10,7 @@ from pharmpy.deps import numpy as np
 
 
 class Seed:
-    """A random seed"""
+    """A random seed."""
 
     def __init__(self, obj: int | float | Seed | None = None):
         if obj is None:
@@ -38,7 +38,7 @@ class Seed:
 
 
 class RandomNumberGenerator:
-    """A random number generator"""
+    """A random number generator."""
 
     def __init__(self, obj: int | list | float | Seed | RandomNumberGenerator | None = None):
         if isinstance(obj, RandomNumberGenerator):
@@ -53,7 +53,7 @@ class RandomNumberGenerator:
         return self._backend
 
     def spawn_seed(self, n: int = 128) -> int:
-        """Spawn a new seed
+        """Spawn a new seed.
 
         Parameters
         ----------

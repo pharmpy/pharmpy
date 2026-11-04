@@ -5,7 +5,7 @@
 r"""
 .. list-table:: Options for the modelfit tool
    :widths: 25 25 50 150
-   :header-rows: 1
+   :header-rows: 1.
 
    * - Option name
      - Default value

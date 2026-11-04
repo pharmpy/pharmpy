@@ -22,7 +22,7 @@ def create_workflow(
     stratify: str | None = None,
     frem: bool = False,
 ):
-    """Run VPC
+    """Run VPC.
 
     Parameters
     ----------

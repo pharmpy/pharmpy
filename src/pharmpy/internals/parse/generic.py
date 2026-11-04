@@ -220,7 +220,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
                 yield from child.tree_walk()
 
     def remove(self, rule):
-        """Remove all children with rule. Not recursively"""
+        """Remove all children with rule. Not recursively."""
         return AttrTree(
             self.rule,
             tuple(child for child in self.children if child.rule != rule),
@@ -430,7 +430,7 @@ def _remove_token_and_space(node: AttrTree | AttrToken, rule: str):
 
 
 def remove_token_and_space(tree: AttrTree, rule: str, recursive: bool = False):
-    """Remove all tokens with rule and any WS before it"""
+    """Remove all tokens with rule and any WS before it."""
     new_nodes = []
     for node in tree.children:
         if node.rule == rule:
@@ -448,7 +448,7 @@ def remove_token_and_space(tree: AttrTree, rule: str, recursive: bool = False):
 def insert_before_or_at_end(
     tree: ImmutableTree, rule: str, nodes: Iterable[ImmutableTree | ImmutableLeaf]
 ):
-    """Insert nodes before rule or if rule does not exist at end"""
+    """Insert nodes before rule or if rule does not exist at end."""
     kept = []
     found = False
     for node in tree.children:
@@ -463,7 +463,7 @@ def insert_before_or_at_end(
 
 
 def insert_after(tree: ImmutableTree, rule: str, nodes: Iterable[ImmutableTree | ImmutableLeaf]):
-    """Insert nodes after rule"""
+    """Insert nodes after rule."""
     kept = []
     for node in tree.children:
         kept.append(node)

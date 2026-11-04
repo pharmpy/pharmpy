@@ -16,7 +16,7 @@ from .workflow import Workflow, WorkflowBuilder, insert_context
 def execute_workflow[T](
     workflow: Workflow[T], dispatcher=None, context=None, path=None, resume=False
 ) -> T | None:
-    """Execute workflow
+    """Execute workflow.
 
     Parameters
     ----------

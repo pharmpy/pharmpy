@@ -28,12 +28,12 @@ class Distribution(Sized, Hashable, Immutable):
     @property
     @abstractmethod
     def names(self) -> tuple[str, ...]:
-        """Names of random variables of distribution"""
+        """Names of random variables of distribution."""
 
     @property
     @abstractmethod
     def level(self) -> str:
-        """Name of VariabilityLevel of the random variables"""
+        """Name of VariabilityLevel of the random variables."""
 
     @property
     @abstractmethod
@@ -73,7 +73,7 @@ class Distribution(Sized, Hashable, Immutable):
     @property
     @abstractmethod
     def parameter_names(self) -> tuple[str, ...]:
-        """List of names of all parameters used in definition"""
+        """List of names of all parameters used in definition."""
 
     @abstractmethod
     def subs(self, d: Mapping[TExpr, TExpr]) -> Distribution:
@@ -92,7 +92,7 @@ class Distribution(Sized, Hashable, Immutable):
 
 
 class NormalDistribution(Distribution):
-    """Normal distribution for one random variable
+    """Normal distribution for one random variable.
 
     Parameters
     ----------
@@ -134,7 +134,7 @@ class NormalDistribution(Distribution):
         return cls(name, level, mean, variance)
 
     def replace(self, **kwargs) -> NormalDistribution:
-        """Replace properties and create a new NormalDistribution"""
+        """Replace properties and create a new NormalDistribution."""
         name = kwargs.get('name', self._name)
         level = kwargs.get('level', self._level)
         mean = kwargs.get('mean', self._mean)
@@ -160,13 +160,13 @@ class NormalDistribution(Distribution):
 
     @property
     def parameter_names(self) -> tuple[str, ...]:
-        """List of names of all parameters used in definition"""
+        """List of names of all parameters used in definition."""
         return (self._variance.name,)
 
     @property
     @cache_method_no_args
     def free_symbols(self) -> frozenset[Expr]:
-        """Free symbols including random variable itself"""
+        """Free symbols including random variable itself."""
         return frozenset().union(
             self._mean.free_symbols,
             self._variance.free_symbols,
@@ -175,11 +175,11 @@ class NormalDistribution(Distribution):
 
     @property
     def symbol(self) -> Expr:
-        """Symbol of this random variable"""
+        """Symbol of this random variable."""
         return Expr.symbol(self._name)
 
     def subs(self, d: Mapping[TExpr, TExpr]) -> NormalDistribution:
-        """Substitute expressions
+        """Substitute expressions.
 
         Parameters
         ----------
@@ -286,7 +286,7 @@ class NormalDistribution(Distribution):
 
 
 class JointNormalDistribution(Distribution):
-    """Joint distribution of random variables
+    """Joint distribution of random variables.
 
     Parameters
     ----------
@@ -342,7 +342,7 @@ class JointNormalDistribution(Distribution):
         return cls(names, level, mean, variance)
 
     def replace(self, **kwargs) -> JointNormalDistribution:
-        """Replace properties and create a new JointNormalDistribution"""
+        """Replace properties and create a new JointNormalDistribution."""
         names = kwargs.get('names', self._names)
         level = kwargs.get('level', self._level)
         mean = kwargs.get('mean', self._mean)
@@ -369,7 +369,7 @@ class JointNormalDistribution(Distribution):
     @property
     @cache_method_no_args
     def parameter_names(self) -> tuple[str, ...]:
-        """List of names of all parameters used in definition"""
+        """List of names of all parameters used in definition."""
         n = self._variance.rows
         params = []
         for row in range(n):
@@ -380,7 +380,7 @@ class JointNormalDistribution(Distribution):
     @property
     @cache_method_no_args
     def free_symbols(self) -> frozenset[Expr]:
-        """Free symbols including random variable itself"""
+        """Free symbols including random variable itself."""
         return frozenset().union(
             self._mean.free_symbols,
             self._variance.free_symbols,
@@ -389,11 +389,11 @@ class JointNormalDistribution(Distribution):
 
     @property
     def symbols(self) -> tuple[Expr, ...]:
-        """Symbols for all random variables"""
+        """Symbols for all random variables."""
         return tuple(Expr.symbol(name) for name in self._names)
 
     def subs(self, d: Mapping[TExpr, TExpr]) -> JointNormalDistribution:
-        """Substitute expressions
+        """Substitute expressions.
 
         Parameters
         ----------
@@ -604,7 +604,7 @@ class JointNormalDistribution(Distribution):
 
 
 class FiniteDistribution(Distribution):
-    """A finite discrete distribution
+    """A finite discrete distribution.
 
     Parameters
     ----------
@@ -636,7 +636,7 @@ class FiniteDistribution(Distribution):
         return cls(name, level, frozenmapping(probs))
 
     def replace(self, **kwargs) -> FiniteDistribution:
-        """Replace properties and create a new FiniteDistribution"""
+        """Replace properties and create a new FiniteDistribution."""
         name = kwargs.get('name', self._name)
         level = kwargs.get('level', self._level)
         probabilities = kwargs.get('mean', self._probabilities)
@@ -684,14 +684,14 @@ class FiniteDistribution(Distribution):
     @property
     @cache_method_no_args
     def free_symbols(self) -> frozenset[Expr]:
-        """Free symbols including random variable itself"""
+        """Free symbols including random variable itself."""
         return frozenset().union(
             (Expr.symbol(self._name),),
             chain.from_iterable(expr.free_symbols for expr in self._probabilities.values()),
         )
 
     def subs(self, d: Mapping[TExpr, TExpr]) -> FiniteDistribution:
-        """Substitute expressions
+        """Substitute expressions.
 
         Parameters
         ----------

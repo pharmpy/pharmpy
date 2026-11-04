@@ -10,7 +10,7 @@ from pharmpy.modeling import fix_or_unfix_parameters, set_initial_estimates
 
 
 def calculate_parcov_inits(model, ie, ncovs):
-    """Get dict of new updated inits for parcov block
+    """Get dict of new updated inits for parcov block.
 
     model already has a FREM block
     Initial estimates for the parcov block is calculated given correlations of individual etas
@@ -40,7 +40,7 @@ def calculate_parcov_inits(model, ie, ncovs):
 
 
 def create_model3b(model1b, model3, model3_res, ncovs):
-    """Create model 3b from model 3
+    """Create model 3b from model 3.
 
     * Update parcov omega block
     * Set FIX pattern back from model1b

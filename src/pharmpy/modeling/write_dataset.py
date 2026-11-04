@@ -26,7 +26,7 @@ def create_dataset_path(model: Model, path: str | Path | None = None) -> Path:
 
 
 def write_csv(model: Model, path: str | Path | None = None, force: bool = False) -> Model:
-    """Write dataset to a csv file and updates the datainfo path
+    """Write dataset to a csv file and updates the datainfo path.
 
     Parameters
     ----------
@@ -74,7 +74,7 @@ def write_csv(model: Model, path: str | Path | None = None, force: bool = False)
 def write_dataset(
     model: Model, path: str | Path | None = None, force: bool = False, type: str = "csv"
 ) -> Model:
-    """Write dataset to file and updates the datainfo path
+    """Write dataset to file and updates the datainfo path.
 
     Curretly supports csv files.
 

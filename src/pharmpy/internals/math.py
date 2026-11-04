@@ -13,7 +13,7 @@ from pharmpy.internals.expr.subs import subs
 
 
 def triangular(n: int):
-    """The n:th triangular number"""
+    """The n:th triangular number."""
     return n * (n + 1) // 2
 
 
@@ -23,13 +23,13 @@ def triangular_root(x):
 
 
 def symmetric_to_flattened(A):
-    """Flatten a symmetric matrix into a vector using the lower triangle"""
+    """Flatten a symmetric matrix into a vector using the lower triangle."""
     return np.concatenate([A[i, : i + 1] for i in range(len(A))])
 
 
 def flattened_to_symmetric(x):
     """Convert a vector containing the elements of a lower triangular matrix into a full symmetric
-    matrix
+    matrix.
     """
     n = triangular_root(len(x))
     new = np.zeros((n, n))
@@ -40,7 +40,7 @@ def flattened_to_symmetric(x):
 
 
 def cov2corr(cov):
-    """Convert covariance matrix to correlation matrix"""
+    """Convert covariance matrix to correlation matrix."""
     v = np.sqrt(np.diag(cov))
     outer_v = np.outer(v, v)
     corr = cov / outer_v
@@ -49,7 +49,7 @@ def cov2corr(cov):
 
 
 def corr2cov(corr, sd):
-    """Convert correlation matrix to covariance matrix
+    """Convert correlation matrix to covariance matrix.
 
     Parameters
     ----------
@@ -64,7 +64,7 @@ def corr2cov(corr, sd):
 
 
 def round_and_keep_sum(x, s):
-    """Round values in Series x and their sum must be s
+    """Round values in Series x and their sum must be s.
 
     Algorithm: Floor all elements in series. If sum not correct add one to element with
                highest fractional part until sum is reached.
@@ -115,7 +115,7 @@ def is_symmetric(A):
 
 
 def is_positive_semidefinite(A, is_hermitian: bool | None = None):
-    """Checks whether a matrix is positive semi-definite"""
+    """Checks whether a matrix is positive semi-definite."""
     if is_hermitian or (is_hermitian is None and is_symmetric(A)):
         eigvals = np.linalg.eigvalsh
     else:
@@ -124,7 +124,7 @@ def is_positive_semidefinite(A, is_hermitian: bool | None = None):
 
 
 def is_posdef(A):
-    """Checks whether a matrix is positive definite"""
+    """Checks whether a matrix is positive definite."""
     try:
         _ = np.linalg.cholesky(A)
         return True
@@ -137,7 +137,7 @@ def toeplitz_hermitian_part(A):
 
 
 def nearest_positive_semidefinite(A):
-    """Return the nearest positive semidefinite matrix in the Frobenius norm to a matrix
+    """Return the nearest positive semidefinite matrix in the Frobenius norm to a matrix.
 
     A Python/Numpy port of John D'Errico's `nearestSPD` MATLAB code [1], which
     credits [2].
@@ -197,7 +197,7 @@ def nearest_positive_definite(A):
 
 
 def conditional_joint_normal(mu, sigma, a):
-    """Give parameters of the conditional joint normal distribution
+    """Give parameters of the conditional joint normal distribution.
 
     The condition is the last len(a) values
 

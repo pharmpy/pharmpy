@@ -94,7 +94,7 @@ def read_nonmem_dataset(
     missing_data_token=None,
 ):
     """Read a nonmem dataset from file
-     column types will be inferred from the column names
+     column types will be inferred from the column names.
 
     raw - minimal processing, data will be kept in string format.
     ignore_character

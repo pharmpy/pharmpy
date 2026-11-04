@@ -27,7 +27,7 @@ def transform_blq(
     method: Literal['m1', 'm3', 'm4', 'm5', 'm6', 'm7'] = 'm4',
     lloq: float | None = None,
 ) -> Model:
-    """Transform for BLQ data
+    """Transform for BLQ data.
 
     Transform a given model, methods available are m1, m3, m4, m5, m6 and m7 [1]_.
     The blq information can come from the dataset, the lloq option or a combination. Both LLOQ and BLQ

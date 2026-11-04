@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 """
-The NONMEM $ESTIMATION record
+The NONMEM $ESTIMATION record.
 """
 
 from .option_record import OptionRecord

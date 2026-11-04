@@ -12,14 +12,14 @@ from .records.raw_record import RawRecord
 
 
 class Abbreviated:
-    """Handling all $ABBREVIATED in a control stream"""
+    """Handling all $ABBREVIATED in a control stream."""
 
     def __init__(self, stream):
         self.stream = stream
 
     @property
     def replace(self):
-        """Get all $ABBR REPLACE as a dictionary"""
+        """Get all $ABBR REPLACE as a dictionary."""
         return dict(
             chain.from_iterable(
                 record.replaceopt.items() for record in self.stream.get_records('ABBREVIATED')
@@ -36,7 +36,7 @@ class Abbreviated:
 
 
 class NMTranParser:
-    """Parser for NMTran control streams"""
+    """Parser for NMTran control streams."""
 
     def parse(self, text):
         records = []
@@ -85,7 +85,7 @@ default_record_order = [
 
 
 class NMTranControlStream:
-    """Representation of a parsed control stream (model file)"""
+    """Representation of a parsed control stream (model file)."""
 
     def __init__(self, records=None):
         if records is None:
@@ -96,7 +96,7 @@ class NMTranControlStream:
         self.abbreviated = Abbreviated(self)
 
     def get_records(self, name, problem_no=0):
-        """Return a list of all records of a certain type in the current $PROBLEM"""
+        """Return a list of all records of a certain type in the current $PROBLEM."""
         # $SIZES is not problem-specific
         if name == 'SIZES':
             return [rec for rec in self.records if rec.name == 'SIZES']
@@ -113,7 +113,7 @@ class NMTranControlStream:
         return next(iter(self.get_records(name)), None)
 
     def insert_record(self, record, at_index=None):
-        """Create and insert a new record at the correct position
+        """Create and insert a new record at the correct position.
 
         If the record type is already present the new record will be put
         directly after the last record of that type.

@@ -39,7 +39,7 @@ def _get_dv_unit(model):
 
 
 def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str):
-    """Plot individual OFV of two models against each other
+    """Plot individual OFV of two models against each other.
 
     Parameters
     ----------
@@ -89,7 +89,7 @@ def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str
 def plot_individual_predictions(
     model: Model, predictions: pd.DataFrame, individuals: Collection[int] | None = None
 ):
-    """Plot DV and predictions grouped on individuals
+    """Plot DV and predictions grouped on individuals.
 
     The predictions would normally be taken from the modelfit results, but any data frame of
     appropriate format can be used. It should have one column per type of prediction where
@@ -160,7 +160,7 @@ def plot_transformed_eta_distributions(
     parameter_estimates_untransformed: pd.Series | Mapping[str, float],
     seed: RandomNumberGenerator | Seed | float | int | None = None,
 ):
-    """Plot transformed eta distributions for all transformed etas
+    """Plot transformed eta distributions for all transformed etas.
 
     Parameters
     ----------
@@ -268,7 +268,7 @@ def plot_eta_distributions(
     model: Model,
     individual_estimates: pd.DataFrame,
 ):
-    """Plot eta distributions for all etas
+    """Plot eta distributions for all etas.
 
     Parameters
     ----------
@@ -331,7 +331,7 @@ def plot_dv_vs_pred(
     stratify_on: str | None = None,
     bins: int = 8,
 ) -> alt.TopLevelMixin:
-    """Plot DV vs PRED
+    """Plot DV vs PRED.
 
     Parameters
     ----------
@@ -386,7 +386,7 @@ def plot_dv_vs_ipred(
     stratify_on: str | None = None,
     bins: int = 8,
 ) -> alt.TopLevelMixin:
-    """Plot DV vs IPRED
+    """Plot DV vs IPRED.
 
     Parameters
     ----------
@@ -444,7 +444,7 @@ def plot_abs_cwres_vs_ipred(
     stratify_on: str | None = None,
     bins: int = 8,
 ) -> alt.TopLevelMixin:
-    r"""Plot \|CWRES\| vs IPRED
+    r"""Plot \|CWRES\| vs IPRED.
 
     Parameters
     ----------
@@ -592,7 +592,7 @@ def plot_cwres_vs_idv(
     stratify_on: str | None = None,
     bins: int = 8,
 ) -> alt.TopLevelMixin:
-    """Plot CWRES vs idv
+    """Plot CWRES vs idv.
 
     Parameters
     ----------
@@ -999,7 +999,7 @@ def plot_vpc(
     ci: float = 0.95,
     stratify_on: str | None = None,
 ):
-    """Creates a VPC plot for a model
+    """Creates a VPC plot for a model.
 
     Parameters
     ----------
@@ -1156,7 +1156,7 @@ def _concat(charts):
 def plot_iteration_trace(
     ofv_iterations: pd.Series, parameter_estimates_iterations: pd.DataFrame
 ) -> alt.TopLevelMixin:
-    """Plot iteration traces for OFV and parameters of an estimation
+    """Plot iteration traces for OFV and parameters of an estimation.
 
     Parameters
     ----------

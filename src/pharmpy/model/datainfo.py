@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-"""DataInfo is a companion to the dataset. It contains metadata of the dataset"""
+"""DataInfo is a companion to the dataset. It contains metadata of the dataset."""
 
 from __future__ import annotations
 
@@ -336,7 +336,7 @@ class Provenance(Sequence, Immutable):
 
 
 class DataVariable(Immutable):
-    """Information about one variable represented by data
+    """Information about one variable represented by data.
 
     For long format datasets a data column can contain multiple data variables.
 
@@ -468,7 +468,7 @@ class DataVariable(Immutable):
         )
 
     def replace(self, **kwargs) -> DataVariable:
-        """Replace properties and create a new DataVariable"""
+        """Replace properties and create a new DataVariable."""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
         new = DataVariable.create(**d)
@@ -529,17 +529,17 @@ class DataVariable(Immutable):
 
     @property
     def name(self) -> str:
-        """Variable name"""
+        """Variable name."""
         return self._name
 
     @property
     def symbol(self) -> Expr:
-        """Symbol having the variable name"""
+        """Symbol having the variable name."""
         return Expr.symbol(self._name)
 
     @property
     def type(self) -> str:
-        """Type of column
+        """Type of column.
 
         ============  =============
         type          Description
@@ -569,7 +569,7 @@ class DataVariable(Immutable):
 
     @property
     def scale(self) -> str:
-        """Scale of measurement
+        """Scale of measurement.
 
         The statistical scale of measurement for the data variable. Can be one of
         'nominal', 'ordinal', 'interval' and 'rational'.
@@ -578,12 +578,12 @@ class DataVariable(Immutable):
 
     @property
     def count(self) -> bool:
-        """Does the data variable represent count data"""
+        """Does the data variable represent count data."""
         return self._count
 
     @property
     def properties(self) -> Mapping[str, Any]:
-        """Other properties of the DataVariable
+        """Other properties of the DataVariable.
 
         descriptor
 
@@ -625,7 +625,7 @@ class DataVariable(Immutable):
         return self._properties
 
     def is_categorical(self) -> bool:
-        """Check if the data variable is categorical
+        """Check if the data variable is categorical.
 
         Returns
         -------
@@ -650,7 +650,7 @@ class DataVariable(Immutable):
         return self.scale in {'nominal', 'ordinal'}
 
     def is_numerical(self) -> bool:
-        """Check if the data variable is numerical
+        """Check if the data variable is numerical.
 
         Returns
         -------
@@ -675,7 +675,7 @@ class DataVariable(Immutable):
         return self.scale in {'interval', 'ratio'}
 
     def get_property(self, property: str) -> Any:
-        """Get a variable property with default if not defined
+        """Get a variable property with default if not defined.
 
         Parameters
         ----------
@@ -715,7 +715,7 @@ class DataVariable(Immutable):
         return value
 
     def set_property(self, property: str, value: Any) -> DataVariable:
-        """Set the value for a property
+        """Set the value for a property.
 
         Parameters
         ----------
@@ -742,7 +742,7 @@ class DataVariable(Immutable):
         return self.replace(properties=props)
 
     def remove_property(self, property: str) -> DataVariable:
-        """Remove a property
+        """Remove a property.
 
         Parameters
         ----------
@@ -772,7 +772,7 @@ class DataVariable(Immutable):
 
 
 class ColumnInfo(Immutable):
-    """Information about one data column
+    """Information about one data column.
 
     Parameters
     ----------
@@ -808,7 +808,7 @@ class ColumnInfo(Immutable):
 
     @staticmethod
     def convert_pd_dtype_to_datatype(dtype) -> str:
-        """Convert pandas dtype to Pharmpy datatype
+        """Convert pandas dtype to Pharmpy datatype.
 
         Parameters
         ----------
@@ -830,7 +830,7 @@ class ColumnInfo(Immutable):
 
     @staticmethod
     def convert_datatype_to_pd_dtype(datatype) -> str:
-        """Convert Pharmpy datatype to pandas dtype
+        """Convert Pharmpy datatype to pandas dtype.
 
         Parameters
         ----------
@@ -913,7 +913,7 @@ class ColumnInfo(Immutable):
         )
 
     def replace(self, **kwargs) -> ColumnInfo:
-        """Replace properties and create a new ColumnInfo"""
+        """Replace properties and create a new ColumnInfo."""
         d = {key[1:]: value for key, value in self.__dict__.items()}
         d.update(kwargs)
         new = ColumnInfo.create(**d)
@@ -978,22 +978,22 @@ class ColumnInfo(Immutable):
 
     @property
     def name(self) -> str:
-        """Column name"""
+        """Column name."""
         return self._name
 
     @property
     def symbol(self) -> Expr:
-        """Symbol having the column name"""
+        """Symbol having the column name."""
         return Expr.symbol(self._name)
 
     @property
     def drop(self) -> bool:
-        """Should this column be dropped"""
+        """Should this column be dropped."""
         return self._drop
 
     @property
     def datatype(self) -> str:
-        """Column datatype
+        """Column datatype.
 
         ============ ================ ======== ================================= ===========
         datatype     Description      Size     Range                             NA allowed?
@@ -1022,24 +1022,24 @@ class ColumnInfo(Immutable):
 
     @property
     def variable_id(self) -> str | None:
-        """Name of identifier column (e.g. DVID or ADMID)"""
+        """Name of identifier column (e.g. DVID or ADMID)."""
         return self._variable_id
 
     @property
     def variable_mapping(self) -> frozenmapping[int, DataVariable] | DataVariable:
-        """Mapping from value in identifier column to DataVariable"""
+        """Mapping from value in identifier column to DataVariable."""
         return self._variable_mapping
 
     @property
     def variable(self) -> DataVariable:
-        """If the column represent a single DataVariable return it else raise"""
+        """If the column represent a single DataVariable return it else raise."""
         if not isinstance(self._variable_mapping, DataVariable):
             raise ValueError("This ColumnInfo represents more than one DataVariable. Use indexing")  # noqa: TRY004
         return self._variable_mapping
 
     @property
     def variables(self) -> tuple[DataVariable, ...]:
-        """All datavariables defined in this column"""
+        """All datavariables defined in this column."""
         if isinstance(self._variable_mapping, DataVariable):
             return (self._variable_mapping,)
         else:
@@ -1048,7 +1048,7 @@ class ColumnInfo(Immutable):
     @property
     def type(self) -> str:
         """The type of the column. See DataVariable.type
-        Note that all variables in one column must have the same type
+        Note that all variables in one column must have the same type.
         """
         if isinstance(self._variable_mapping, DataVariable):
             return self._variable_mapping.type
@@ -1073,7 +1073,7 @@ class ColumnInfo(Immutable):
             raise KeyError(f"No DataVariable named {index}")
 
     def is_integer(self) -> bool:
-        """Check if the column datatype is integral
+        """Check if the column datatype is integral.
 
         Returns
         -------
@@ -1124,7 +1124,7 @@ class ColumnInfo(Immutable):
 
 
 class DataInfo(Sequence, Immutable):
-    """Metadata for the dataset
+    """Metadata for the dataset.
 
     Can be indexed to get ColumnInfo for the columns.
 
@@ -1325,7 +1325,7 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def separator(self) -> str:
-        """Separator for dataset file
+        """Separator for dataset file.
 
         Can be a single character or a regular expression
         string.
@@ -1334,17 +1334,17 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def missing_data_token(self) -> str:
-        """Token for missing data"""
+        """Token for missing data."""
         return self._missing_data_token
 
     @property
     def provenance(self) -> Provenance:
-        """Provenance of dataset"""
+        """Provenance of dataset."""
         return self._provenance
 
     @property
     def typeix(self) -> TypeIndexer:
-        """Type indexer
+        """Type indexer.
 
         Example
         -------
@@ -1356,7 +1356,7 @@ class DataInfo(Sequence, Immutable):
         return TypeIndexer(self)
 
     def set_column(self, col: ColumnInfo) -> DataInfo:
-        """Set ColumnInfo of an existing column of the same name
+        """Set ColumnInfo of an existing column of the same name.
 
         Parameters
         ----------
@@ -1378,7 +1378,7 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def id_column(self) -> ColumnInfo:
-        """The id column
+        """The id column.
 
         Examples
         --------
@@ -1423,7 +1423,7 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def dv_column(self) -> ColumnInfo:
-        """The dv column
+        """The dv column.
 
         Examples
         --------
@@ -1439,7 +1439,7 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def idv_column(self) -> ColumnInfo:
-        """The idv column
+        """The idv column.
 
         Examples
         --------
@@ -1455,7 +1455,7 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def names(self) -> tuple[str, ...]:
-        """All column names in order
+        """All column names in order.
 
         Examples
         --------
@@ -1468,7 +1468,7 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def symbols(self) -> tuple[Expr, ...]:
-        """Symbols for all columns in order
+        """Symbols for all columns in order.
 
         Examples
         --------
@@ -1481,11 +1481,11 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def types(self) -> tuple[str, ...]:
-        """All column types in order"""
+        """All column types in order."""
         return tuple(col.type for col in self._columns)
 
     def set_types(self, value: list[str] | str) -> DataInfo:
-        """Set types for all columns
+        """Set types for all columns.
 
         Parameters
         ----------
@@ -1521,7 +1521,7 @@ class DataInfo(Sequence, Immutable):
         return DataInfo.create(columns=newcols, path=self._path, separator=self._separator)
 
     def find_column_by_type(self, type: str) -> ColumnInfo | None:
-        """Find a column given by type
+        """Find a column given by type.
 
         Parameters
         ----------
@@ -1543,7 +1543,7 @@ class DataInfo(Sequence, Immutable):
         return cols[0]
 
     def find_single_column_name(self, type: str, default: str | None = None) -> str:
-        """Find name of single column given type
+        """Find name of single column given type.
 
         Finds single column name with a given type, else provided default. Raises
         if more than one column is found or if no column is found and no default is
@@ -1572,7 +1572,7 @@ class DataInfo(Sequence, Immutable):
         return col[0].name
 
     def get_dtype_dict(self) -> dict[str, str]:
-        """Create a dictionary from column names to pandas dtypes
+        """Create a dictionary from column names to pandas dtypes.
 
         This can be used as input to some pandas functions to convert
         column to the correct pandas dtype.
@@ -1688,7 +1688,7 @@ class DataInfo(Sequence, Immutable):
 
     @staticmethod
     def from_json(s: str) -> DataInfo:
-        """Create DataInfo from JSON string
+        """Create DataInfo from JSON string.
 
         Parameters
         ----------
@@ -1708,7 +1708,7 @@ class DataInfo(Sequence, Immutable):
 
     @staticmethod
     def read_json(path: Path | str) -> DataInfo:
-        """Read DataInfo from JSON file
+        """Read DataInfo from JSON file.
 
         Parameters
         ----------
@@ -1731,7 +1731,7 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def variables(self) -> list[DataVariable]:
-        """A list of all data variables in order"""
+        """A list of all data variables in order."""
         variables = []
         for col in self._columns:
             if isinstance(col._variable_mapping, DataVariable):
@@ -1770,7 +1770,7 @@ class DataInfo(Sequence, Immutable):
         return df.to_string(index=False)
 
     def find_column_by_property(self, property: str, value: Any) -> ColumnInfo | None:
-        """Find a single  column having a property/value pair
+        """Find a single  column having a property/value pair.
 
         Returns None if more than one column have the pair, if no column
         has the pair or if not all variables of a column have the pair.
@@ -1789,7 +1789,7 @@ class DataInfo(Sequence, Immutable):
         return found
 
     def find_variable(self, alias: str) -> DataVariable:
-        """Find a single data variable given a column name alias
+        """Find a single data variable given a column name alias.
 
         The alias can be the name of the column (e.g. "DV") if it maps to one single data variable
         or the name of the column suffixed by ":" and the DVID number if it maps to multiple
@@ -1820,7 +1820,7 @@ class DataInfo(Sequence, Immutable):
         return variable
 
     def find_column(self, alias: str) -> ColumnInfo:
-        """Find a single column given a column name alias
+        """Find a single column given a column name alias.
 
         The data variable suffix of the alias will be ignored
         """

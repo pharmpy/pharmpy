@@ -23,7 +23,7 @@ from .data import get_doses, get_ids, get_observations
 
 
 def create_trial_design(idv_name: str = 'TIME') -> TrialDesign:
-    """Create an empty trial design
+    """Create an empty trial design.
 
     Parameters
     ----------
@@ -52,7 +52,7 @@ def create_trial_design(idv_name: str = 'TIME') -> TrialDesign:
 
 
 def add_arm(td: TrialDesign, name: str, size: int) -> TrialDesign:
-    """Add an empty arm to a trial design
+    """Add an empty arm to a trial design.
 
     Parameters
     ----------
@@ -86,7 +86,7 @@ def add_arm(td: TrialDesign, name: str, size: int) -> TrialDesign:
 def add_observations(
     td: TrialDesign, arm: str, variable: str, time_points: Sequence[float], start_time: float = 0.0
 ) -> TrialDesign:
-    """Add observations to an arm in a trial design
+    """Add observations to an arm in a trial design.
 
     Parameters
     ----------
@@ -138,7 +138,7 @@ def add_administration(
     time_points: Sequence[float],
     start_time: float = 0.0,
 ) -> TrialDesign:
-    """Add observations to an arm in a trial design
+    """Add observations to an arm in a trial design.
 
     Parameters
     ----------
@@ -193,7 +193,7 @@ def add_administration(
 
 
 def create_dataset_from_design(td: TrialDesign) -> pd.DataFrame:
-    """Create a dataset matching a design
+    """Create a dataset matching a design.
 
     Parameters
     ----------

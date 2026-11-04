@@ -158,7 +158,7 @@ def add_parentheses(theta):
 
 class ThetaRecord(Record):
     def _multiple(self, theta: AttrTree) -> int:
-        """Return the multiple (xn) of a theta or 1 if no multiple"""
+        """Return the multiple (xn) of a theta or 1 if no multiple."""
         if theta.find('n'):
             return cast(int, eval_token(theta.subtree('n').leaf('INT')))
         else:
@@ -282,7 +282,7 @@ class ThetaRecord(Record):
         return names
 
     def update(self, parameters):
-        """From a Parameters update the THETAs in this record
+        """From a Parameters update the THETAs in this record.
 
         parameters - Only parameters defined by this $THETA record
         """
@@ -363,7 +363,7 @@ class ThetaRecord(Record):
         return ThetaRecord(self.name, self.raw_name, new_tree)
 
     def __len__(self):
-        """Number of thetas in this record"""
+        """Number of thetas in this record."""
         tot = 0
         for theta in self.root.subtrees('theta'):
             tot += self._multiple(theta)

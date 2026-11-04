@@ -18,7 +18,7 @@ from pharmpy.workflows import Results
 
 @dataclass(frozen=True)
 class SimevalResults(Results):
-    """Simeval results class"""
+    """Simeval results class."""
 
     sampled_iofv: Any | None = None
     iofv_summary: Any | None = None
@@ -26,7 +26,7 @@ class SimevalResults(Results):
 
 
 def calculate_results(original_model, original_results, simfit_results):
-    """Calculate simeval results"""
+    """Calculate simeval results."""
     sampled_iofv = pd.concat(
         [res.individual_ofv for res in simfit_results.modelfit_results],
         axis=1,

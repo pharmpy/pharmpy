@@ -58,14 +58,14 @@ class OptionRecord(Record):
     def option_pairs(self):
         """Extract the key-value pairs
         If no value exists set it to None
-        Can only handle cases where options are supposed to be unique
+        Can only handle cases where options are supposed to be unique.
         """
         return {_get_key(node): _get_value(node) for node in self.root.subtrees('option')}
 
     @property
     def all_options(self):
         """Extract all options even if non-unique.
-        returns a list of named two-tuples with key and value
+        returns a list of named two-tuples with key and value.
         """
         pairs = []
         for node in self.root.subtrees('option'):
@@ -88,7 +88,7 @@ class OptionRecord(Record):
         return None
 
     def get_option_lists(self, option):
-        """Generator for lists of one option
+        """Generator for lists of one option.
 
         For example COMPARTMENT in $MODEL. This handles 'KEY VALUE' syntax.
         """
@@ -109,7 +109,7 @@ class OptionRecord(Record):
                     yield [value]
 
     def set_option(self, key: str, new_value: str):
-        """Set the value of an option
+        """Set the value of an option.
 
         If option already exists replaces its value
         appends option at the end if it does not exist
@@ -173,19 +173,19 @@ class OptionRecord(Record):
         return node
 
     def prepend_option(self, key: str, value: str | None = None):
-        """Prepend option"""
+        """Prepend option."""
         node = self._create_option(key, value)
         new_root = self._prepend_option_node(node)
         return self.__class__(self.name, self.raw_name, new_root)
 
     def _prepend_option_node(self, node):
-        """Add a new option as first option"""
+        """Add a new option as first option."""
         ws_token = AttrToken('WS', ' ')
         new = (node, ws_token)
         return AttrTree(self.root.rule, self.root.children[:1] + new + self.root.children[1:])
 
     def append_option(self, key: str, value: str | None = None):
-        """Append option as last option
+        """Append option as last option.
 
         Method applicable to option records with no special grammar
         """
@@ -208,14 +208,14 @@ class OptionRecord(Record):
         return (0, j, AttrToken('WS', ' '))
 
     def append_option_node(self, node):
-        """Add a new option as last option"""
+        """Add a new option as last option."""
         i, j, sep = self._append_option_args()
         children = self.root.children
         newroot = AttrTree(self.root.rule, children[:i] + (sep, node) + children[i:j])
         return self.__class__(self.name, self.raw_name, newroot)
 
     def replace_option(self, old, new):
-        """Replace an option"""
+        """Replace an option."""
 
         def _fn(node: AttrTree | AttrToken):
             if isinstance(node, AttrTree) and node.rule == 'option':
@@ -234,7 +234,7 @@ class OptionRecord(Record):
         return self.__class__(self.name, self.raw_name, newroot)
 
     def remove_option(self, key):
-        """Remove all options key"""
+        """Remove all options key."""
         new_children = []
         for node in self.root.children:
             if isinstance(node, AttrTree) and node.rule == 'option' and key == _get_key(node):
@@ -246,7 +246,7 @@ class OptionRecord(Record):
         return self.__class__(self.name, self.raw_name, newroot)
 
     def remove_nth_option(self, key, n):
-        """Remove the nth option key"""
+        """Remove the nth option key."""
         new_children = []
         i = 0
         for node in self.root.children:
@@ -265,7 +265,7 @@ class OptionRecord(Record):
         return self.__class__(self.name, self.raw_name, newroot)
 
     def add_suboption_for_nth(self, key, n, suboption):
-        """Adds a suboption to the nth option key"""
+        """Adds a suboption to the nth option key."""
         i = 0
         new_children = []
         it = iter(self.root.children)
@@ -290,7 +290,7 @@ class OptionRecord(Record):
             new_children.append(node)
 
     def remove_suboption_for_all(self, key, suboption):
-        """Remove subtoption from all options key"""
+        """Remove subtoption from all options key."""
         new_children = []
         it = iter(self.root.children)
         for node in it:
@@ -315,7 +315,7 @@ class OptionRecord(Record):
         return self.__class__(self.name, self.raw_name, newroot)
 
     def remove_option_startswith(self, start):
-        """Remove all options that startswith"""
+        """Remove all options that startswith."""
         rec = self
         for key in self.option_pairs:
             if key.startswith(start):
@@ -324,7 +324,7 @@ class OptionRecord(Record):
 
     @staticmethod
     def match_option(options: Iterable[str], query: str):
-        """Match a given option to any from a set of valid options
+        """Match a given option to any from a set of valid options.
 
         NONMEM allows matching down to three letters as long as
         there are no ambiguities.

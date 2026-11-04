@@ -34,7 +34,7 @@ class Record:
 
     @property
     def root(self):
-        """Root of the parse tree"""
+        """Root of the parse tree."""
         return self._root
 
     def __str__(self):

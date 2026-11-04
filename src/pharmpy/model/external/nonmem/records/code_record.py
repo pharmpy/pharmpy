@@ -525,7 +525,7 @@ def _index_statements_diff(
     it: Iterator[tuple[Literal[-1, 0, 1], Statement]],
 ):
     """Reorder and group a diff of statements according to the
-    given index mapping
+    given index mapping.
     """
 
     index_index = 0
@@ -667,7 +667,7 @@ class CodeRecord(Record):
 
     def from_odes(self, ode_system, extra):
         """Set statements of record given an explicit ode system
-        extra statements are added to the top
+        extra statements are added to the top.
         """
         odes = ode_system.eqs
         functions = [ode.lhs.args[0] for ode in odes]
@@ -682,7 +682,7 @@ class CodeRecord(Record):
         return self.update_statements(statements)
 
     def update_extra_nodes(self, dvs, dvid_name):
-        """Update AST nodes not part of the statements
+        """Update AST nodes not part of the statements.
 
         Currently the block IF for DVID is handled as extra nodes
         """
@@ -721,7 +721,7 @@ class CodeRecord(Record):
 
 
 def create_dvs_node(dvs, dvid_name):
-    """Create special dvs AST node"""
+    """Create special dvs AST node."""
     s = ""
     for dv, dvid in dvs.items():
         s += f'IF ({dvid_name}.EQ.{dvid}) Y = {dv}\n'

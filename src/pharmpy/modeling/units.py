@@ -36,7 +36,7 @@ def get_unit_of(model: Model, variable: str | Expr) -> Unit: ...
 
 
 def get_unit_of(model: Model, variable: str | Expr | None = None) -> Unit | dict[str, Unit]:
-    """Derive the physical unit of a variable in the model
+    """Derive the physical unit of a variable in the model.
 
     Unit information for the dataset needs to be available.
     The variable can be defined in the code, a dataset column, a parameter
@@ -344,7 +344,7 @@ def convert_unit(
     original_unit: str | Unit | None = None,
     in_dataset: bool = False,
 ) -> Model:
-    """Convert between units for a data variable
+    """Convert between units for a data variable.
 
     The conversion could either be handled in the model code or optionally in the dataset (if applicable).
     Note that when doing the conversion in the model the unit of the data variable itself will not

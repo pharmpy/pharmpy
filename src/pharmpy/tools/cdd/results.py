@@ -20,7 +20,7 @@ from pharmpy.workflows import Results
 
 @dataclass(frozen=True)
 class CDDResults(Results):
-    """CDD Results class"""
+    """CDD Results class."""
 
     case_results: Any | None = None
     case_column: Any | None = None
@@ -93,7 +93,7 @@ def calculate_results(
     skipped_individuals,
     **_,
 ):
-    """Calculate CDD results"""
+    """Calculate CDD results."""
     if base_model_results is None:
         raise ValueError('cdd base model has no results')
 
@@ -217,7 +217,7 @@ def psn_cdd_skipped_individuals(path: str | Path):
 
 
 def psn_cdd_results(path: str | Path, base_model_path=None):
-    """Create cdd results from a PsN CDD run
+    """Create cdd results from a PsN CDD run.
 
     :param path: Path to PsN cdd run directory
     :return: A :class:`CDDResults` object

@@ -370,7 +370,7 @@ def add_indirect_effect(
     prod: bool = True,
     variable: str | None = None,
 ) -> Model:
-    r"""Add indirect (turnover) effect
+    r"""Add indirect (turnover) effect.
 
     The concentration :math:`C_c` has an impact on the production or degradation rate of the response  R:
 

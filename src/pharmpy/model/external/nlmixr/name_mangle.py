@@ -5,7 +5,7 @@
 
 def name_mangle(s: str) -> str:
     """
-    Changes the format of parameter name to avoid using parenthesis
+    Changes the format of parameter name to avoid using parenthesis.
 
     Parameters
     ----------

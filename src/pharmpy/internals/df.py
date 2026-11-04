@@ -37,7 +37,7 @@ def hash_df_fs(df: pd.DataFrame) -> str:
 
 
 def create_series(x, name: str) -> pd.Series:
-    """Create a pandas series with index starting from 1"""
+    """Create a pandas series with index starting from 1."""
     ser = pd.Series(x, name=name, index=range(1, len(x) + 1))
     return ser
 

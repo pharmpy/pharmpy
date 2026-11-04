@@ -16,7 +16,7 @@ from pharmpy.modeling.mfl import generate_transformations
 
 
 def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: float | None = None):
-    """Create baseline pkpd model
+    """Create baseline pkpd model.
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ def create_pkpd_models(
     met_init: int | float | None = None,
     initial_error_models: dict[int, str] | None = None,
 ):
-    """Create pkpd models
+    """Create pkpd models.
 
     Parameters
     ----------

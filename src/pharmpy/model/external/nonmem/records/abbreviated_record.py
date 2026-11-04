@@ -27,7 +27,7 @@ def strip_quote(s):
 class AbbreviatedRecord(Record):
     @property
     def replaceopt(self):
-        """Give a dict of all REPLACE in record"""
+        """Give a dict of all REPLACE in record."""
         d = {}
         for replace in self.root.subtrees('replace'):
             a, b = islice(iter(replace.leaves('ANY')), 2)

@@ -25,7 +25,7 @@ from .parameters import set_initial_estimates, set_lower_bounds, set_upper_bound
 
 
 def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False) -> Model:
-    """Adds a metabolite compartment to a model
+    """Adds a metabolite compartment to a model.
 
     The flow from the central compartment to the metabolite compartment
     will be unidirectional.
@@ -155,7 +155,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False) 
 
 
 def has_presystemic_metabolite(model: Model) -> bool:
-    """Checks whether a model has a presystemic metabolite
+    """Checks whether a model has a presystemic metabolite.
 
     If pre-systemic drug there will be a flow from DEPOT to METABOLITE as well
     as being a flow from the CENTRAL to METABOLITE

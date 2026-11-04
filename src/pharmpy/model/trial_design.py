@@ -38,17 +38,17 @@ class Activity(Immutable):
 
     @property
     def start_time(self) -> float:
-        """Start time of activity"""
+        """Start time of activity."""
         return self._start_time
 
     @property
     def end_time(self) -> float:
-        """End time of activity"""
+        """End time of activity."""
         return self._start_time + self._time_points[-1]
 
 
 class Observations(Activity):
-    """Observation activity"""
+    """Observation activity."""
 
     def __init__(self, variable: DataVariable, start_time: float, time_points: tuple[float, ...]):
         self._variable = variable
@@ -77,12 +77,12 @@ class Observations(Activity):
 
     @property
     def variable(self) -> DataVariable:
-        """Observed variable"""
+        """Observed variable."""
         return self._variable
 
     @property
     def time_points(self) -> tuple[float, ...]:
-        """Observation times relative to start_time"""
+        """Observation times relative to start_time."""
         return self._time_points
 
     def to_dict(self) -> dict[str, Any]:
@@ -116,7 +116,7 @@ class Observations(Activity):
 
 
 class Administration(Activity):
-    """Administration activity"""
+    """Administration activity."""
 
     def __init__(
         self, variable: DataVariable, dose: Dose, start_time: float, time_points: tuple[float, ...]
@@ -151,17 +151,17 @@ class Administration(Activity):
 
     @property
     def variable(self) -> DataVariable:
-        """The dose data variable"""
+        """The dose data variable."""
         return self._variable
 
     @property
     def dose(self) -> Dose:
-        """The dose"""
+        """The dose."""
         return self._dose
 
     @property
     def time_points(self) -> tuple[float, ...]:
-        """Observation times relative to start_time"""
+        """Observation times relative to start_time."""
         return self._time_points
 
     def to_dict(self) -> dict[str, Any]:
@@ -202,7 +202,7 @@ class Administration(Activity):
 
 
 class Arm(Sequence, Immutable):
-    """Arm definition"""
+    """Arm definition."""
 
     def __init__(self, name: str, size: int, activities: tuple[Activity, ...]):
         self._name = name
@@ -236,17 +236,17 @@ class Arm(Sequence, Immutable):
 
     @property
     def name(self) -> str:
-        """Name of arm"""
+        """Name of arm."""
         return self._name
 
     @property
     def size(self) -> int:
-        """Size of arm"""
+        """Size of arm."""
         return self._size
 
     @property
     def start_time(self) -> float:
-        """Start time for Arm activities
+        """Start time for Arm activities.
 
         Will default to 0.0 for an Arm with no activities
         """
@@ -258,7 +258,7 @@ class Arm(Sequence, Immutable):
 
     @property
     def end_time(self) -> float:
-        """End time for Arm activites
+        """End time for Arm activites.
 
         Will default to 0.0 for an Arm with no activites
         """
@@ -270,7 +270,7 @@ class Arm(Sequence, Immutable):
 
     @property
     def activities(self) -> tuple[Activity, ...]:
-        """All activities in the arm"""
+        """All activities in the arm."""
         return self._activities
 
     def to_dict(self) -> dict[str, Any]:
@@ -347,7 +347,7 @@ class Arm(Sequence, Immutable):
 
 
 class TrialDesign(Sequence, Immutable):
-    """TrialDesign"""
+    """TrialDesign."""
 
     def __init__(self, arms: tuple[Arm, ...], independent_variable: DataVariable):
         self._arms = arms
@@ -380,12 +380,12 @@ class TrialDesign(Sequence, Immutable):
 
     @property
     def arms(self) -> tuple[Arm, ...]:
-        """The arms"""
+        """The arms."""
         return self._arms
 
     @property
     def independent_variable(self) -> DataVariable:
-        """Independent variable for the entire trial"""
+        """Independent variable for the entire trial."""
         return self._independent_variable
 
     def to_dict(self) -> dict[str, Any]:
@@ -475,7 +475,7 @@ class TrialDesign(Sequence, Immutable):
         return True
 
     def replace_arm(self, arm: Arm) -> TrialDesign:
-        """Replace an Arm with an existing name
+        """Replace an Arm with an existing name.
 
         Parameters
         ----------

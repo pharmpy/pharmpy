@@ -1047,7 +1047,7 @@ def _parse_tables(
     netas,
     include_etas=False,
 ) -> pd.DataFrame:
-    """Parse $TABLE and table files into one large dataframe of useful columns"""
+    """Parse $TABLE and table files into one large dataframe of useful columns."""
     interesting_columns = {
         'ID',
         'TIME',
@@ -1417,7 +1417,7 @@ def _get_fixed_parameters(table: ExtTable, parameters: Parameters, pe_translatio
 
 
 def simfit_results(model, model_path, parse_error_messages=True):
-    """Read in modelfit results from a simulation/estimation model"""
+    """Read in modelfit results from a simulation/estimation model."""
     nsubs = model.internals.control_stream.get_records('SIMULATION')[0].nsubs
     results = []
     for i in range(1, nsubs + 1):

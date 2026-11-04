@@ -105,7 +105,7 @@ def known_error_model(model: pharmpy.model.Model) -> bool:
     model hase
     - additive error model
     - proportional error model
-    - combined error model
+    - combined error model.
 
     Parameters
     ----------
@@ -129,7 +129,7 @@ def same_time(model: pharmpy.model.Model) -> bool:
     """
     Check if a dataset to connected model has bolus doses and observations at the
     exact same time. This causes issues in nlmixr2 as the dose always comes before
-    the observation, increasing its value´
+    the observation, increasing its value´.
 
     Parameters
     ----------
@@ -183,7 +183,7 @@ def same_time(model: pharmpy.model.Model) -> bool:
 def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
     """
     Force dosing to happen after observation, if bolus dose is given at the
-    exact same time. Done by adding 0.000001 to the time of the bolus dose
+    exact same time. Done by adding 0.000001 to the time of the bolus dose.
 
     Parameters
     ----------
@@ -249,7 +249,7 @@ def rvs_same(model: pharmpy.model.Model, sigma: bool = False) -> bool:
     """
     Check if there are random variables that are referencing the same
     distribution value.
-    Comes from NONMEM format
+    Comes from NONMEM format.
 
     Parameters
     ----------
@@ -360,7 +360,7 @@ def change_rvs_same(model: pharmpy.model.Model, sigma: bool = False) -> pharmpy.
 
 def print_warning(warning: str) -> None:
     """
-    Help function for printing warning messages to the console
+    Help function for printing warning messages to the console.
 
     Parameters
     ----------

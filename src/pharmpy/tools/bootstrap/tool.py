@@ -26,7 +26,7 @@ def create_workflow(
     dofv: bool = False,
     strictness: str = "",
 ):
-    """Run bootstrap tool
+    """Run bootstrap tool.
 
     Parameters
     ----------

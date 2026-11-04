@@ -46,7 +46,7 @@ class Dispatcher(ABC):
 
     @staticmethod
     def select_dispatcher(name: str | None) -> Dispatcher:
-        """Create a new dispatcher given a dispatcher name"""
+        """Create a new dispatcher given a dispatcher name."""
         dispatcher_name = Dispatcher.canonicalize_dispatcher_name(name)
 
         if dispatcher_name == 'local_dask':

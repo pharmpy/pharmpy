@@ -251,13 +251,13 @@ def read_results(path_or_str: str | Path, model_deserialization_func=None):
 
 @dataclass(frozen=True)
 class Results(Immutable):
-    """Base class for all result classes"""
+    """Base class for all result classes."""
 
     __version__: str = pharmpy.__version__  # NOTE: Default version if not overridden
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]):
-        """Create results object from dictionary"""
+        """Create results object from dictionary."""
         removed_keys = {
             '__version__',
             'best_model',  # NOTE: Was removed in d5b3503 and 8578c8b
@@ -282,7 +282,7 @@ class Results(Immutable):
     def to_json(self, path: Path, lzma: bool = False) -> None: ...
 
     def to_json(self, path: Path | None = None, lzma: bool = False) -> str | None:
-        """Serialize results object as json
+        """Serialize results object as json.
 
         Parameters
         ----------
@@ -309,7 +309,7 @@ class Results(Immutable):
             return s
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert results object to a dictionary"""
+        """Convert results object to a dictionary."""
         return vars(self).copy()
 
     def __str__(self):
@@ -334,7 +334,7 @@ class Results(Immutable):
         return s
 
     def to_csv(self, path: Path):
-        """Save results as a human readable csv file
+        """Save results as a human readable csv file.
 
         Index will not be printed if it is a basic range.
 
@@ -378,7 +378,7 @@ class Results(Immutable):
 
 @dataclass(frozen=True)
 class ModelfitResults(Results):
-    """Base class for results from a modelfit operation
+    """Base class for results from a modelfit operation.
 
     Attributes
     ----------
@@ -501,7 +501,7 @@ class ModelfitResults(Results):
 
 @dataclass(frozen=True)
 class SimulationResults(Results):
-    """Base class for resutls from simulation operation
+    """Base class for resutls from simulation operation.
 
     Attributes
     ----------

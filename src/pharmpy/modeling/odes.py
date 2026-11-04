@@ -112,7 +112,7 @@ def _find_noncov_theta(model, paramsymb, full=False):
 def add_individual_parameter(
     model: Model, name: str, init: float = 0.1, lower: float = 0.0
 ) -> Model:
-    """Add an individual or pk parameter to a model
+    """Add an individual or pk parameter to a model.
 
     Parameters
     ----------
@@ -156,7 +156,7 @@ def _add_parameter(
 
 
 def set_first_order_elimination(model: Model) -> Model:
-    """Sets elimination to first order
+    """Sets elimination to first order.
 
     Parameters
     ----------
@@ -424,7 +424,7 @@ def _get_pk_observations(model):
 
 
 def has_michaelis_menten_elimination(model: Model) -> bool:
-    """Check if the model describes Michaelis-Menten elimination
+    """Check if the model describes Michaelis-Menten elimination.
 
     This function relies on heuristics and will not be able to detect all
     possible ways of coding the Michaelis-Menten elimination.
@@ -461,7 +461,7 @@ def has_michaelis_menten_elimination(model: Model) -> bool:
 
 
 def has_zero_order_elimination(model: Model) -> bool:
-    """Check if the model describes zero-order elimination
+    """Check if the model describes zero-order elimination.
 
     This function relies on heuristics and will not be able to detect all
     possible ways of coding the zero-order elimination.
@@ -498,7 +498,7 @@ def has_zero_order_elimination(model: Model) -> bool:
 
 
 def has_mixed_mm_fo_elimination(model: Model) -> bool:
-    """Check if the model describes mixed Michaelis-Menten and first order elimination
+    """Check if the model describes mixed Michaelis-Menten and first order elimination.
 
     This function relies on heuristics and will not be able to detect all
     possible ways of coding the mixed Michalis-Menten and first order elimination.
@@ -535,7 +535,7 @@ def has_mixed_mm_fo_elimination(model: Model) -> bool:
 
 
 def has_first_order_elimination(model: Model) -> bool:
-    """Check if the model describes first order elimination
+    """Check if the model describes first order elimination.
 
     This function relies on heuristics and will not be able to detect all
     possible ways of coding the first order elimination.
@@ -812,7 +812,7 @@ def _get_mm_inits(model: Model, rate_numer, combined):
 
 
 def set_n_transit_compartments(model: Model, keep_depot: bool = True) -> Model:
-    """Set the n-transit compartments model
+    """Set the n-transit compartments model.
 
     This is the absorption delay model where the number of transit compartments is a parameter
     to be estimated [1]_ [2]_. Initial estimate for absorption rate is
@@ -1621,7 +1621,7 @@ def set_seq_zo_fo_absorption(model: Model) -> Model:
 
 
 def has_weibull_absorption(model: Model) -> bool:
-    """Check if ode system describes a weibull type absorption
+    """Check if ode system describes a weibull type absorption.
 
     Parameters
     ----------
@@ -1662,7 +1662,7 @@ def has_weibull_absorption(model: Model) -> bool:
 
 
 def set_weibull_absorption(model: Model) -> Model:
-    r"""Set or change to Weibull type absorption
+    r"""Set or change to Weibull type absorption.
 
     The Weibull absorption has an abosption rate varying with time (or rather time after dose).
     :math:`k_a(t) = \frac{k}{\lambda} (\frac{t}{\lambda})^{k - 1}`
@@ -1789,7 +1789,7 @@ def _disallow_infusion(model: Model, odes: CompartmentalSystem) -> None:
 
 
 def has_zero_order_absorption(model: Model) -> bool:
-    """Check if ode system describes a zero order absorption
+    """Check if ode system describes a zero order absorption.
 
     currently defined as having Infusion dose with rate not in dataset
 
@@ -1838,7 +1838,7 @@ def _dose_zo(model, dose):
 
 
 def _sorted_doses(comp, model):
-    """Return doses to compartment where oral doses are located first"""
+    """Return doses to compartment where oral doses are located first."""
     doses = comp.doses
     assert len(doses) > 0
     if len(doses) > 1:
@@ -1848,7 +1848,7 @@ def _sorted_doses(comp, model):
 
 
 def has_first_order_absorption(model: Model) -> bool:
-    """Check if ode system describes a first order absorption
+    """Check if ode system describes a first order absorption.
 
     Currently defined as the central compartment having a unidirectional input
     flow from another compartment (such as depot or transit)
@@ -1885,7 +1885,7 @@ def has_first_order_absorption(model: Model) -> bool:
 
 
 def has_instantaneous_absorption(model: Model) -> bool:
-    """Check if ode system describes a instantaneous absorption
+    """Check if ode system describes a instantaneous absorption.
 
     Defined as being a instantaneous dose directly into the central compartment
 
@@ -1920,7 +1920,7 @@ def has_instantaneous_absorption(model: Model) -> bool:
 
 
 def has_seq_zo_fo_absorption(model: Model) -> bool:
-    """Check if ode system describes a sequential zero-order, first-order absorption
+    """Check if ode system describes a sequential zero-order, first-order absorption.
 
     Defined as the model having both zero- and first-order absorption.
 
@@ -1945,7 +1945,7 @@ def has_seq_zo_fo_absorption(model: Model) -> bool:
 
 def get_number_of_peripheral_compartments(model: Model) -> int:
     """Return the number of peripherals compartments connected to the central
-    compartment
+    compartment.
 
     Parameters
     ----------
@@ -1963,7 +1963,7 @@ def get_number_of_peripheral_compartments(model: Model) -> int:
 
 
 def get_number_of_transit_compartments(model: Model) -> int:
-    """Return the number of transit compartments in the model
+    """Return the number of transit compartments in the model.
 
     Parameters
     ----------
@@ -1981,7 +1981,7 @@ def get_number_of_transit_compartments(model: Model) -> int:
 
 
 def has_lag_time(model: Model) -> bool:
-    """Check if ode system is defined with absorption lag time
+    """Check if ode system is defined with absorption lag time.
 
     Parameters
     ----------
@@ -2170,7 +2170,7 @@ def set_peripheral_compartments(model: Model, n: int, name: str | None = None) -
 
 
 def add_peripheral_compartment(model: Model, name: str | None = None) -> Model:
-    r"""Add a peripheral distribution compartment to model
+    r"""Add a peripheral distribution compartment to model.
 
     The rate of flow from the central to the peripheral compartment
     will be parameterized as QPn / VC where VC is the volume of the central compartment.
@@ -2328,7 +2328,7 @@ def add_peripheral_compartment(model: Model, name: str | None = None) -> Model:
 
 
 def remove_peripheral_compartment(model: Model, name: str | None = None) -> Model:
-    r"""Remove a peripheral distribution compartment from model
+    r"""Remove a peripheral distribution compartment from model.
 
     If name is set, a peripheral compartment will be removed from the compartment
     with the specified name.
@@ -2455,7 +2455,7 @@ def remove_peripheral_compartment(model: Model, name: str | None = None) -> Mode
 def set_ode_solver(
     model: Model, solver: Literal['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
 ) -> Model:
-    """Sets ODE solver to use for model
+    """Sets ODE solver to use for model.
 
     The recognized solvers are CVODS, DGEAR, DVERK, IDA, LSODA and LSODI.
     To see the corresponding NONMEM ADVANs see :ref:`ADVANS`.
@@ -2489,7 +2489,7 @@ def set_ode_solver(
 
 
 def find_clearance_parameters(model: Model) -> list[str]:
-    """Find clearance parameters in model
+    """Find clearance parameters in model.
 
     Parameters
     ----------
@@ -2529,7 +2529,7 @@ def find_clearance_parameters(model: Model) -> list[str]:
 
 
 def find_volume_parameters(model: Model) -> list[str]:
-    """Find volume parameters in model
+    """Find volume parameters in model.
 
     Parameters
     ----------
@@ -2614,7 +2614,7 @@ def _find_real_symbol(sset, symbol):
 
 
 def _get_dependent_assignments(sset: Statements, assignment: Assignment):
-    """Finds dependent assignments one layer deep"""
+    """Finds dependent assignments one layer deep."""
     return list(
         filter(
             None,  # NOTE: filters out falsy values
@@ -2624,7 +2624,7 @@ def _get_dependent_assignments(sset: Statements, assignment: Assignment):
 
 
 def has_odes(model: Model) -> bool:
-    """Check if model has an ODE system
+    """Check if model has an ODE system.
 
     Parameters
     ----------
@@ -2654,7 +2654,7 @@ def has_odes(model: Model) -> bool:
 
 
 def has_linear_odes(model: Model) -> bool:
-    """Check if model has a linear ODE system
+    """Check if model has a linear ODE system.
 
     Parameters
     ----------
@@ -2689,7 +2689,7 @@ def has_linear_odes(model: Model) -> bool:
 
 
 def has_linear_odes_with_real_eigenvalues(model: Model) -> bool:
-    """Check if model has a linear ode system with real eigenvalues
+    """Check if model has a linear ode system with real eigenvalues.
 
     Parameters
     ----------
@@ -2765,7 +2765,7 @@ def _check_all_cycles(model):
 
 
 def get_initial_conditions(model: Model, dosing: bool = False) -> Mapping[Expr, Expr]:
-    """Get initial conditions for the ode system
+    """Get initial conditions for the ode system.
 
     Default initial conditions at t=0 for amounts is 0
 
@@ -2825,7 +2825,7 @@ def set_initial_condition(
     expression: TExpr,
     time: TExpr = Expr.integer(0),
 ) -> Model:
-    """Set an initial condition for the ode system
+    """Set an initial condition for the ode system.
 
     If the initial condition is already set it will be updated. If the initial condition
     is set to zero at time zero it will be removed (since the default is 0).
@@ -2884,7 +2884,7 @@ def set_initial_condition(
 
 
 def get_zero_order_inputs(model: Model) -> Matrix:
-    """Get zero order inputs for all compartments
+    """Get zero order inputs for all compartments.
 
     Parameters
     ----------
@@ -2910,7 +2910,7 @@ def get_zero_order_inputs(model: Model) -> Matrix:
 
 
 def set_zero_order_input(model: Model, compartment: str, expression: TExpr) -> Model:
-    """Set a zero order input for the ode system
+    """Set a zero order input for the ode system.
 
     If the zero order input is already set it will be updated.
 
@@ -2983,7 +2983,7 @@ class ODEDisplayer:
 
 
 def display_odes(model: Model) -> ODEDisplayer:
-    """Displays the ordinary differential equation system
+    """Displays the ordinary differential equation system.
 
     Parameters
     ----------
@@ -3018,7 +3018,7 @@ def display_odes(model: Model) -> ODEDisplayer:
 
 
 def solve_ode_system(model: Model) -> Model:
-    """Replace ODE system with analytical solution if possible
+    """Replace ODE system with analytical solution if possible.
 
     Warnings
     --------
@@ -3069,7 +3069,7 @@ def solve_ode_system(model: Model) -> Model:
 
 
 def get_central_volume_and_clearance(model: Model) -> tuple[Expr, Expr]:
-    """Get the volume and clearance parameters
+    """Get the volume and clearance parameters.
 
     Parameters
     ----------

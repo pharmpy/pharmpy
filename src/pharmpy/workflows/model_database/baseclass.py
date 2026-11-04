@@ -34,12 +34,12 @@ class ModelTransaction(ABC):
 
     @abstractmethod
     def store_model(self) -> None:
-        """Store the model object bound to this transaction"""
+        """Store the model object bound to this transaction."""
 
     @abstractmethod
     def store_local_file(self, path: Path, new_filename: str | None = None):
         """Store a file from the local machine for the model bound to this
-        transaction
+        transaction.
 
         Parameters
         ----------
@@ -52,7 +52,7 @@ class ModelTransaction(ABC):
 
     @abstractmethod
     def store_metadata(self, metadata) -> None:
-        """Store metadata for the model bound to this transaction
+        """Store metadata for the model bound to this transaction.
 
         Parameters
         ----------
@@ -62,11 +62,11 @@ class ModelTransaction(ABC):
 
     @abstractmethod
     def store_modelfit_results(self) -> None:
-        """Store modelfit results of the model bound to this transaction"""
+        """Store modelfit results of the model bound to this transaction."""
 
     @abstractmethod
     def store_model_entry(self) -> None:
-        """Store model entry of the model entry bound to this transaction"""
+        """Store model entry of the model entry bound to this transaction."""
 
 
 class ModelSnapshot(ABC):
@@ -76,7 +76,7 @@ class ModelSnapshot(ABC):
 
     @abstractmethod
     def list_all_files(self) -> list[str]:
-        """Lists all file names related to a model run bound to this snapshot
+        """Lists all file names related to a model run bound to this snapshot.
 
         Note that this will not return a list of full paths, only the name of the files
 
@@ -88,7 +88,7 @@ class ModelSnapshot(ABC):
 
     @abstractmethod
     def retrieve_file(self, filename: str, destination_path: Path, force: bool = False) -> None:
-        """Retrieve one file related to a model run bound to this snapshot
+        """Retrieve one file related to a model run bound to this snapshot.
 
         Parameters
         ----------
@@ -102,7 +102,7 @@ class ModelSnapshot(ABC):
 
     @abstractmethod
     def retrieve_all_files(self, destination_path: Path, force: bool = False) -> None:
-        """Retrieve all files related to a model run bound to this snapshot
+        """Retrieve all files related to a model run bound to this snapshot.
 
         Parameters
         ----------
@@ -114,7 +114,7 @@ class ModelSnapshot(ABC):
 
     @abstractmethod
     def retrieve_model(self) -> Model:
-        """Get the model bound to this snapshot
+        """Get the model bound to this snapshot.
 
         Returns
         -------
@@ -124,7 +124,7 @@ class ModelSnapshot(ABC):
 
     @abstractmethod
     def retrieve_modelfit_results(self) -> Results:
-        """Read modelfit results from the database
+        """Read modelfit results from the database.
 
         Parameters
         ----------
@@ -139,7 +139,7 @@ class ModelSnapshot(ABC):
 
     @abstractmethod
     def retrieve_model_entry(self) -> ModelEntry:
-        """Read model entry from the database
+        """Read model entry from the database.
 
         Returns
         -------
@@ -149,7 +149,7 @@ class ModelSnapshot(ABC):
 
 
 class ModelDatabase(ABC):
-    """Baseclass for databases for models and results of model runs
+    """Baseclass for databases for models and results of model runs.
 
     Primary key is the model name, which means that models with
     the same name will be counted as the same model.
@@ -162,7 +162,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def store_model(self, model: Model) -> None:
-        """Store a model object
+        """Store a model object.
 
         Parameters
         ----------
@@ -174,7 +174,7 @@ class ModelDatabase(ABC):
     def store_local_file(
         self, model: Model | ModelHash, path: Path, new_filename: str | None = None
     ) -> None:
-        """Store a file from the local machine
+        """Store a file from the local machine.
 
         Parameters
         ----------
@@ -189,7 +189,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def store_metadata(self, model: Model | ModelHash, metadata: dict) -> None:
-        """Store metadata
+        """Store metadata.
 
         Parameters
         ----------
@@ -201,7 +201,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def store_modelfit_results(self, model: Model | ModelHash) -> None:
-        """Store modelfit results
+        """Store modelfit results.
 
         Parameters
         ----------
@@ -211,7 +211,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def store_model_entry(self, model_entry: ModelEntry) -> None:
-        """Store model entry of the model entry bound to this transaction
+        """Store model entry of the model entry bound to this transaction.
 
         Parameters
         ----------
@@ -221,7 +221,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def list_all_files(self, model: Model | ModelHash) -> list[str]:
-        """Lists all file names related to a model run
+        """Lists all file names related to a model run.
 
         Note that this will not return a list of full paths, only the name of the files
 
@@ -244,7 +244,7 @@ class ModelDatabase(ABC):
         destination_path: Path,
         force: bool = False,
     ) -> None:
-        """Retrieve one file related to a model run
+        """Retrieve one file related to a model run.
 
         Parameters
         ----------
@@ -262,7 +262,7 @@ class ModelDatabase(ABC):
     def retrieve_all_files(
         self, model: Model | ModelHash, destination_path: Path, force: bool = False
     ) -> None:
-        """Retrieve all files related to a model run
+        """Retrieve all files related to a model run.
 
         Parameters
         ----------
@@ -276,7 +276,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def retrieve_model(self, model: ModelHash) -> Model:
-        """Read a model from the database
+        """Read a model from the database.
 
         Parameters
         ----------
@@ -291,7 +291,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def retrieve_modelfit_results(self, model: Model | ModelHash) -> Results:
-        """Read modelfit results from the database
+        """Read modelfit results from the database.
 
         Parameters
         ----------
@@ -306,7 +306,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def retrieve_model_entry(self, model: Model | ModelHash) -> ModelEntry:
-        """Read model entry from the database
+        """Read model entry from the database.
 
         Parameters
         ----------

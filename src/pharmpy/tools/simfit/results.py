@@ -12,13 +12,13 @@ from pharmpy.workflows import Results
 
 @dataclass(frozen=True)
 class SimfitResults(Results):
-    """Simfit results class"""
+    """Simfit results class."""
 
     modelfit_results: Any | None = None
 
 
 def calculate_results(modelfit_results):
-    """Calculate simfit results"""
+    """Calculate simfit results."""
     return SimfitResults(modelfit_results=modelfit_results)
 
 

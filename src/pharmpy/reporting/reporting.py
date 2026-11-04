@@ -43,7 +43,7 @@ class SpoofExecutable:
 
 
 def generate_report(rst_path, results_path, target_path):
-    """Generate report from rst and results json"""
+    """Generate report from rst and results json."""
     results_path = Path(results_path)
     with TemporaryDirectory() as tmpdirname:
         tmp_path = Path(tmpdirname)
@@ -136,7 +136,7 @@ def generate_report(rst_path, results_path, target_path):
 
 
 def embed_css_and_js(html, target):
-    """Embed all external css and javascript into an html"""
+    """Embed all external css and javascript into an html."""
     with open(html, 'r', encoding='utf-8') as sh:
         with warnings.catch_warnings():
             # Don't display deprecation warnings.

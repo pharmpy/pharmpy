@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 """
-.. highlight:: console
+.. highlight:: console.
 
 ============================
 The CLI interface of Pharmpy
@@ -56,7 +56,7 @@ warnings.formatwarning = warnings_formatter
 
 
 def error(exception):
-    """Raise the exception with no traceback printed
+    """Raise the exception with no traceback printed.
 
     Used for non-recoverables in CLI. Exceptions giving traceback are bugs!
     """
@@ -339,7 +339,7 @@ def data_write(args):
 
 
 def data_print(args):
-    """Subcommand to print a dataset to stdout via pager"""
+    """Subcommand to print a dataset to stdout via pager."""
     try:
         df = args.model_or_dataset.dataset
     except AttributeError:
@@ -353,7 +353,7 @@ def data_print(args):
 
 
 def data_filter(args):
-    """Subcommand to filter a dataset"""
+    """Subcommand to filter a dataset."""
     try:
         df = args.model_or_dataset.dataset
     except TypeError:
@@ -369,7 +369,7 @@ def data_filter(args):
 
 
 def data_append(args):
-    """Subcommand to append a column to a dataset"""
+    """Subcommand to append a column to a dataset."""
     try:
         df = args.model_or_dataset.dataset
     except TypeError:
@@ -382,7 +382,7 @@ def data_append(args):
 
 
 def write_model_or_dataset(model_or_dataset, new_df, path, force):
-    """Write model or dataset to output_path or using default names"""
+    """Write model or dataset to output_path or using default names."""
     if isinstance(model_or_dataset, pd.DataFrame):
         # Is a dataset
         try:
@@ -443,7 +443,7 @@ def data_resample(args):
 
 def data_deidentify(args):
     """Subcommand to deidentify a dataset
-    Will be default try to overwrite original file (but won't unless force)
+    Will be default try to overwrite original file (but won't unless force).
     """
     path = check_input_path(args.dataset)
     dataset = pd.read_csv(path, dtype=str)
@@ -464,7 +464,7 @@ def data_deidentify(args):
 
 
 def data_reference(args):
-    """Subcommand to replace columns with reference values"""
+    """Subcommand to replace columns with reference values."""
     from pharmpy.modeling import set_reference_values
 
     d = key_vals(args.colrefs)
@@ -553,7 +553,7 @@ def update_inits(args):
 
 
 def results_bootstrap(args):
-    """Subcommand to generate bootstrap results"""
+    """Subcommand to generate bootstrap results."""
     from pharmpy.tools.bootstrap.results import psn_bootstrap_results
 
     if not args.psn_dir.is_dir():
@@ -577,7 +577,7 @@ def results_cdd(args):
 
 
 def results_frem(args):
-    """Generate frem results"""
+    """Generate frem results."""
     from pharmpy.tools.frem.results import psn_frem_results
 
     if not args.psn_dir.is_dir():
@@ -637,7 +637,7 @@ def results_simeval(args):
 
 
 def results_print(args):
-    """Subcommand to print any results"""
+    """Subcommand to print any results."""
     if args.dir.is_dir():
         path = args.dir / 'results.json'
     elif args.dir.is_file():
@@ -661,7 +661,7 @@ def results_qa(args):
 
 
 def results_report(args):
-    """Subcommand to generate reports"""
+    """Subcommand to generate reports."""
     results_path = args.psn_dir / 'results.json'
     if not results_path.is_file():
         error(FileNotFoundError(results_path))
@@ -674,7 +674,7 @@ def results_report(args):
 
 
 def results_summary(args):
-    """Subcommand to output summary of modelfit"""
+    """Subcommand to output summary of modelfit."""
     from pharmpy.tools import print_fit_summary
 
     for model, res in args.models:
@@ -738,7 +738,7 @@ def input_model_nores(path):
 
 
 def input_model_or_dataset(path):
-    """Returns :class:`~pharmpy.model.Model` or pd.DataFrame from *path*"""
+    """Returns :class:`~pharmpy.model.Model` or pd.DataFrame from *path*."""
     path = check_input_path(path)
     try:
         from pharmpy.model import Model

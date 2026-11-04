@@ -6,7 +6,7 @@ from collections.abc import Iterable, Iterator, Sequence, Sized
 
 
 def partitions[T](elements: Iterable[T]) -> Iterator[tuple[tuple[T, ...], ...]]:
-    """Returns all partitions of a set of elements
+    """Returns all partitions of a set of elements.
 
     Each partition is represented canonically as a shortlex-sorted tuple of
     tuples. Partitions are ordered by length, then length of parts, and finally

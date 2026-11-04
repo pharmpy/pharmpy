@@ -47,7 +47,7 @@ def calculate_eta_shrinkage(
     individual_estimates: pd.DataFrame,
     sd: bool = False,
 ) -> pd.Series:
-    """Calculate eta shrinkage for each eta
+    """Calculate eta shrinkage for each eta.
 
     Parameters
     ----------
@@ -105,7 +105,7 @@ def calculate_eta_shrinkage(
 def calculate_individual_shrinkage(
     model: Model, parameter_estimates: pd.Series, individual_estimates_covariance: pd.DataFrame
 ) -> pd.DataFrame:
-    """Calculate the individual eta-shrinkage
+    """Calculate the individual eta-shrinkage.
 
     Definition: ieta_shr = (var(eta) / omega)
 
@@ -232,7 +232,7 @@ def calculate_individual_parameter_statistics(
     covariance_matrix: pd.DataFrame | None = None,
     seed: RandomNumberGenerator | float | Seed | int | None = None,
 ) -> pd.DataFrame:
-    """Calculate statistics for individual parameters
+    """Calculate statistics for individual parameters.
 
     Calculate the mean (expected value of the distribution), variance
     (variance of the distribution) and standard error for individual
@@ -421,7 +421,7 @@ def calculate_pk_parameters_statistics(
     covariance_matrix: pd.DataFrame | None = None,
     seed: RandomNumberGenerator | Seed | float | int | None = None,
 ) -> pd.DataFrame:
-    """Calculate statistics for common pharmacokinetic parameters
+    """Calculate statistics for common pharmacokinetic parameters.
 
     Calculate the mean (expected value of the distribution), variance
     (variance of the distribution) and standard error for some individual
@@ -572,7 +572,7 @@ def _split_equation(s):
 
 
 def calculate_aic(model: Model, likelihood: float) -> float:
-    """Calculate AIC
+    """Calculate AIC.
 
     AIC = -2LL + 2*n_estimated_parameters
 
@@ -607,7 +607,7 @@ def calculate_bic(
     likelihood: float,
     type: Literal['mixed', 'fixed', 'random', 'iiv'] = 'mixed',
 ) -> float:
-    """Calculate BIC
+    """Calculate BIC.
 
     Different variations of the BIC can be calculated:
 
@@ -722,7 +722,7 @@ def _categorize_parameters(model):
 
 
 def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9) -> pd.Series:
-    """Check for highly correlated parameter estimates
+    """Check for highly correlated parameter estimates.
 
     Parameters
     ----------
@@ -758,7 +758,7 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
 def check_parameters_near_bounds(
     model: Model, values: pd.Series, zero_limit: float = 0.001, significant_digits: int = 2
 ) -> pd.Series:
-    """Check if any estimated parameter value is close to its bounds
+    """Check if any estimated parameter value is close to its bounds.
 
     Parameters
     ----------
@@ -834,7 +834,7 @@ def insert_ebes_into_dataset(
     individual_estimates: pd.DataFrame,
     individual_estimates_covariance: pd.DataFrame | None = None,
 ) -> Model:
-    """Insert EBEs and ETCs from results into the dataset of a model
+    """Insert EBEs and ETCs from results into the dataset of a model.
 
     Parameters
     ----------

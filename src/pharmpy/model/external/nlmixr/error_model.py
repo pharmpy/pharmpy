@@ -208,7 +208,7 @@ def is_number(symbol: Expr, model: pharmpy.model.Model) -> bool:
 
 def find_aliases(symbol: Expr, model: Model, aliases=None) -> set:
     """
-    Returns a list of all variable names that are the same as the inputed symbol
+    Returns a list of all variable names that are the same as the inputed symbol.
 
     Parameters
     ----------
@@ -250,7 +250,7 @@ def find_aliases(symbol: Expr, model: Model, aliases=None) -> set:
 def convert_eps_to_sigma(expr: Expr, model: pharmpy.model.Model) -> Expr:
     """
     Change the use of epsilon names to sigma names instead. Mostly used for
-    converting NONMEM format to nlmxir2
+    converting NONMEM format to nlmxir2.
 
     Parameters
     ----------

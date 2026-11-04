@@ -185,7 +185,7 @@ def add_statements(
 
 
 def extract_add_prop(s, res_alias: set[sympy.Symbol], model: pharmpy.model.Model):
-    """Extract additive and proportional error terms from a sympy expression
+    """Extract additive and proportional error terms from a sympy expression.
 
     Parameters
     ----------
@@ -329,7 +329,7 @@ def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
 
 def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     """
-    Add the ODEs from a model to a code generator
+    Add the ODEs from a model to a code generator.
 
     Parameters
     ----------
@@ -366,7 +366,7 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
 
 def remove_piecewise(expr: str) -> str:
     """
-    Return an expression without Piecewise statements
+    Return an expression without Piecewise statements.
 
     Parameters
     ----------
@@ -388,7 +388,7 @@ def remove_piecewise(expr: str) -> str:
 
 def find_piecewise(expr: str) -> list:
     """
-    Locate all Piecewise statements in an expression and return them as a list
+    Locate all Piecewise statements in an expression and return them as a list.
 
     Parameters
     ----------
@@ -414,7 +414,7 @@ def find_piecewise(expr: str) -> list:
 
 def find_parentheses(s: str) -> dict:
     """
-    Find all matching parenthesis in a given string
+    Find all matching parenthesis in a given string.
 
     Parameters
     ----------
@@ -446,7 +446,7 @@ def find_parentheses(s: str) -> dict:
 
 def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
     """
-    Will replace a given piecewise expression with wanted string, s
+    Will replace a given piecewise expression with wanted string, s.
 
     Parameters
     ----------
@@ -472,7 +472,7 @@ def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
 
 def convert_eq(cond) -> str:
     """
-    Convert a sympy equal statement to R syntax
+    Convert a sympy equal statement to R syntax.
     """
     if isinstance(cond, BooleanExpr):
         cond = cond._sympy_()

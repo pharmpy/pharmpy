@@ -8,7 +8,7 @@ from contextlib import AbstractContextManager
 
 class chdir(AbstractContextManager):
     """Non thread-safe context manager to change the current working directory.
-    (copied from contextlib's implementation in Python 3.11)
+    (copied from contextlib's implementation in Python 3.11).
     """
 
     def __init__(self, path):

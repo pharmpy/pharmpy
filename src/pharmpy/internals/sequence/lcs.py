@@ -9,7 +9,7 @@ C = Literal[-1, 0, 1]
 
 
 def diff[T](old: Sequence[T], new: Sequence[T]) -> Iterator[tuple[C, T]]:
-    """Get diff between a and b in order for all elements
+    """Get diff between a and b in order for all elements.
 
     Optimizes by first handling equal elements from the head and tail
     Each entry is a pair of operation (+1, -1 or 0) and the element
@@ -57,7 +57,7 @@ def _matrix[T](a: Sequence[T], b: Sequence[T]) -> Sequence[Sequence[int]]:
 def _diff[T](
     c: Sequence[Sequence[int]], x: Sequence[T], y: Sequence[T], i: int, j: int
 ) -> Iterator[tuple[C, T]]:
-    """Print the diff using LCS length matrix using backtracking"""
+    """Print the diff using LCS length matrix using backtracking."""
     if i < 0 and j < 0:
         return
     elif i < 0:

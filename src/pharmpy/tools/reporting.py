@@ -10,7 +10,7 @@ from pharmpy.workflows.results import Results
 
 
 def create_report(results: Results, path: Path | str):
-    """Create standard report for results
+    """Create standard report for results.
 
     The report will be an html created at specified path.
 

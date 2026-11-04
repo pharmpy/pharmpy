@@ -38,7 +38,7 @@ class Interpreter[T, L, R](ABC):
         return f(tree)
 
     def visit_subtrees(self, tree: Tree[T, L]) -> list:
-        """Does not visit and discards tokens"""
+        """Does not visit and discards tokens."""
         return [self.visit_tree(child) for child in tree.children if isinstance(child, Tree)]
 
     def __getattr__(self, name):

@@ -23,7 +23,7 @@ INPUT_MODEL_NAME = 'input'
 
 
 class Context(ABC):
-    """Context for runs
+    """Context for runs.
 
     A database of results, metadata and run files for one tool run
 
@@ -79,7 +79,7 @@ class Context(ABC):
 
     @property
     def model_database(self) -> ModelDatabase:
-        """ModelDatabase to store results of models run in context"""
+        """ModelDatabase to store results of models run in context."""
         return self._model_database
 
     @property
@@ -130,7 +130,7 @@ class Context(ABC):
 
     @abstractmethod
     def store_results(self, res: Results) -> None:
-        """Store tool results
+        """Store tool results.
 
         Parameters
         ----------
@@ -140,7 +140,7 @@ class Context(ABC):
 
     @abstractmethod
     def retrieve_results(self) -> Results:
-        """Retrieve tool results
+        """Retrieve tool results.
 
         Return
         ------
@@ -150,7 +150,7 @@ class Context(ABC):
 
     @abstractmethod
     def store_metadata(self, metadata: dict) -> None:
-        """Store tool metadata
+        """Store tool metadata.
 
         Parameters
         ----------
@@ -160,37 +160,37 @@ class Context(ABC):
 
     @abstractmethod
     def retrieve_metadata(self) -> dict:
-        """Read tool metadata"""
+        """Read tool metadata."""
 
     @abstractmethod
     def store_key(self, name: str, key: ModelHash) -> None:
-        """Associate a key with a model name"""
+        """Associate a key with a model name."""
 
     @abstractmethod
     def retrieve_key(self, name: str) -> ModelHash:
-        """Retrive the key corresponding to a model name
+        """Retrive the key corresponding to a model name.
 
         This key can be used to lookup the model in the model database
         """
 
     @abstractmethod
     def list_all_names(self) -> list[str]:
-        """Retrieve a list of all model names in the context"""
+        """Retrieve a list of all model names in the context."""
 
     @abstractmethod
     def list_all_subcontexts(self) -> list[str]:
-        """Retrieve a list of the names of all subcontexts in the context"""
+        """Retrieve a list of the names of all subcontexts in the context."""
 
     @abstractmethod
     def store_annotation(self, name: str, annotation: str):
-        """Store an annotation string (description) for a model"""
+        """Store an annotation string (description) for a model."""
 
     @abstractmethod
     def retrieve_annotation(self, name: str) -> str:
-        """Retrieve an annotation for a model"""
+        """Retrieve an annotation for a model."""
 
     def get_ncores_for_execution(self) -> int:
-        """Get number of cores for execution (using available cores among allocation)"""
+        """Get number of cores for execution (using available cores among allocation)."""
         ncores = self.retrieve_dispatching_options()['ncores']
         return self.dispatcher.get_available_cores(ncores)
 
@@ -204,7 +204,7 @@ class Context(ABC):
         message: str,
         model: Model | None = None,
     ) -> None:
-        """Add a message to the log"""
+        """Add a message to the log."""
         date = datetime.now().astimezone()
         if model is None:
             ctxpath = self.context_path
@@ -214,18 +214,18 @@ class Context(ABC):
         self.broadcaster.broadcast_message(severity, ctxpath, date, message)
 
     def log_info(self, message: str, model: Model | None = None) -> None:
-        """Add an info message to the log
+        """Add an info message to the log.
 
         Currently with echo to stdout. In the future this could be changed or be configurable.
         """
         self.log_message(severity="info", message=message, model=model)
 
     def log_error(self, message: str, model: Model | None = None) -> None:
-        """Add an error message to the log"""
+        """Add an error message to the log."""
         self.log_message(severity="error", message=message, model=model)
 
     def log_warning(self, message: str, model: Model | None = None) -> None:
-        """Add a warning message to the log"""
+        """Add a warning message to the log."""
         self.log_message(severity="warning", message=message, model=model)
 
     @abstractmethod
@@ -233,7 +233,7 @@ class Context(ABC):
         """Retrieve the entire log
         all - the entire log
         current - only the current Context level
-        lower - current and sub levels
+        lower - current and sub levels.
         """
 
     @abstractmethod
@@ -246,24 +246,24 @@ class Context(ABC):
 
     @abstractmethod
     def get_parent_context(self) -> Context:
-        """Get the parent context of this context"""
+        """Get the parent context of this context."""
 
     @abstractmethod
     def get_top_level_context(self) -> Context:
-        """Get the top level context of this context"""
+        """Get the top level context of this context."""
 
     @abstractmethod
     def get_subcontext(self, name: str) -> Context:
-        """Get one of the subcontexts of this context"""
+        """Get one of the subcontexts of this context."""
 
     @abstractmethod
     def create_subcontext(self, name: str) -> Context:
-        """Create a new subcontext of this context"""
+        """Create a new subcontext of this context."""
 
     @abstractmethod
     def finalize(self) -> None:
         """Called after a tool has finished its run in a context
-        can be implemented to do cleanup of the context
+        can be implemented to do cleanup of the context.
         """
 
     def _store_model(self, name: str, model: Model | ModelEntry):
@@ -297,7 +297,7 @@ class Context(ABC):
         self._store_model(INPUT_MODEL_NAME, me)
 
     def retrieve_input_model_entry(self) -> ModelEntry:
-        """Retrieve the ModelEntry of the model marked as input"""
+        """Retrieve the ModelEntry of the model marked as input."""
         me = self._retrieve_me(INPUT_MODEL_NAME)
         return me
 
@@ -305,31 +305,31 @@ class Context(ABC):
         self._store_model(FINAL_MODEL_NAME, me)
 
     def retrieve_final_model_entry(self) -> ModelEntry:
-        """Retrieve the ModelEntry of the model marked as final"""
+        """Retrieve the ModelEntry of the model marked as final."""
         me = self._retrieve_me(FINAL_MODEL_NAME)
         return me
 
     def call_workflow(self, workflow, unique_name: str):
-        """Ask the dispatcher to call a subworkflow"""
+        """Ask the dispatcher to call a subworkflow."""
         res = self.dispatcher.call_workflow(workflow, unique_name, self)
         return res
 
     @abstractmethod
     def abort_workflow(self, message: str):
-        """Ask the dispatcher to abort the currently running workflow immediately"""
+        """Ask the dispatcher to abort the currently running workflow immediately."""
 
     def has_started(self) -> bool:
-        """Check if the tool running in the context has started"""
+        """Check if the tool running in the context has started."""
         metadata = self.retrieve_metadata()
         return "stats" in metadata and "start_time" in metadata["stats"]
 
     def has_completed(self) -> bool:
-        """Check if the tool running in the context has completed"""
+        """Check if the tool running in the context has completed."""
         metadata = self.retrieve_metadata()
         return "stats" in metadata and "end_time" in metadata["stats"]
 
     def create_rng(self, index: int) -> RandomNumberGenerator:
-        """Create a random number generator
+        """Create a random number generator.
 
         Creating the generator will be using the seed common option, the index and
         the context path to get a unique sequence.

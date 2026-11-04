@@ -47,7 +47,7 @@ def evaluate_expression(
     expression: str | TExpr,
     parameter_estimates: ParameterMap | None = None,
 ) -> pd.Series:
-    """Evaluate expression using model
+    """Evaluate expression using model.
 
     Calculate the value of expression for each data record.
     The expression can contain dataset columns, variables in model and
@@ -105,7 +105,7 @@ def evaluate_expression(
 def evaluate_population_prediction(
     model: Model, parameters: ParameterMap | None = None, dataset: pd.DataFrame | None = None
 ) -> pd.Series:
-    """Evaluate the numeric population prediction
+    """Evaluate the numeric population prediction.
 
     The prediction is evaluated at the current model parameter values
     or optionally at the given parameter values.
@@ -170,7 +170,7 @@ def evaluate_individual_prediction(
     parameters: ParameterMap | None = None,
     dataset: pd.DataFrame | None = None,
 ) -> pd.Series:
-    """Evaluate the numeric individual prediction
+    """Evaluate the numeric individual prediction.
 
     The prediction is evaluated at the current model parameter values
     or optionally at the given parameter values.
@@ -259,7 +259,7 @@ def evaluate_eta_gradient(
     parameters: ParameterMap | None = None,
     dataset: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    """Evaluate the numeric eta gradient
+    """Evaluate the numeric eta gradient.
 
     The gradient is evaluated at the current model parameter values
     or optionally at the given parameter values.
@@ -350,7 +350,7 @@ def evaluate_epsilon_gradient(
     parameters: ParameterMap | None = None,
     dataset: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    """Evaluate the numeric epsilon gradient
+    """Evaluate the numeric epsilon gradient.
 
     The gradient is evaluated at the current model parameter values
     or optionally at the given parameter values.
@@ -443,7 +443,7 @@ def evaluate_weighted_residuals(
     parameters: ParameterMap | None = None,
     dataset: pd.DataFrame | None = None,
 ) -> pd.Series:
-    """Evaluate the weighted residuals
+    """Evaluate the weighted residuals.
 
     The residuals is evaluated at the current model parameter values
     or optionally at the given parameter values.

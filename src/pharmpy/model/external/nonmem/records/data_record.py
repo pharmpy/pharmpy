@@ -133,7 +133,7 @@ class DataRecord(OptionRecord):
     def set_ignore_character_from_header(self, label):
         """Set ignore character from a header label
         If s[0] is a-zA-Z set @
-        else set s[0]
+        else set s[0].
         """
         c = label[0]
         if c.isalpha():
@@ -144,7 +144,7 @@ class DataRecord(OptionRecord):
     @property
     def null_value(self):
         """The value to replace for NULL (i.e. . etc) in the dataset
-        note that only +,-,0 (meaning 0) and 1-9 are allowed
+        note that only +,-,0 (meaning 0) and 1-9 are allowed.
         """
         if subtree := self.root.first_branch('null', 'char'):
             char = str(subtree)

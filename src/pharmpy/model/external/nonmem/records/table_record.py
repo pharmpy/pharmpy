@@ -67,12 +67,12 @@ class TableRecord(OptionRecord):
 
     @property
     def eta_derivatives(self):
-        """List of numbers for etas whose derivative are requested"""
+        """List of numbers for etas whose derivative are requested."""
         return self._find_derivatives('G')
 
     @property
     def epsilon_derivatives(self):
-        """List of numbers for epsilons whose derivateives are requested"""
+        """List of numbers for epsilons whose derivateives are requested."""
         return self._find_derivatives('H')
 
     def _find_derivatives(self, ch):

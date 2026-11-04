@@ -8,7 +8,7 @@ from types import ModuleType
 
 
 class LazyImport(ModuleType):
-    """Class that masquerades as a module and lazily loads it when accessed the first time
+    """Class that masquerades as a module and lazily loads it when accessed the first time.
 
     The code for the class is taken from TensorFlow and is under the Apache 2.0 license
 

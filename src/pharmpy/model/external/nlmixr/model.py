@@ -23,7 +23,7 @@ def convert_model(
     skip_check: bool = False,
 ) -> pharmpy.model.Model:
     """
-    Convert a NONMEM model into an nlmixr model
+    Convert a NONMEM model into an nlmixr model.
 
     Parameters
     ----------
@@ -82,7 +82,7 @@ def convert_model(
 
 def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path=None) -> None:
     """
-    Create dataset for nlmixr
+    Create dataset for nlmixr.
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ def create_dataset(cg: CodeGenerator, model: pharmpy.model.Model, path=None) -> 
 
 def create_ini(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
-    Create the nlmixr ini block code
+    Create the nlmixr ini block code.
 
     Parameters
     ----------
@@ -128,7 +128,7 @@ def create_ini(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
 
 def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
-    Create the nlmixr model block code
+    Create the nlmixr model block code.
 
     Parameters
     ----------
@@ -217,7 +217,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
 
 def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     """
-    Create the call to fit for the nlmixr model with appropriate methods and datasets
+    Create the call to fit for the nlmixr model with appropriate methods and datasets.
 
     Parameters
     ----------

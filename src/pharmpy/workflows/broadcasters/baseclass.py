@@ -28,7 +28,7 @@ class Broadcaster(Immutable):
 
     @staticmethod
     def select_broadcaster(name: str | None) -> Broadcaster:
-        """Create a new broadcaster given a broadcaster name"""
+        """Create a new broadcaster given a broadcaster name."""
         canon_name = Broadcaster.canonicalize_broadcaster_name(name)
         if canon_name == 'null':
             from pharmpy.workflows.broadcasters.null import NullBroadcaster

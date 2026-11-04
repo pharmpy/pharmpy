@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-"""The lock module exposes a path_lock context manager function
+"""The lock module exposes a path_lock context manager function.
 
 Exception classes are part of the public API.
 Other exported functions are implementation details subject to change.
@@ -82,15 +82,15 @@ T = TypeVar('T')
 
 
 class AcquiringLockWouldBlockError(Exception):
-    """Raised when acquiring lock would block and blocking is False"""
+    """Raised when acquiring lock would block and blocking is False."""
 
 
 class AcquiringProcessLevelLockWouldBlockError(AcquiringLockWouldBlockError):
-    """Raised when acquiring a process-level lock would block and blocking is False"""
+    """Raised when acquiring a process-level lock would block and blocking is False."""
 
 
 class AcquiringThreadLevelLockWouldBlockError(AcquiringLockWouldBlockError):
-    """Raised when acquiring a thread-level lock would block and blocking is False"""
+    """Raised when acquiring a thread-level lock would block and blocking is False."""
 
 
 class RecursiveDeadlockError(Exception):
@@ -109,7 +109,7 @@ if is_windows:
     _lock_length = -1 if sys.version_info.major == 2 else (2**31 - 1)
 
     def _is_process_level_lock_timeout_error(error: OSError) -> bool:
-        """Check if an OSError corresponds to a blocking lock timeout error
+        """Check if an OSError corresponds to a blocking lock timeout error.
 
         Note that the errno for a non-blocking lock failure would be 13 with a
         strerror of "Permission denied".
@@ -118,7 +118,7 @@ if is_windows:
 
     def _is_process_level_lock_blocking_error(error: OSError) -> bool:
         """Check that an OSError corresponds to an error raised because
-        a process-level lock cannot be acquired immediately
+        a process-level lock cannot be acquired immediately.
         """
         return (
             isinstance(error, PermissionError)
@@ -171,7 +171,7 @@ else:
 
     def _is_process_level_lock_blocking_error(error: OSError) -> bool:
         """Check that an OSError corresponds to an error raised because
-        a process-level lock cannot be acquired immediately
+        a process-level lock cannot be acquired immediately.
         """
         return (
             isinstance(error, BlockingIOError)
@@ -203,7 +203,7 @@ else:
 
 
 class ShareableProcessLock:
-    """Creates a process lock for a FD shared by all threads of a process"""
+    """Creates a process lock for a FD shared by all threads of a process."""
 
     def __init__(self, fd: int):
         self._fd = fd
@@ -213,7 +213,7 @@ class ShareableProcessLock:
 
     @contextmanager
     def lock(self, shared: bool = False, blocking: bool = True, reentrant: bool = False):
-        """Locks the scoped FD
+        """Locks the scoped FD.
 
         shared : bool
             Whether the lock should be shared. If not shared, the lock is

@@ -11,7 +11,7 @@ from pharmpy.internals.immutable import Immutable
 
 
 class Task(Immutable):
-    """One task in a workflow
+    """One task in a workflow.
 
     Parameters
     ----------
@@ -44,17 +44,17 @@ class Task(Immutable):
 
     @property
     def name(self) -> str:
-        """Task name"""
+        """Task name."""
         return self._name
 
     @property
     def function(self) -> Callable:
-        """Task function"""
+        """Task function."""
         return self._function
 
     @property
     def task_input(self) -> tuple:
-        """Tuple of static input to function"""
+        """Tuple of static input to function."""
         return self._task_input
 
     def __repr__(self) -> str:

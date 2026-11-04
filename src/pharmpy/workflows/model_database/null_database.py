@@ -7,7 +7,7 @@ from .baseclass import NonTransactionalModelDatabase
 
 
 class NullModelDatabase(NonTransactionalModelDatabase):
-    """Dummy model database implementation
+    """Dummy model database implementation.
 
     No operation does anything. This database can be used if no storing of files
     is desirable.

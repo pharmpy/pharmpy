@@ -96,7 +96,7 @@ def create_workflow(
     filter_data_records: str | None = None,
     _E: dict[str, float | str] | None = None,
 ):
-    """Run Automatic Model Development (AMD) tool
+    """Run Automatic Model Development (AMD) tool.
 
     Parameters
     ----------

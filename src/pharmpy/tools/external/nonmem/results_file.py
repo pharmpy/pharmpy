@@ -118,7 +118,7 @@ class NONMEMResultsFile:
     """Representing and parsing a NONMEM results file (aka lst-file)
     This is not a generic output object and will be combined by other classes
     into new structures.
-    We rely on tags in NONMEM >= 7.2.0
+    We rely on tags in NONMEM >= 7.2.0.
     """
 
     def __init__(self, path=None, parse_error_messages=True):

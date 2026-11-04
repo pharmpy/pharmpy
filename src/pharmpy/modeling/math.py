@@ -10,7 +10,7 @@ from pharmpy.internals.math import cov2corr
 
 
 def calculate_se_from_cov(cov: pd.DataFrame) -> pd.Series:
-    """Calculate standard errors from a covariance matrix
+    """Calculate standard errors from a covariance matrix.
 
     Parameters
     ----------
@@ -60,7 +60,7 @@ def calculate_se_from_cov(cov: pd.DataFrame) -> pd.Series:
 
 
 def calculate_se_from_prec(precision_matrix: pd.DataFrame) -> pd.Series:
-    """Calculate standard errors from a precision matrix
+    """Calculate standard errors from a precision matrix.
 
     Parameters
     ----------
@@ -112,7 +112,7 @@ def calculate_se_from_prec(precision_matrix: pd.DataFrame) -> pd.Series:
 
 
 def calculate_corr_from_cov(cov: pd.DataFrame) -> pd.DataFrame:
-    """Calculate correlation matrix from a covariance matrix
+    """Calculate correlation matrix from a covariance matrix.
 
     Parameters
     ----------
@@ -163,7 +163,7 @@ def calculate_corr_from_cov(cov: pd.DataFrame) -> pd.DataFrame:
 
 
 def calculate_cov_from_prec(precision_matrix: pd.DataFrame) -> pd.DataFrame:
-    """Calculate covariance matrix from a precision matrix
+    """Calculate covariance matrix from a precision matrix.
 
     Parameters
     ----------
@@ -218,7 +218,7 @@ def calculate_cov_from_prec(precision_matrix: pd.DataFrame) -> pd.DataFrame:
 
 
 def calculate_cov_from_corrse(corr: pd.DataFrame, se: pd.Series) -> pd.DataFrame:
-    """Calculate covariance matrix from a correlation matrix and standard errors
+    """Calculate covariance matrix from a correlation matrix and standard errors.
 
     Parameters
     ----------
@@ -274,7 +274,7 @@ def calculate_cov_from_corrse(corr: pd.DataFrame, se: pd.Series) -> pd.DataFrame
 
 
 def calculate_prec_from_cov(cov: pd.DataFrame) -> pd.DataFrame:
-    """Calculate precision matrix from a covariance matrix
+    """Calculate precision matrix from a covariance matrix.
 
     Parameters
     ----------
@@ -325,7 +325,7 @@ def calculate_prec_from_cov(cov: pd.DataFrame) -> pd.DataFrame:
 
 
 def calculate_prec_from_corrse(corr: pd.DataFrame, se: pd.Series) -> pd.DataFrame:
-    """Calculate precision matrix from a correlation matrix and standard errors
+    """Calculate precision matrix from a correlation matrix and standard errors.
 
     Parameters
     ----------
@@ -381,7 +381,7 @@ def calculate_prec_from_corrse(corr: pd.DataFrame, se: pd.Series) -> pd.DataFram
 
 
 def calculate_corr_from_prec(precision_matrix: pd.DataFrame) -> pd.DataFrame:
-    """Calculate correlation matrix from a precision matrix
+    """Calculate correlation matrix from a precision matrix.
 
     Parameters
     ----------

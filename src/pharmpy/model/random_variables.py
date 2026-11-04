@@ -24,7 +24,7 @@ from .distributions.symbolic import Distribution, JointNormalDistribution, Norma
 
 
 class VariabilityLevel(Immutable):
-    """A variability level
+    """A variability level.
 
     Parameters
     ----------
@@ -72,17 +72,17 @@ class VariabilityLevel(Immutable):
 
     @property
     def name(self) -> str:
-        """Name of the variability level"""
+        """Name of the variability level."""
         return self._name
 
     @property
     def reference(self) -> bool:
-        """Is this the reference level"""
+        """Is this the reference level."""
         return self._reference
 
     @property
     def group(self) -> str | None:
-        """Group variable for variability level"""
+        """Group variable for variability level."""
         return self._group
 
     def __repr__(self):
@@ -90,7 +90,7 @@ class VariabilityLevel(Immutable):
 
 
 class VariabilityHierarchy(Immutable):
-    """Description of a variability hierarchy"""
+    """Description of a variability hierarchy."""
 
     def __init__(self, levels: tuple[VariabilityLevel, ...] = ()):
         self._levels = levels
@@ -119,7 +119,7 @@ class VariabilityHierarchy(Immutable):
         return cls(levels)
 
     def replace(self, **kwargs) -> VariabilityHierarchy:
-        """Replace properties and create a new VariabilityHierarchy object"""
+        """Replace properties and create a new VariabilityHierarchy object."""
         levels = kwargs.get('levels', self._levels)
         new = VariabilityHierarchy.create(levels)
         return new
@@ -191,7 +191,7 @@ class VariabilityHierarchy(Immutable):
     @property
     @cache_method_no_args
     def names(self) -> tuple[str, ...]:
-        """Names of all variability levels"""
+        """Names of all variability levels."""
         return tuple(varlev.name for varlev in self._levels)
 
     @cache_method_no_args
@@ -205,7 +205,7 @@ class VariabilityHierarchy(Immutable):
     @property
     @cache_method_no_args
     def levels(self) -> frozenmapping[str, int]:
-        """Dictionary of variability level name to numerical level"""
+        """Dictionary of variability level name to numerical level."""
         ind = self._find_reference()
         d = {}
         for level in self._levels:
@@ -221,7 +221,7 @@ class VariabilityHierarchy(Immutable):
 
 
 class RandomVariables(CollectionsSequence, Immutable):
-    """A collection of distributions of random variables
+    """A collection of distributions of random variables.
 
     This class provides a container for random variables that preserves their order
     and acts list-like while also allowing for indexing on names.
@@ -322,12 +322,12 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     @property
     def eta_levels(self) -> VariabilityHierarchy:
-        """VariabilityHierarchy for all etas"""
+        """VariabilityHierarchy for all etas."""
         return self._eta_levels
 
     @property
     def epsilon_levels(self) -> VariabilityHierarchy:
-        """VariabilityHierarchy for all epsilons"""
+        """VariabilityHierarchy for all epsilons."""
         return self._epsilon_levels
 
     def __add__(
@@ -472,19 +472,19 @@ class RandomVariables(CollectionsSequence, Immutable):
     @property
     @cache_method_no_args
     def names(self) -> tuple[str, ...]:
-        """List of the names of all random variables"""
+        """List of the names of all random variables."""
         return tuple(chain.from_iterable(dist.names for dist in self._dists))
 
     @property
     @cache_method_no_args
     def symbols(self) -> tuple[Expr, ...]:
-        """List with symbols for all random variables"""
+        """List with symbols for all random variables."""
         return tuple(Expr.symbol(name) for name in self.names)
 
     @property
     @cache_method_no_args
     def epsilons(self) -> RandomVariables:
-        """Get only the epsilons"""
+        """Get only the epsilons."""
         return RandomVariables(
             tuple(dist for dist in self._dists if dist.level in self._epsilon_levels.names),
             self._eta_levels,
@@ -494,7 +494,7 @@ class RandomVariables(CollectionsSequence, Immutable):
     @property
     @cache_method_no_args
     def etas(self) -> RandomVariables:
-        """Get only the etas"""
+        """Get only the etas."""
         return RandomVariables(
             tuple(dist for dist in self._dists if dist.level in self._eta_levels.names),
             self._eta_levels,
@@ -504,7 +504,7 @@ class RandomVariables(CollectionsSequence, Immutable):
     @property
     @cache_method_no_args
     def iiv(self) -> RandomVariables:
-        """Get only the iiv etas, i.e. etas with variability level 0"""
+        """Get only the iiv etas, i.e. etas with variability level 0."""
         return RandomVariables(
             tuple(dist for dist in self._dists if dist.level == self._eta_levels[0].name),
             self._eta_levels,
@@ -514,7 +514,7 @@ class RandomVariables(CollectionsSequence, Immutable):
     @property
     @cache_method_no_args
     def iov(self) -> RandomVariables:
-        """Get only the iov etas, i.e. etas with variability level 1"""
+        """Get only the iov etas, i.e. etas with variability level 1."""
         return RandomVariables(
             tuple(dist for dist in self._dists if dist.level == self._eta_levels[1].name),
             self._eta_levels,
@@ -524,13 +524,13 @@ class RandomVariables(CollectionsSequence, Immutable):
     @property
     @cache_method_no_args
     def free_symbols(self) -> frozenset[Expr]:
-        """Set of free symbols for all random variables"""
+        """Set of free symbols for all random variables."""
         return frozenset().union(*(dist.free_symbols for dist in self._dists))
 
     @property
     @cache_method_no_args
     def parameter_names(self) -> tuple[str, ...]:
-        """List of parameter names for all random variables
+        """List of parameter names for all random variables.
 
         The list has a lower triangular canonical order
         """
@@ -544,7 +544,7 @@ class RandomVariables(CollectionsSequence, Immutable):
     @property
     @cache_method_no_args
     def variance_parameters(self) -> tuple[str, ...]:
-        """List of all parameters representing variance for all random variables"""
+        """List of all parameters representing variance for all random variables."""
         parameters = []
         for dist in self._dists:
             if isinstance(dist, NormalDistribution):
@@ -559,7 +559,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return tuple(p.name for p in parameters)
 
     def get_covariance(self, rv1: TSymbol, rv2: TSymbol) -> Expr:
-        """Get covariance between two random variables"""
+        """Get covariance between two random variables."""
         rv1 = Expr(rv1)
         rv2 = Expr(rv2)
         _, dist1 = self._lookup_rv(rv1)
@@ -572,7 +572,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             return dist1.get_covariance(name1, name2)
 
     def subs(self, d: Mapping[TExpr, TExpr]) -> RandomVariables:
-        """Substitute expressions
+        """Substitute expressions.
 
         Parameters
         ----------
@@ -594,7 +594,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return self.replace(dists=new_dists)
 
     def unjoin(self, inds: str | Expr | Iterable[str | Expr]) -> RandomVariables:
-        """Remove all covariances the random variables have with other random variables
+        """Remove all covariances the random variables have with other random variables.
 
         Parameters
         ----------
@@ -673,7 +673,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         name_template: str | None = None,
         param_names: list[str] | None = None,
     ) -> tuple[RandomVariables, dict[str, tuple[str, str]]]:
-        """Join random variables together into one joint distribution
+        """Join random variables together into one joint distribution.
 
         Set new covariances (and previous 0 covs) to 'fill'.
         All joined random variables will form a new joint normal distribution and
@@ -757,7 +757,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return new_rvs, cov_to_params
 
     def nearest_valid_parameters(self, parameter_values: Mapping[str, float]) -> dict[str, float]:
-        """Force parameter values into being valid
+        """Force parameter values into being valid.
 
         As small changes as possible
 
@@ -778,7 +778,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return nearest
 
     def validate_parameters(self, parameter_values: Mapping[str, float]) -> bool:
-        """Validate a dict or Series of parameter values
+        """Validate a dict or Series of parameter values.
 
         Currently checks that all covariance matrices are positive semidefinite
         """
@@ -799,7 +799,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         samples: int = 1,
         rng: RandomNumberGenerator | Seed | int | float | None = None,
     ) -> np.ndarray:
-        """Sample from the distribution of expr
+        """Sample from the distribution of expr.
 
         parameters in the distributions will first be replaced
         """
@@ -853,7 +853,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     @property
     def covariance_matrix(self) -> Matrix:
-        """Covariance matrix of all random variables"""
+        """Covariance matrix of all random variables."""
         _, M, _ = self._calc_covariance_matrix()
         return Matrix(M)
 
@@ -865,7 +865,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return '\\begin{aligned}\n' + r' \\ '.join(lines) + '\\end{aligned}'
 
     def parameters_sdcorr(self, values: Mapping[str, float]) -> dict[str, float]:
-        """Convert parameter values to sd/corr form
+        """Convert parameter values to sd/corr form.
 
         All parameter values will be converted to sd/corr assuming
         they are given in var/cov form.
@@ -905,7 +905,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return newdict
 
     def get_rvs_with_same_dist(self, rv: str | sympy.Symbol) -> RandomVariables:
-        """Gets random variables with the same distribution as input random variable
+        """Gets random variables with the same distribution as input random variable.
 
         The resulting RandomVariables objects includes the input random variable.
 
@@ -926,7 +926,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return RandomVariables.create(rvs)
 
     def replace_with_sympy_rvs(self, expr: Expr) -> sympy.Expr:
-        """Replaces Pharmpy RVs in a Sympy expression with Sympy RVs
+        """Replaces Pharmpy RVs in a Sympy expression with Sympy RVs.
 
         Takes a Sympy expression and replaces all RVs with Sympy RVs, resulting expression
         can be used in different Sympy functions (e.g. sympy.stats.std())

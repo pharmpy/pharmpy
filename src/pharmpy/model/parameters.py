@@ -15,7 +15,7 @@ from pharmpy.internals.immutable import Immutable, cache_method_no_args
 
 
 class Parameter(Immutable):
-    """A single parameter
+    """A single parameter.
 
     Example
     -------
@@ -64,7 +64,7 @@ class Parameter(Immutable):
         upper: float | Expr | None = None,
         fix: bool = False,
     ) -> Self:
-        """Alternative constructor for Parameter with error checking"""
+        """Alternative constructor for Parameter with error checking."""
         if not isinstance(name, str):
             raise TypeError("Name of parameter must be of type string")
         init = float(init)
@@ -85,7 +85,7 @@ class Parameter(Immutable):
         return cls(name, init, lower, upper, bool(fix))
 
     def replace(self, **kwargs) -> Parameter:
-        """Replace properties and create a new Parameter"""
+        """Replace properties and create a new Parameter."""
         name = kwargs.get('name', self._name)
         init = kwargs.get('init', self._init)
         lower = kwargs.get('lower', self._lower)
@@ -96,32 +96,32 @@ class Parameter(Immutable):
 
     @property
     def name(self) -> str:
-        """Parameter name"""
+        """Parameter name."""
         return self._name
 
     @property
     def fix(self) -> bool:
-        """Should parameter be fixed or not"""
+        """Should parameter be fixed or not."""
         return self._fix
 
     @property
     def symbol(self) -> Expr:
-        """Symbol representing the parameter"""
+        """Symbol representing the parameter."""
         return Expr.symbol(self._name)
 
     @property
     def lower(self) -> float:
-        """Lower bound of the parameter"""
+        """Lower bound of the parameter."""
         return self._lower
 
     @property
     def upper(self) -> float:
-        """Upper bound of the parameter"""
+        """Upper bound of the parameter."""
         return self._upper
 
     @property
     def init(self) -> float:
-        """Initial parameter estimate or value"""
+        """Initial parameter estimate or value."""
         return self._init
 
     @cache_method_no_args
@@ -142,7 +142,7 @@ class Parameter(Immutable):
         return cls(**d)
 
     def __eq__(self, other: object):
-        """Two parameters are equal if they have the same name, init and constraints"""
+        """Two parameters are equal if they have the same name, init and constraints."""
         if not isinstance(other, Parameter):
             return NotImplemented
         if id(self) == id(other):
@@ -171,7 +171,7 @@ class Parameter(Immutable):
 
 
 class Parameters(CollectionsSequence, Immutable):
-    """An immutable collection of parameters
+    """An immutable collection of parameters.
 
     Class representing a group of parameters. Usually all parameters in a model.
     This class give a ways of displaying, summarizing and manipulating
@@ -218,7 +218,7 @@ class Parameters(CollectionsSequence, Immutable):
         return cls(parameters)
 
     def replace(self, **kwargs) -> Parameters:
-        """Replace properties and create a new Parameters object"""
+        """Replace properties and create a new Parameters object."""
         parameters = kwargs.get('parameters', self._params)
         new = Parameters.create(parameters)
         return new
@@ -268,7 +268,7 @@ class Parameters(CollectionsSequence, Immutable):
             return False
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Create a dataframe with a summary of all Parameters
+        """Create a dataframe with a summary of all Parameters.
 
         Returns
         -------
@@ -301,31 +301,31 @@ class Parameters(CollectionsSequence, Immutable):
 
     @property
     def names(self) -> tuple[str, ...]:
-        """All parameter names"""
+        """All parameter names."""
         return tuple(p.name for p in self._params)
 
     @property
     def symbols(self) -> list[Expr]:
-        """List of all parameter symbols"""
+        """List of all parameter symbols."""
         return [p.symbol for p in self._params]
 
     @property
     def lower(self) -> dict[str, float]:
-        """Lower bounds of all parameters as a dictionary"""
+        """Lower bounds of all parameters as a dictionary."""
         return {p.name: p.lower for p in self._params}
 
     @property
     def upper(self) -> dict[str, float]:
-        """Upper bounds of all parameters as a dictionary"""
+        """Upper bounds of all parameters as a dictionary."""
         return {p.name: p.upper for p in self._params}
 
     @property
     def inits(self) -> dict[str, float]:
-        """Initial estimates of parameters as dict"""
+        """Initial estimates of parameters as dict."""
         return {p.name: p.init for p in self._params}
 
     def set_initial_estimates(self, inits: Mapping[str, float]) -> Parameters:
-        """Create a new Parameters with changed initial estimates
+        """Create a new Parameters with changed initial estimates.
 
         Parameters
         ----------
@@ -349,11 +349,11 @@ class Parameters(CollectionsSequence, Immutable):
 
     @property
     def fix(self) -> dict[str, bool]:
-        """Fixedness of parameters as dict"""
+        """Fixedness of parameters as dict."""
         return {p.name: p.fix for p in self._params}
 
     def set_fix(self, fix: Mapping[str, bool]) -> Parameters:
-        """Create a new Parameters with changed fix state
+        """Create a new Parameters with changed fix state.
 
         Parameters
         ----------
@@ -377,13 +377,13 @@ class Parameters(CollectionsSequence, Immutable):
 
     @property
     def fixed(self) -> Parameters:
-        """All fixed parameters"""
+        """All fixed parameters."""
         fixed = [p for p in self._params if p.fix]
         return Parameters(tuple(fixed))
 
     @property
     def nonfixed(self) -> Parameters:
-        """All non-fixed parameters"""
+        """All non-fixed parameters."""
         nonfixed = [p for p in self._params if not p.fix]
         return Parameters(tuple(nonfixed))
 

@@ -9,7 +9,7 @@ from .baseclass import Context
 
 
 class NullContext(Context):
-    """Dummy context
+    """Dummy context.
 
     No operation does anything. This context can be used if no storing of files
     is desirable for example for testing.

@@ -18,27 +18,27 @@ T = TypeVar('T')
 
 
 class WorkflowBase:
-    """Common base class for Workflow and WorkflowBuilder"""
+    """Common base class for Workflow and WorkflowBuilder."""
 
     _g: nx.DiGraph
 
     @property
     def tasks(self) -> list[Task]:
-        """All tasks in workflow"""
+        """All tasks in workflow."""
         return list(self._g.nodes())
 
     @property
     def input_tasks(self) -> list[Task]:
-        """All input (source) tasks of entire workflow"""
+        """All input (source) tasks of entire workflow."""
         return [node for node in self._g.nodes if self._g.in_degree(node) == 0]
 
     @property
     def output_tasks(self) -> list[Task]:
-        """All output tasks (sink) tasks of entire workflow"""
+        """All output tasks (sink) tasks of entire workflow."""
         return [node for node in self._g.nodes if self._g.out_degree(node) == 0]
 
     def get_upstream_tasks(self, task: Task) -> list[Task]:
-        """Get all tasks upstream of a certain task
+        """Get all tasks upstream of a certain task.
 
         Parameters
         ----------
@@ -54,7 +54,7 @@ class WorkflowBase:
         return [node for node, _, _ in edges]
 
     def get_predecessors(self, task: Task) -> list[Task]:
-        """Get all predecessors of task
+        """Get all predecessors of task.
 
         Parameters
         ----------
@@ -69,7 +69,7 @@ class WorkflowBase:
         return list(self._g.predecessors(task))
 
     def get_successors(self, task: Task) -> list[Task]:
-        """Get all successors of task
+        """Get all successors of task.
 
         Parameters
         ----------
@@ -108,7 +108,7 @@ class WorkflowBase:
 
 
 class WorkflowBuilder(WorkflowBase):
-    """Builder class for Workflow"""
+    """Builder class for Workflow."""
 
     def __init__(
         self,
@@ -127,7 +127,7 @@ class WorkflowBuilder(WorkflowBase):
                 self.add_task(task)
 
     def add_task(self, task: Task, predecessors: Task | Iterable[Task] | None = None) -> None:
-        """Add a task to the workflow
+        """Add a task to the workflow.
 
         Predecessors will be connected if given.
 
@@ -147,7 +147,7 @@ class WorkflowBuilder(WorkflowBase):
                     self._g.add_edge(pred, task)
 
     def scatter(self, source: Task, destinations: Iterable[Task]) -> None:
-        """Scatter output from one task to multiple previously added tasks
+        """Scatter output from one task to multiple previously added tasks.
 
         The predecessor should return one value per successor task
 
@@ -169,7 +169,7 @@ class WorkflowBuilder(WorkflowBase):
             self._g.add_edge(scatter_task, task)
 
     def gather(self, sources: Iterable[Task], destination: Task | None = None) -> None:
-        """Gather output from multiple tasks to one task
+        """Gather output from multiple tasks to one task.
 
         The destination Task could be left out to keep the gathered output unconnected
 
@@ -194,7 +194,7 @@ class WorkflowBuilder(WorkflowBase):
             self._g.add_edge(gather_task, destination)
 
     def replace_task(self, task: Task, new_task: Task) -> None:
-        """Replace a task with a new task
+        """Replace a task with a new task.
 
         Parameters
         ----------
@@ -209,7 +209,7 @@ class WorkflowBuilder(WorkflowBase):
     def insert_workflow(
         self, other: Workflow, predecessors: Task | Iterable[Task] | None = None
     ) -> None:
-        """Insert other workflow
+        """Insert other workflow.
 
         Parameters
         ----------
@@ -249,7 +249,7 @@ class WorkflowBuilder(WorkflowBase):
 
 
 class Workflow[T](WorkflowBase, Immutable):
-    """Workflow class
+    """Workflow class.
 
     Representation of a directed acyclic graph with Tasks as nodes and
     the flow of parameters as edges.
@@ -285,7 +285,7 @@ class Workflow[T](WorkflowBase, Immutable):
         return Workflow.create(builder=builder, graph=g, name=name)
 
     def as_dask_dict(self) -> dict:
-        """Create a dask workflow dictionary
+        """Create a dask workflow dictionary.
 
         Returns
         -------
@@ -309,7 +309,7 @@ class Workflow[T](WorkflowBase, Immutable):
         return as_dict
 
     def get_id_mapping(self) -> dict[Task, str]:
-        """Create a dictionary of task and a unique name"""
+        """Create a dictionary of task and a unique name."""
         ids = {}
         for task in self._g.nodes():
             assert isinstance(task, Task)
@@ -318,11 +318,11 @@ class Workflow[T](WorkflowBase, Immutable):
 
     @property
     def name(self) -> str | None:
-        """Name of Workflow"""
+        """Name of Workflow."""
         return self._name
 
     def plot_dask(self, filename: str) -> None:
-        """Save a visualization of workflow to file
+        """Save a visualization of the workflow to file.
 
         Parameters
         ----------
@@ -343,7 +343,7 @@ class Workflow[T](WorkflowBase, Immutable):
 
 
 def insert_context(wb: WorkflowBuilder, context) -> None:
-    """Insert context for all tasks in a workflow needing it
+    """Insert context for all tasks in a workflow needing it.
 
     having context as first argument of function
     """

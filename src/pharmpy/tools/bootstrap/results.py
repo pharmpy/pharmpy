@@ -227,7 +227,7 @@ def create_distribution(df):
 
 
 def psn_bootstrap_results(path):
-    """Create bootstrapresults from a PsN bootstrap run
+    """Create bootstrapresults from a PsN bootstrap run.
 
     :param path: Path to PsN boostrap run directory
     :return: A :class:`BootstrapResults` object

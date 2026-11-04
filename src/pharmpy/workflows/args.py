@@ -19,7 +19,7 @@ class InputValidationError(Exception):
 def split_common_options(
     d,
 ) -> tuple[Mapping[str, Any], Mapping[str, Any], int | None, Mapping[str, Any]]:
-    """Split the dict into dispatching options, common options, seed and tool options
+    """Split the dict into dispatching options, common options, seed and tool options.
 
     Dispatching options will be handled before the tool is run to setup the context and dispatching
     system. Common options will be handled by the context so that all tasks in the workflow can get

@@ -61,7 +61,7 @@ class PharmpyAbstractCodeDirective(RecursiveDirective):
 
     @abstractmethod
     def _lines(self) -> List[str]:
-        """Return lines for this directive"""
+        """Return lines for this directive."""
 
     def _input(self):
         return [

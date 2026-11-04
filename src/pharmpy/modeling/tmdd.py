@@ -38,7 +38,7 @@ def set_tmdd(
     dv_types: dict[Literal['drug', 'drug_tot', 'target', 'target_tot', 'complex'], int]
     | None = None,
 ) -> Model:
-    """Sets target mediated drug disposition
+    """Sets target mediated drug disposition.
 
     Implemented target mediated drug disposition (TMDD) models are:
 

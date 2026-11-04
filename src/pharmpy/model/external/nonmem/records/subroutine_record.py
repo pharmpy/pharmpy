@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 """
-The NONMEM $SUBROUTINES record
+The NONMEM $SUBROUTINES record.
 """
 
 from .option_record import OptionRecord

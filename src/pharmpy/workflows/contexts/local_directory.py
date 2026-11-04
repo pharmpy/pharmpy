@@ -27,7 +27,7 @@ from .baseclass import Context
 
 
 class LocalDirectoryContext(Context):
-    """Context in a local directory
+    """Context in a local directory.
 
     Parameters
     ----------

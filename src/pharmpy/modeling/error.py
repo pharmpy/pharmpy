@@ -533,7 +533,7 @@ def set_combined_error_model(
 
 
 def has_additive_error_model(model: Model, dv: Expr | str | int | None = None) -> bool:
-    """Check if a model has an additive error model
+    """Check if a model has an additive error model.
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
     first (in case of many) dependent variable is going to be checked.
@@ -574,7 +574,7 @@ def has_additive_error_model(model: Model, dv: Expr | str | int | None = None) -
 
 
 def has_proportional_error_model(model: Model, dv: Expr | str | int | None = None) -> bool:
-    """Check if a model has a proportional error model
+    """Check if a model has a proportional error model.
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
     first (in case of many) dependent variable is going to be checked.
@@ -643,7 +643,7 @@ def _check_and_get_zero_protect(error_sset, y_symbs):
 
 
 def has_combined_error_model(model: Model, dv: Expr | str | int | None = None) -> bool:
-    """Check if a model has a combined additive and proportional error model
+    """Check if a model has a combined additive and proportional error model.
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
     first (in case of many) dependent variable is going to be checked.
@@ -692,7 +692,7 @@ def has_combined_error_model(model: Model, dv: Expr | str | int | None = None) -
 
 
 def use_thetas_for_error_stdev(model: Model) -> Model:
-    """Use thetas to estimate standard deviation of error
+    """Use thetas to estimate standard deviation of error.
 
     Parameters
     ----------
@@ -737,7 +737,7 @@ def use_thetas_for_error_stdev(model: Model) -> Model:
 
 
 def set_weighted_error_model(model: Model) -> Model:
-    """Encode error model with one epsilon and W as weight
+    """Encode error model with one epsilon and W as weight.
 
     Parameters
     ----------
@@ -789,7 +789,7 @@ def set_weighted_error_model(model: Model) -> Model:
 
 
 def has_weighted_error_model(model: Model) -> bool:
-    """Check if a model has a weighted error model
+    """Check if a model has a weighted error model.
 
     Parameters
     ----------
@@ -852,7 +852,7 @@ def _index_of_first_assignment(statements: Statements, symbol) -> int:
 
 
 def set_dtbs_error_model(model: Model, fix_to_log: bool = False) -> Model:
-    """Dynamic transform both sides
+    """Dynamic transform both sides.
 
     Parameters
     ----------
@@ -922,7 +922,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False) -> Model:
 def set_time_varying_error_model(
     model: Model, cutoff: float, idv: str = 'TIME', dv: Expr | str | int | None = None
 ) -> Model:
-    """Set a time varying error model per time cutoff
+    """Set a time varying error model per time cutoff.
 
     Parameters
     ----------

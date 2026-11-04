@@ -736,7 +736,7 @@ def find_dose(doses, comp_number, admid=1):
 
 
 def _get_alag(control_stream: NMTranControlStream, n: int):
-    """Check if ALAGn is defined in model and return it else return 0"""
+    """Check if ALAGn is defined in model and return it else return 0."""
     alag = f'ALAG{n}'
     pkrec = control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(alag):
@@ -746,7 +746,7 @@ def _get_alag(control_stream: NMTranControlStream, n: int):
 
 
 def _get_bioavailability(control_stream: NMTranControlStream, n: int):
-    """Check if Fn is defined in model and return it else return 0"""
+    """Check if Fn is defined in model and return it else return 0."""
     fn = f'F{n}'
     pkrec = control_stream.get_records('PK')[0]
     if pkrec.statements.find_assignment(fn):

@@ -26,7 +26,7 @@ def read_dataset_header_and_separator(path) -> tuple[list[str], str]:
 
 
 def create_datainfo(path_or_df: str | Path | pd.DataFrame) -> DataInfo:
-    """Create a DataInfo
+    """Create a DataInfo.
 
     Will assume NONMEM names of columns
 
@@ -129,7 +129,7 @@ def create_nonmem_annotation(path_or_df):
 
 
 def read_datainfo(path: str | Path) -> DataInfo:
-    """Read a datainfo file
+    """Read a datainfo file.
 
     Parameters
     ----------
@@ -152,7 +152,7 @@ def read_datainfo(path: str | Path) -> DataInfo:
 
 
 def write_datainfo(di: DataInfo, path: str | Path, force: bool = False) -> None:
-    """Write a DataInfo object to a datainfo file
+    """Write a DataInfo object to a datainfo file.
 
     Parameters
     ----------
@@ -181,7 +181,7 @@ def annotate_unit(model_or_datainfo: DataInfo, column: str, unit: str) -> DataIn
 
 
 def annotate_unit(model_or_datainfo: Model | DataInfo, column: str, unit: str) -> Model | DataInfo:
-    """Specify the unit of a data column
+    """Specify the unit of a data column.
 
     Note that no conversion of units will happen if the unit was already set.
 
@@ -230,7 +230,7 @@ def set_property(
 def set_property(
     model_or_datainfo: Model | DataInfo, column: str, property: str, value: Any
 ) -> Model | DataInfo:
-    """Specify a property of a column
+    """Specify a property of a column.
 
     See :py:attr:`pharmpy.DataInfo.properties` for documentation on data properties.
 

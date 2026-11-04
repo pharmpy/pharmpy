@@ -27,7 +27,7 @@ def setup(model_path, covariates, missing_data_token):
 
 
 def check_covariates(input_model, covariates):
-    """Perform checks of covariates and filter out inappropriate ones
+    """Perform checks of covariates and filter out inappropriate ones.
 
     1. A covariate has the same baseline value for all individuals
     2. Two or more covariates have the exact same baseline values
@@ -77,7 +77,7 @@ def check_covariates(input_model, covariates):
 
 
 def update_model3b_for_psn(rundir, ncovs):
-    """Function to update model3b from psn
+    """Function to update model3b from psn.
 
     NOTE: This function lets pharmpy tie in to the PsN workflow
           and is a temporary solution

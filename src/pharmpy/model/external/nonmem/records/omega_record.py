@@ -32,7 +32,7 @@ def _find_first_name(nodes):
 
 class OmegaRecord(Record):
     def parse(self):
-        """Parse the omega record
+        """Parse the omega record.
 
         Return a list with one tuple for each block. Each block will have a list of names,
         a list of inits, fixedness and same.
@@ -137,7 +137,7 @@ class OmegaRecord(Record):
                     pending = None
 
     def _block_flags(self):
-        """Get a tuple of all interesting flags for block"""
+        """Get a tuple of all interesting flags for block."""
         fix = bool(self.root.find('FIX'))
         var = bool(self.root.find('VAR'))
         sd = bool(self.root.find('SD'))
@@ -188,7 +188,7 @@ class OmegaRecord(Record):
         return fix, sd, corr, cholesky
 
     def update(self, parameters):
-        """From a Parameters update the OMEGAs in this record"""
+        """From a Parameters update the OMEGAs in this record."""
         block = self.root.find('block')
         bare_block = self.root.find('bare_block')
         if not (block or bare_block):
@@ -332,7 +332,7 @@ class OmegaRecord(Record):
 
     def remove(self, inds):
         """Remove some etas from block given eta names
-        inds - list of tuples of block index and eta index within block
+        inds - list of tuples of block index and eta index within block.
         """
         if len(inds) == 0:
             return self

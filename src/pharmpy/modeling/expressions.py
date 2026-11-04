@@ -43,7 +43,7 @@ def raise_if_odes(model):
 
 
 def get_observation_expression(model: Model) -> Expr:
-    """Get the full symbolic expression for the observation according to the model
+    """Get the full symbolic expression for the observation according to the model.
 
     This function currently only support models without ODE systems
 
@@ -85,7 +85,7 @@ def get_observation_expression(model: Model) -> Expr:
 
 
 def get_individual_prediction_expression(model: Model) -> Expr:
-    """Get the full symbolic expression for the modelled individual prediction
+    """Get the full symbolic expression for the modelled individual prediction.
 
     This function currently only support models without ODE systems
 
@@ -117,7 +117,7 @@ def get_individual_prediction_expression(model: Model) -> Expr:
 
 
 def get_population_prediction_expression(model: Model) -> Expr:
-    """Get the full symbolic expression for the modelled population prediction
+    """Get the full symbolic expression for the modelled population prediction.
 
     This function currently only support models without ODE systems
 
@@ -150,7 +150,7 @@ def get_population_prediction_expression(model: Model) -> Expr:
 
 
 def calculate_eta_gradient_expression(model: Model) -> list[Expr]:
-    """Calculate the symbolic expression for the eta gradient
+    """Calculate the symbolic expression for the eta gradient.
 
     This function currently only support models without ODE systems
 
@@ -182,7 +182,7 @@ def calculate_eta_gradient_expression(model: Model) -> list[Expr]:
 
 
 def calculate_epsilon_gradient_expression(model: Model) -> list[Expr]:
-    """Calculate the symbolic expression for the epsilon gradient
+    """Calculate the symbolic expression for the epsilon gradient.
 
     This function currently only support models without ODE systems
 
@@ -215,7 +215,7 @@ def calculate_epsilon_gradient_expression(model: Model) -> list[Expr]:
 
 
 def create_symbol(model: Model, stem: str, force_numbering: bool = False) -> Expr:
-    """Create a new unique variable symbol given a model
+    """Create a new unique variable symbol given a model.
 
     Parameters
     ----------
@@ -293,7 +293,7 @@ def _find_eta_assignments(model):
 
 
 def mu_reference_model(model: Model) -> Model:
-    r"""Convert model to use mu-referencing
+    r"""Convert model to use mu-referencing.
 
     Mu-referencing an eta is to separately define its actual mu (mean) parameter.
     For example: :math:`CL = \theta_1 e^{\eta_1}` with :math:`\eta_1` following a zero-mean
@@ -423,7 +423,7 @@ def has_mu_reference(model: Model) -> bool:
 
 
 def get_mu_connected_to_parameter(model: Model, parameter: str) -> str | None:
-    """Return Mu name connected to parameter
+    """Return Mu name connected to parameter.
 
     If the given parameter is not dependent on any Mu, None is returned
 
@@ -448,7 +448,7 @@ def get_mu_connected_to_parameter(model: Model, parameter: str) -> str | None:
 
 
 def get_symbolic_constraints(model: Model) -> list[BooleanExpr]:
-    """Create symbolic constraints on parameters for a model
+    """Create symbolic constraints on parameters for a model.
 
         The output of this function can be used for further inference or manipulation
         of expressions. For example in the :func:`pharmpy.basic.equals` function.
@@ -493,7 +493,7 @@ def get_symbolic_constraints(model: Model) -> list[BooleanExpr]:
 
 
 def simplify_expression(model: Model, expr: str | TExpr) -> Expr:
-    """Simplify expression given constraints in model
+    """Simplify expression given constraints in model.
 
     Parameters
     ----------
@@ -550,7 +550,7 @@ def _simplify_expression_from_parameters(expr, parameters) -> Expr:
 
 
 def make_declarative(model: Model) -> Model:
-    """Make the model statments declarative
+    """Make the model statments declarative.
 
     Each symbol will only be declared once.
 
@@ -633,7 +633,7 @@ def make_declarative(model: Model) -> Model:
 
 
 def cleanup_model(model: Model) -> Model:
-    """Perform various cleanups of a model
+    """Perform various cleanups of a model.
 
     This is what is currently done
 
@@ -724,7 +724,7 @@ def cleanup_model(model: Model) -> Model:
 
 
 def greekify_model(model: Model, named_subscripts: bool = False) -> Model:
-    """Convert to using greek letters for all population parameters
+    """Convert to using greek letters for all population parameters.
 
     Parameters
     ----------
@@ -2028,7 +2028,7 @@ def _dependency_graph(assignments: Sequence[Assignment]):
 
 
 def is_real(model: Model, expr: TExpr) -> bool | None:
-    """Determine if an expression is real valued given constraints of a model
+    """Determine if an expression is real valued given constraints of a model.
 
     Parameters
     ----------
@@ -2055,7 +2055,7 @@ def is_real(model: Model, expr: TExpr) -> bool | None:
 
 
 def is_linearized(model: Model) -> bool:
-    """Determine if a model is linearized
+    """Determine if a model is linearized.
 
     Parameters
     ----------
@@ -2108,7 +2108,7 @@ def is_linearized(model: Model) -> bool:
 
 
 def get_dv_symbol(model: Model, dv: Expr | str | int | None = None) -> Expr:
-    """Get the symbol for a certain dvid or dv and check that it is valid
+    """Get the symbol for a certain dvid or dv and check that it is valid.
 
     Parameters
     ----------
@@ -2218,7 +2218,7 @@ def _create_inits(model: Model, dist: JointNormalDistribution) -> Matrix:
 
 
 def cholesky_decompose(model: Model, rvs: Collection[str] | None = None) -> Model:
-    """Cholesky decomposition of joint normally distributed random variables
+    """Cholesky decomposition of joint normally distributed random variables.
 
     Parameters
     ----------

@@ -19,7 +19,7 @@ from pharmpy.model import Model
 def create_rng(
     seed: int | float | RandomNumberGenerator | Seed | None = None,
 ) -> RandomNumberGenerator:
-    """Create a new random number generator
+    """Create a new random number generator.
 
     Pharmpy functions that use random sampling take a random number generator or seed as input.
     This function can be used to create a default new random number generator.
@@ -51,7 +51,7 @@ def _sample_truncated_joint_normal(sigma, mu, a, b, n, rng):
     """Give an array of samples from the truncated joint normal distribution using sample rejection
     - mu, sigma - parameters for the normal distribution
     - a, b - vectors of lower and upper limits for each random variable
-    - n - number of samples
+    - n - number of samples.
     """
     if not is_posdef(sigma):
         raise ValueError("Covariance matrix not positive definite")
@@ -75,7 +75,7 @@ def _sample_from_function(
     force_posdef_samples=None,
     n=1,
 ):
-    """Sample parameter vectors using a general function
+    """Sample parameter vectors using a general function.
 
     The sampling function will be given three arguments:
 
@@ -135,7 +135,7 @@ def sample_parameters_uniformly(
     seed: RandomNumberGenerator | float | int | Seed | None = None,
     scale: Literal['UCP', 'normal'] = 'normal',
 ) -> pd.DataFrame:
-    """Sample parameter vectors using uniform sampling
+    """Sample parameter vectors using uniform sampling.
 
     Each parameter value will be randomly sampled from a uniform distribution
     with the bounds being estimate ± estimate * fraction.
@@ -212,7 +212,7 @@ def sample_parameters_from_covariance_matrix(
     n: int = 1,
     seed: RandomNumberGenerator | int | float | Seed | None = None,
 ) -> pd.DataFrame:
-    """Sample parameter vectors using the covariance matrix
+    """Sample parameter vectors using the covariance matrix.
 
     If parameters is not provided all estimated parameters will be used
 

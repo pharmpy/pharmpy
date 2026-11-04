@@ -473,7 +473,7 @@ def _stepwise_linear_covariate_selection(
     linreg_method="ols",
 ):
     """
-    Perform linear stepwsie covariate screening using BIC or LRT
+    Perform linear stepwsie covariate screening using BIC or LRT.
     """
     lin_func = _get_linreg_method(linreg_method, data, parameter)
 
@@ -582,7 +582,7 @@ def _linear_covariate_selection(
     lrt_alpha=0.05,
     linreg_method="ols",
 ):
-    """Linear covariate selection using BIC or LRT"""
+    """Linear covariate selection using BIC or LRT."""
     lin_func = _get_linreg_method(linreg_method, data, parameter)
 
     partial_ofv = partial(_ofv, nsamples=nsamples, linreg_method=linreg_method)
@@ -805,7 +805,7 @@ def samba_nonlinear_model_selection(
 def scmlcs_nonlinear_model_selection(
     context, step, selection_criterion, lrt_alpha, state_and_effect
 ):
-    """Perform nonlinear model selection for SCM-LCS using either BIC or LRT criteria"""
+    """Perform nonlinear model selection for SCM-LCS using either BIC or LRT criteria."""
     # unpack state_and_effect
     search_state = state_and_effect.search_state
     effect_funcs = state_and_effect.effect_funcs

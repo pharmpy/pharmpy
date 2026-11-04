@@ -24,7 +24,7 @@ from pharmpy.workflows.results import ModelfitResults, Results
 
 @dataclass(frozen=True)
 class SCMResults(Results):
-    """SCM Results class"""
+    """SCM Results class."""
 
     steps: Any | None = None
     ofv_summary: Any | None = None
@@ -108,7 +108,7 @@ def ofv_summary_dataframe(steps, final_included=True, iterations=True):
 
 
 def psn_scm_parse_logfile(logfile, options, parcov_dictionary):
-    """Read SCM results"""
+    """Read SCM results."""
 
     logfile = Path(logfile)
     df = pd.concat(list(log_steps(logfile, options, parcov_dictionary)))
@@ -700,7 +700,7 @@ def _parameter_estimates(results: ModelfitResults, parameter: str):
 
 
 def psn_scm_results(path):
-    """Create scm results from a PsN SCM run
+    """Create scm results from a PsN SCM run.
 
     :param path: Path to PsN scm run directory
     :return: A :class:`SCMResults` object

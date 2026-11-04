@@ -61,7 +61,7 @@ def scatter_plot_correlation(df, x, y, tooltip_columns=None, title=""):
 
 
 def scatter_matrix(df):
-    """Scatter matrix plot
+    """Scatter matrix plot.
 
     Each column will be scatter plotted against all columns.
     """
@@ -95,7 +95,7 @@ def scatter_matrix(df):
 
 
 def line_plot(df, x, title='', xlabel='', ylabel='', legend_title=''):
-    """Line plot for multiple lines
+    """Line plot for multiple lines.
 
     Parameters
     ----------
@@ -180,7 +180,7 @@ def histogram(values, title=""):
 
 
 def facetted_histogram(df):
-    """Facet of one histogram per column with cross filter interaction"""
+    """Facet of one histogram per column with cross filter interaction."""
     brush = alt.selection_interval(encodings=['x'])
 
     base = (

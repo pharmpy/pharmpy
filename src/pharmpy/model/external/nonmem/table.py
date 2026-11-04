@@ -93,7 +93,7 @@ def _remove_repeated_header_lines(lines: Iterator[str]):
 
 
 class NONMEMTableFile:
-    """A NONMEM table file that can contain multiple tables"""
+    """A NONMEM table file that can contain multiple tables."""
 
     def __init__(
         self,
@@ -284,7 +284,7 @@ class NONMEMTable:
 
     @staticmethod
     def rename_index(df, ext=True):
-        """If columns rename also the row index"""
+        """If columns rename also the row index."""
         theta_labels = [x for x in df.columns if x.startswith('THETA')]
         omega_labels = [x for x in df.columns if x.startswith('OMEGA')]
         sigma_labels = [x for x in df.columns if x.startswith('SIGMA')]
@@ -394,7 +394,7 @@ class ExtTable(NONMEMTable):
 
     @property
     def iterations(self):
-        """List of all iteration numbers (except the special negative)"""
+        """List of all iteration numbers (except the special negative)."""
         it = self.data_frame['ITERATION']
         return list(it[it >= 0])
 
@@ -416,25 +416,25 @@ class ExtTable(NONMEMTable):
 
     @property
     def standard_errors(self):
-        """Get the standard errors of the parameter estimates as a Series"""
+        """Get the standard errors of the parameter estimates as a Series."""
         ser = self._get_parameters(-1000000001)
         ser.name = 'SE'
         return ser
 
     @property
     def condition_number(self):
-        """Get the condition number of the correlation matrix"""
+        """Get the condition number of the correlation matrix."""
         ser = self._get_parameters(-1000000003)
         return ser.values[0]
 
     @property
     def omega_sigma_stdcorr(self):
-        """Get the omegas and sigmas in standard deviation/correlation form"""
+        """Get the omegas and sigmas in standard deviation/correlation form."""
         return self._get_parameters(-1000000004, include_thetas=False)
 
     @property
     def omega_sigma_se_stdcorr(self):
-        """The standard error of the omegas and sigmas in stdcorr form"""
+        """The standard error of the omegas and sigmas in stdcorr form."""
         return self._get_parameters(-1000000005, include_thetas=False)
 
     @property

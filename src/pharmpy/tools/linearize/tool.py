@@ -32,7 +32,7 @@ def create_workflow(
     description: str = "",
 ):
     """
-    Linearize a model
+    Linearize a model.
 
     Parameters
     ----------

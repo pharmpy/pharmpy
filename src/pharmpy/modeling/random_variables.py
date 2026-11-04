@@ -9,7 +9,7 @@ from pharmpy.model import Model, Parameters, RandomVariables
 
 
 def replace_non_random_rvs(model: Model) -> Model:
-    """Replace all random variables that are not actually random
+    """Replace all random variables that are not actually random.
 
     Some random variables are constant. For example a normal
     distribution with the variance parameter fixed to 0 will always

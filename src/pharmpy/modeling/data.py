@@ -46,7 +46,7 @@ from .iterators import resample_data
 
 
 def read_dataset(path: str | Path, format: str | None = None) -> pd.DataFrame:
-    """Read a dataset given a path to a dataset file
+    """Read a dataset given a path to a dataset file.
 
     Parameters
     ----------
@@ -90,7 +90,7 @@ def read_dataset(path: str | Path, format: str | None = None) -> pd.DataFrame:
 
 
 def get_ids(model: Model) -> list[int]:
-    """Retrieve a list of all subject ids of the dataset
+    """Retrieve a list of all subject ids of the dataset.
 
     Parameters
     ----------
@@ -116,7 +116,7 @@ def get_ids(model: Model) -> list[int]:
 
 
 def get_number_of_individuals(model: Model) -> int:
-    """Retrieve the number of individuals in the model dataset
+    """Retrieve the number of individuals in the model dataset.
 
     Parameters
     ----------
@@ -151,7 +151,7 @@ def get_number_of_individuals(model: Model) -> int:
 
 
 def get_number_of_observations(model: Model) -> int:
-    """Retrieve the total number of observations in the model dataset
+    """Retrieve the total number of observations in the model dataset.
 
     Parameters
     ----------
@@ -186,7 +186,7 @@ def get_number_of_observations(model: Model) -> int:
 
 
 def get_number_of_observations_per_individual(model: Model) -> pd.Series:
-    """Number of observations for each individual
+    """Number of observations for each individual.
 
     Parameters
     ----------
@@ -285,7 +285,7 @@ def get_number_of_observations_per_individual(model: Model) -> pd.Series:
 def get_observations(
     model: Model, keep_index: bool = False, dv: Expr | str | int | None = None
 ) -> pd.Series:
-    """Get observations from dataset
+    """Get observations from dataset.
 
     Parameters
     ----------
@@ -494,7 +494,7 @@ def set_covariates(model: DataInfo, covariates: Container[str]) -> DataInfo: ...
 
 
 def set_covariates(model: Model | DataInfo, covariates: Container[str]) -> Model | DataInfo:
-    """Set columns in the dataset to be covariates in the datainfo
+    """Set columns in the dataset to be covariates in the datainfo.
 
     Parameters
     ----------
@@ -682,7 +682,7 @@ def get_covariate_baselines(model: Model) -> pd.DataFrame:
 
 
 def list_time_varying_covariates(model: Model) -> list[str]:
-    """Return a list of names of all time varying covariates
+    """Return a list of names of all time varying covariates.
 
     Parameters
     ----------
@@ -720,7 +720,7 @@ def list_time_varying_covariates(model: Model) -> list[str]:
 
 
 def get_doses(model: Model) -> pd.Series:
-    """Get a series of all doses
+    """Get a series of all doses.
 
     Indexed with ID and TIME
 
@@ -774,7 +774,7 @@ def get_doses(model: Model) -> pd.Series:
 
 
 def expand_additional_doses(model: Model, flag: bool = False) -> Model:
-    """Expand additional doses into separate dose records
+    """Expand additional doses into separate dose records.
 
     Parameters
     ----------
@@ -849,7 +849,7 @@ def expand_additional_doses(model: Model, flag: bool = False) -> Model:
 
 
 def get_doseid(model: Model) -> pd.Series:
-    """Get a DOSEID series from the dataset with an id of each dose period starting from 1
+    """Get a DOSEID series from the dataset with an id of each dose period starting from 1.
 
     If a a dose and observation exist at the same time point the observation will be counted
     towards the previous dose.
@@ -935,7 +935,7 @@ def get_doseid(model: Model) -> pd.Series:
 
 
 def get_mdv(model: Model) -> pd.Series:
-    """Get MDVs from dataset
+    """Get MDVs from dataset.
 
     Parameters
     ----------
@@ -966,7 +966,7 @@ def get_mdv(model: Model) -> pd.Series:
 
 
 def get_evid(model: Model) -> pd.Series:
-    """Get the evid from model dataset
+    """Get the evid from model dataset.
 
     If an event column is present this will be extracted otherwise
     an evid column will be created.
@@ -993,7 +993,7 @@ def get_evid(model: Model) -> pd.Series:
 
 
 def get_admid(model: Model) -> pd.Series:
-    """Get the admid from model dataset
+    """Get the admid from model dataset.
 
     If an administration column is present this will be extracted otherwise
     an admid column will be created based on the admids of the present doses.
@@ -1114,7 +1114,7 @@ def set_admid(model: Model, column_name: str) -> Model:
 
 
 def get_cmt(model: Model) -> pd.Series:
-    """Get the cmt (compartment) column from the model dataset
+    """Get the cmt (compartment) column from the model dataset.
 
     If a cmt column is present this will be extracted otherwise
     a cmt column will be created. If created, multiple dose compartments are
@@ -1179,7 +1179,7 @@ def get_cmt(model: Model) -> pd.Series:
 
 
 def add_cmt(model: Model) -> Model:
-    """Add a CMT column to the model dataset and datainfo if not existed
+    """Add a CMT column to the model dataset and datainfo if not existed.
 
     In case of multiple doses, this method is dependent on the presence of an
     admid column to correctly number each dose.
@@ -1218,7 +1218,7 @@ def add_cmt(model: Model) -> Model:
 
 
 def add_time_of_last_dose(model: Model, name: str = "TDOSE") -> Model:
-    """Add a variable for time of last dose to the model
+    """Add a variable for time of last dose to the model.
 
     Parameters
     ----------
@@ -1247,7 +1247,7 @@ def add_time_of_last_dose(model: Model, name: str = "TDOSE") -> Model:
 
 
 def add_time_after_dose(model: Model) -> Model:
-    """Calculate and add a TAD column to the dataset
+    """Calculate and add a TAD column to the dataset.
 
     Parameters
     ----------
@@ -1327,7 +1327,7 @@ def add_time_after_dose(model: Model) -> Model:
 
 
 def get_concentration_parameters_from_data(model: Model) -> pd.DataFrame:
-    """Create a dataframe with concentration parameters
+    """Create a dataframe with concentration parameters.
 
     Note that all values are directly calculated from the dataset
 
@@ -1391,7 +1391,7 @@ def get_concentration_parameters_from_data(model: Model) -> pd.DataFrame:
 
 
 def drop_dropped_columns(model: Model) -> Model:
-    """Drop columns marked as dropped from the dataset
+    """Drop columns marked as dropped from the dataset.
 
     NM-TRAN date columns will not be dropped by this function
     even if marked as dropped.
@@ -1433,7 +1433,7 @@ def drop_dropped_columns(model: Model) -> Model:
 
 
 def drop_columns(model: Model, column_names: list[str] | str, mark: bool = False) -> Model:
-    """Drop columns from the dataset or mark as dropped
+    """Drop columns from the dataset or mark as dropped.
 
     Parameters
     ----------
@@ -1487,7 +1487,7 @@ def drop_columns(model: Model, column_names: list[str] | str, mark: bool = False
 
 
 def undrop_columns(model: Model, column_names: list[str] | str) -> Model:
-    """Undrop columns of model
+    """Undrop columns of model.
 
     Parameters
     ----------
@@ -1529,7 +1529,7 @@ def undrop_columns(model: Model, column_names: list[str] | str) -> Model:
 
 
 def remove_unused_columns(model: Model) -> Model:
-    """Remove all columns in the dataset that are not used by the model including dropped columns
+    """Remove all columns in the dataset that are not used by the model including dropped columns.
 
     Warnings
     --------
@@ -1710,7 +1710,7 @@ def _find_time_and_date_columns(model):
 
 
 def translate_nmtran_time(model: Model) -> Model:
-    """Translate NM-TRAN TIME and DATE column into one TIME column
+    """Translate NM-TRAN TIME and DATE column into one TIME column.
 
     If dataset of model have special NM-TRAN TIME and DATE columns these
     will be translated into one single time column with time in hours.
@@ -1762,7 +1762,7 @@ def _loq_mask(
     alq: str | None = None,
 ):
     """Boolean series with False for lloq records and True for non-lloq
-    Options as remove_loq_data
+    Options as remove_loq_data.
     """
     if blq and lloq:
         raise ValueError("Cannot specify blq and lloq at the same time")
@@ -1813,7 +1813,7 @@ def remove_loq_data(
     alq: str | None = None,
     keep: int = 0,
 ) -> Model:
-    """Remove loq data records from the dataset
+    """Remove loq data records from the dataset.
 
     Does nothing if none of the limits are specified.
 
@@ -1877,7 +1877,7 @@ def set_lloq_data(
     lloq: float | str | None = None,
     blq: str | None = None,
 ) -> Model:
-    """Set a dv value for lloq data records
+    """Set a dv value for lloq data records.
 
     Parameters
     ----------
@@ -1923,7 +1923,7 @@ def set_lloq_data(
 
 
 def set_reference_values(model: Model, refs: dict[str, int | float]) -> Model:
-    """Set reference values for selected columns
+    """Set reference values for selected columns.
 
         All values for each selected column will be replaced. For dose columns
         only the values for dosing events will be replaced.
@@ -1985,7 +1985,7 @@ def set_reference_values(model: Model, refs: dict[str, int | float]) -> Model:
 
 
 def infer_datatypes(model: Model, columns: Collection[str] | None = None) -> Model:
-    """Infer and set datatypes for the dataset
+    """Infer and set datatypes for the dataset.
 
         All columns or only the ones set in the columns option will be checked
         for conversion to a simpler datatype. Currently only int32 will be checked since
@@ -2054,7 +2054,7 @@ def infer_datatypes(model: Model, columns: Collection[str] | None = None) -> Mod
 def read_dataset_from_datainfo(
     datainfo: DataInfo | Path | str, datatype: str | None = None
 ) -> pd.DataFrame:
-    """Read a dataset given a datainfo object or path to a datainfo file
+    """Read a dataset given a datainfo object or path to a datainfo file.
 
     Parameters
     ----------
@@ -2108,7 +2108,7 @@ def read_dataset_from_datainfo_update(datainfo: DataInfo | Path | str, datatype:
 def deidentify_data(
     df: pd.DataFrame, id_column: str = 'ID', date_columns: list[str] | None = None
 ) -> pd.DataFrame:
-    """Deidentify a dataset
+    """Deidentify a dataset.
 
     Two operations are performed on the dataset:
 
@@ -2168,7 +2168,7 @@ def deidentify_data(
 
 
 def unload_dataset(model: Model) -> Model:
-    """Unload the dataset from a model
+    """Unload the dataset from a model.
 
     Parameters
     ----------
@@ -2195,7 +2195,7 @@ def unload_dataset(model: Model) -> Model:
 
 
 def load_dataset(model: Model) -> Model:
-    """Load the dataset given datainfo
+    """Load the dataset given datainfo.
 
     Parameters
     ----------
@@ -2244,7 +2244,7 @@ def set_dataset(
     annotate_using: str | None = None,
     datatype: Any = None,
 ) -> Model:
-    """Load the dataset given datainfo
+    """Load the dataset given datainfo.
 
     Option `annotate_using` will by default use the datainfo file (if available), otherwise the
     information in the input model. If all or any columns have not been annotated, this option
@@ -2343,7 +2343,7 @@ def set_dataset(
 def bin_observations(
     model: Model, method: Literal["equal_width", "equal_number"], nbins: int
 ) -> pd.Series:
-    """Bin all observations on the independent variable
+    """Bin all observations on the independent variable.
 
     Available binning methods:
 
@@ -2416,7 +2416,7 @@ def bin_observations(
 
 
 def _get_bin_edges_psn(data, n_bins):
-    """Similar to function "get_bin_ceilings_from_count" from PsN
+    """Similar to function "get_bin_ceilings_from_count" from PsN.
 
     Divide a list of data points into bins of equal count.
     """
@@ -2467,7 +2467,7 @@ def _get_bin_edges_psn(data, n_bins):
 def binarize_dataset(
     model: Model, columns: list[str] | None, keep: bool = False, all_levels: bool = False
 ) -> Model:
-    """Binarize dataset
+    """Binarize dataset.
 
     Will create one column per category if specified, otherwise for all columns
     except for the last one. Will also update datainfo so that new columns have
@@ -2572,7 +2572,7 @@ def binarize_dataset(
 
 
 def get_column_name(model: Model, type: str) -> str | None:
-    """Retrieve the column with a certain type
+    """Retrieve the column with a certain type.
 
     If multiple columns have the same type an exception will be raised.
 
@@ -2609,7 +2609,7 @@ def get_column_name(model: Model, type: str) -> str | None:
 def calculate_summary_statistic(
     model: Model, stat: str, expr: str | None, default: float | None = None
 ) -> float:
-    """Calculate a summary statistic for an expression over the dataset
+    """Calculate a summary statistic for an expression over the dataset.
 
     The expression can be a dataset column name, a variable from the model, e.g. a derived
     covariate or a matematical expression involving dataset columns or model variables.
@@ -2666,7 +2666,7 @@ def calculate_summary_statistic(
 
 
 def is_binary(model: Model, expr: str) -> bool:
-    """Check if an expression defines a binary variable (only having values 0 and 1)
+    """Check if an expression defines a binary variable (only having values 0 and 1).
 
     Parameters
     ----------
@@ -2715,7 +2715,7 @@ def _get_all_statement_deps(model: Model, expr: Expr) -> set[Expr]:
 
 
 def reset_dataset(model: Model) -> Model:
-    """Use Pharmpy dataset instead of original file
+    """Use Pharmpy dataset instead of original file.
 
     The parsed dataset will be written down when doing e.g. estimation or writing files
     instead of the original dataset file

@@ -190,7 +190,7 @@ def _match(typing, value):
 
 
 def check_list(name, value, valid_values):
-    """Check if value is in valid_values else raise"""
+    """Check if value is in valid_values else raise."""
     if value not in valid_values:
         raise ValueError(
             f"Invalid `{name}`: got '{value}', must be{itemize_strings(sorted(valid_values))}"

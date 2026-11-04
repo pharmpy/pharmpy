@@ -156,7 +156,7 @@ def template_model_string(datafile=None, ignore=(), drop=(), label='TEMPLATE'):
 
 
 def pharmpy_wrapper():
-    """Command line wrapper for PsN to call pharmpy"""
+    """Command line wrapper for PsN to call pharmpy."""
     exec(sys.argv[1], globals(), {})  # noqa: S102
 
 

@@ -20,7 +20,7 @@ from pharmpy.internals.immutable import Immutable, cache_method_no_args
 
 
 class Statement(Immutable):
-    """Abstract base class for all types of statements"""
+    """Abstract base class for all types of statements."""
 
     def __add__(self, other: Statement | Statements | Iterable[Statement]) -> Statements:
         if isinstance(other, Statements):
@@ -54,7 +54,7 @@ class Statement(Immutable):
 
 
 class Assignment(Statement):
-    """Representation of variable assignment
+    """Representation of variable assignment.
 
     This class represents an assignment of an expression to a variable. Multiple assignments
     are combined together into a Statements object.
@@ -88,16 +88,16 @@ class Assignment(Statement):
 
     @property
     def symbol(self) -> Expr:
-        """Symbol of statement"""
+        """Symbol of statement."""
         return self._symbol
 
     @property
     def expression(self) -> Expr:
-        """Expression of assignment"""
+        """Expression of assignment."""
         return self._expression
 
     def subs(self, substitutions: Mapping[Expr, Expr]) -> Assignment:
-        """Substitute expressions or symbols in assignment
+        """Substitute expressions or symbols in assignment.
 
         Parameters
         ----------
@@ -127,7 +127,7 @@ class Assignment(Statement):
 
     @property
     def free_symbols(self) -> set[Expr]:
-        """Get set of all free symbols in the assignment
+        """Get set of all free symbols in the assignment.
 
         Note that the left hand side symbol will be in the set
 
@@ -145,7 +145,7 @@ class Assignment(Statement):
 
     @property
     def rhs_symbols(self) -> set[Expr]:
-        """Get set of all free symbols in the right hand side expression
+        """Get set of all free symbols in the right hand side expression.
 
         Examples
         --------
@@ -244,7 +244,7 @@ output = Output()
 
 
 class CompartmentalSystemBuilder:
-    """Builder for CompartmentalSystem"""
+    """Builder for CompartmentalSystem."""
 
     def __init__(self, cs: CompartmentalSystem | None = None):
         if cs:
@@ -254,7 +254,7 @@ class CompartmentalSystemBuilder:
             self._g.add_node(output)  # Single output "compartment"
 
     def add_compartment(self, compartment: Compartment) -> None:
-        """Add compartment to system
+        """Add compartment to system.
 
         The compartment will be added without any flows to other compartments.
         Use the add_flow method to add flows to and from the newly added compartment.
@@ -273,7 +273,7 @@ class CompartmentalSystemBuilder:
         self._g.add_node(compartment)
 
     def remove_compartment(self, compartment: Compartment) -> None:
-        """Remove compartment from system
+        """Remove compartment from system.
 
         Parameters
         ----------
@@ -291,7 +291,7 @@ class CompartmentalSystemBuilder:
         self._g.remove_node(compartment)
 
     def add_flow(self, source: Compartment, destination: CompartmentBase, rate: TExpr) -> None:
-        """Add flow between two compartments
+        """Add flow between two compartments.
 
         Parameters
         ----------
@@ -321,7 +321,7 @@ class CompartmentalSystemBuilder:
         self._g.add_edge(source, destination, rate=Expr(rate))
 
     def remove_flow(self, source: Compartment, destination: CompartmentBase) -> None:
-        """Remove flow between two compartments
+        """Remove flow between two compartments.
 
         Parameters
         ----------
@@ -349,7 +349,7 @@ class CompartmentalSystemBuilder:
         destination: Compartment,
         admid: int | None = None,
     ) -> tuple[Compartment, Compartment]:
-        """Move a dose input from one compartment to another
+        """Move a dose input from one compartment to another.
 
         Parameters
         ----------
@@ -476,7 +476,7 @@ class CompartmentalSystemBuilder:
         return new_comp
 
     def set_lag_time(self, compartment: Compartment, lag_time: TExpr) -> Compartment:
-        """Set lag time of compartment
+        """Set lag time of compartment.
 
         Parameters
         ----------
@@ -496,7 +496,7 @@ class CompartmentalSystemBuilder:
         return new_comp
 
     def set_bioavailability(self, compartment: Compartment, bioavailability: TExpr) -> Compartment:
-        """Set bioavailability of compartment
+        """Set bioavailability of compartment.
 
         Parameters
         ----------
@@ -516,7 +516,7 @@ class CompartmentalSystemBuilder:
         return new_comp
 
     def set_input(self, compartment: Compartment, input: TExpr) -> Compartment:
-        """Set zero order input of compartment
+        """Set zero order input of compartment.
 
         Parameters
         ----------
@@ -556,7 +556,7 @@ def _comps(graph):
 
 
 def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSystem:
-    """Convert an list of odes to a compartmental system
+    """Convert an list of odes to a compartmental system.
 
     names : func to compartment name map
     """
@@ -661,7 +661,7 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
 
 
 class CompartmentalSystem(Statement):
-    """System of ODEs descibed as a compartmental system
+    """System of ODEs descibed as a compartmental system.
 
     Examples
     --------
@@ -723,13 +723,13 @@ class CompartmentalSystem(Statement):
 
     @property
     def t(self) -> Expr:
-        """Independent variable of CompartmentalSystem"""
+        """Independent variable of CompartmentalSystem."""
         return self._t
 
     @property
     @cache_method_no_args
     def eqs(self) -> tuple[BooleanExpr, ...]:
-        """Tuple of equations"""
+        """Tuple of equations."""
         amount_funcs = Matrix(list(self.amounts))
         derivatives = Matrix([Expr.derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
@@ -742,7 +742,7 @@ class CompartmentalSystem(Statement):
 
     @property
     def free_symbols(self) -> set[Expr]:
-        """Get set of all free symbols in the compartmental system
+        """Get set of all free symbols in the compartmental system.
 
         Returns
         -------
@@ -765,7 +765,7 @@ class CompartmentalSystem(Statement):
 
     @property
     def rhs_symbols(self) -> set[Expr]:
-        """Get set of all free symbols in the right hand side expressions
+        """Get set of all free symbols in the right hand side expressions.
 
         Returns
         -------
@@ -782,7 +782,7 @@ class CompartmentalSystem(Statement):
         return self.free_symbols  # This works currently
 
     def subs(self, substitutions: Mapping[Expr, Expr]) -> CompartmentalSystem:
-        """Substitute expressions or symbols in ODE system
+        """Substitute expressions or symbols in ODE system.
 
         Examples
         --------
@@ -851,7 +851,7 @@ class CompartmentalSystem(Statement):
         return cls(cb, t=Expr.deserialize(d['t']))
 
     def get_flow(self, source: CompartmentBase | None, destination: CompartmentBase | None) -> Expr:
-        """Get the rate of flow between two compartments
+        """Get the rate of flow between two compartments.
 
         Parameters
         ----------
@@ -890,7 +890,7 @@ class CompartmentalSystem(Statement):
     def get_compartment_outflows(
         self, compartment: str | CompartmentBase
     ) -> list[tuple[CompartmentBase, Expr]]:
-        """Get list of all flows going out from a compartment
+        """Get list of all flows going out from a compartment.
 
         Parameters
         ----------
@@ -919,7 +919,7 @@ class CompartmentalSystem(Statement):
     def get_compartment_inflows(
         self, compartment: CompartmentBase | str
     ) -> list[tuple[Compartment, Expr]]:
-        """Get list of all flows going in to a compartment
+        """Get list of all flows going in to a compartment.
 
         Parameters
         ----------
@@ -952,7 +952,7 @@ class CompartmentalSystem(Statement):
         return flows
 
     def get_bidirectionals(self, compartment: CompartmentBase | str) -> list[Compartment]:
-        """Get list of all compartments with bidirectional flow from/to a compartment
+        """Get list of all compartments with bidirectional flow from/to a compartment.
 
         Parameters
         ----------
@@ -980,7 +980,7 @@ class CompartmentalSystem(Statement):
         return comps
 
     def find_compartment(self, name: str) -> Compartment | None:
-        """Find a compartment using its name
+        """Find a compartment using its name.
 
         Parameters
         ----------
@@ -1014,7 +1014,7 @@ class CompartmentalSystem(Statement):
         return found_comp
 
     def get_n_connected(self, comp: Compartment) -> int:
-        """Get the number of compartments connected to a compartment
+        """Get the number of compartments connected to a compartment.
 
         Parameters
         ----------
@@ -1039,7 +1039,7 @@ class CompartmentalSystem(Statement):
 
     @property
     def dosing_compartments(self) -> tuple[Compartment, ...]:
-        """The dosing compartment(s)
+        """The dosing compartment(s).
 
         A dosing compartment is a compartment that receives an input dose. Multiple
         dose compartments are supported. The order of dose compartments is defined
@@ -1076,7 +1076,7 @@ class CompartmentalSystem(Statement):
 
     @property
     def central_compartment(self) -> Compartment:
-        """The central compartment
+        """The central compartment.
 
         The central compartment is defined to be the compartment that has an outward flow
         to the output compartment. Only one central compartment is supported.
@@ -1113,7 +1113,7 @@ class CompartmentalSystem(Statement):
         return central
 
     def find_peripheral_compartments(self, name: str | None = None) -> list[Compartment]:
-        """Find perihperal compartments
+        """Find perihperal compartments.
 
         A peripheral compartment is defined as having one flow to the central compartment and
         one flow from the central compartment.
@@ -1149,7 +1149,7 @@ class CompartmentalSystem(Statement):
         return peripherals
 
     def find_transit_compartments(self, statements: Statements) -> list[Compartment]:
-        """Find all transit compartments
+        """Find all transit compartments.
 
         Transit compartments are a chain of compartments with the same out rate starting from
         the dose compartment. Because one single transit compartment cannot be distinguished
@@ -1201,7 +1201,7 @@ class CompartmentalSystem(Statement):
             return transits
 
     def find_depot(self, statements: Statements) -> Compartment | None:
-        """Find the depot compartment
+        """Find the depot compartment.
 
         The depot compartment is defined to be the compartment that only has out flow to the
         central compartment, but no flow from the central compartment.
@@ -1251,7 +1251,7 @@ class CompartmentalSystem(Statement):
 
     @property
     def compartmental_matrix(self) -> Matrix:
-        """Compartmental matrix of the compartmental system
+        """Compartmental matrix of the compartmental system.
 
         Examples
         --------
@@ -1280,7 +1280,7 @@ class CompartmentalSystem(Statement):
 
     @property
     def amounts(self) -> Matrix:
-        """Column vector of amounts for all compartments
+        """Column vector of amounts for all compartments.
 
         Examples
         --------
@@ -1296,7 +1296,7 @@ class CompartmentalSystem(Statement):
 
     @property
     def compartment_names(self) -> list[str]:
-        """Names of all compartments
+        """Names of all compartments.
 
         Examples
         --------
@@ -1310,7 +1310,7 @@ class CompartmentalSystem(Statement):
         return names
 
     def _order_compartments(self):
-        """Return list of all compartments in canonical order"""
+        """Return list of all compartments in canonical order."""
         try:
             dosecmt = self.dosing_compartments[0]
         except ValueError:
@@ -1346,7 +1346,7 @@ class CompartmentalSystem(Statement):
 
     @property
     def zero_order_inputs(self) -> Matrix:
-        """Vector of all zero order inputs to each compartment
+        """Vector of all zero order inputs to each compartment.
 
         Example
         -------
@@ -1360,7 +1360,7 @@ class CompartmentalSystem(Statement):
         return Matrix(inputs)
 
     def __len__(self):
-        """The number of compartments"""
+        """The number of compartments."""
         return len(self._g.nodes) - 1
 
     def _repr_html_(self):
@@ -1483,7 +1483,7 @@ class CompartmentalSystem(Statement):
 
 
 class Dose(ABC):
-    """Abstract base class for different types of doses"""
+    """Abstract base class for different types of doses."""
 
     def __init__(self, amount: Expr, admid: int):
         self._admid = admid
@@ -1491,12 +1491,12 @@ class Dose(ABC):
 
     @property
     def admid(self) -> int:
-        """Administration ID of dose"""
+        """Administration ID of dose."""
         return self._admid
 
     @property
     def amount(self) -> Expr:
-        """Symbolic amount of dose"""
+        """Symbolic amount of dose."""
         return self._amount
 
     @abstractmethod
@@ -1521,7 +1521,7 @@ class Dose(ABC):
 
 
 class Bolus(Dose, Immutable):
-    """A Bolus dose
+    """A Bolus dose.
 
     Parameters
     ----------
@@ -1552,12 +1552,12 @@ class Bolus(Dose, Immutable):
 
     @property
     def amount(self) -> Expr:
-        """Symbolic amount of dose"""
+        """Symbolic amount of dose."""
         return self._amount
 
     @property
     def free_symbols(self) -> set[Expr]:
-        """Get set of all free symbols in the dose
+        """Get set of all free symbols in the dose.
 
         Examples
         --------
@@ -1569,7 +1569,7 @@ class Bolus(Dose, Immutable):
         return {self._amount}
 
     def subs(self, substitutions: Mapping[Expr, Expr]) -> Bolus:
-        """Substitute expressions or symbols in dose
+        """Substitute expressions or symbols in dose.
 
         Parameters
         ----------
@@ -1605,7 +1605,7 @@ class Bolus(Dose, Immutable):
 
 
 class Infusion(Dose, Immutable):
-    """An infusion dose
+    """An infusion dose.
 
     Parameters
     ----------
@@ -1667,7 +1667,7 @@ class Infusion(Dose, Immutable):
 
     @property
     def rate(self) -> Expr | None:
-        """Symbolic rate
+        """Symbolic rate.
 
         Mutually exclusive with duration.
         """
@@ -1675,7 +1675,7 @@ class Infusion(Dose, Immutable):
 
     @property
     def duration(self) -> Expr | None:
-        """Symbolc duration
+        """Symbolc duration.
 
         Mutually exclusive with rate.
         """
@@ -1683,7 +1683,7 @@ class Infusion(Dose, Immutable):
 
     @property
     def free_symbols(self) -> set[Expr]:
-        """Get set of all free symbols in the dose
+        """Get set of all free symbols in the dose.
 
         Examples
         --------
@@ -1700,7 +1700,7 @@ class Infusion(Dose, Immutable):
         return symbs | self._amount.free_symbols
 
     def subs(self, substitutions: Mapping[Expr, Expr]) -> Infusion:
-        """Substitute expressions or symbols in dose
+        """Substitute expressions or symbols in dose.
 
         Parameters
         ----------
@@ -1764,7 +1764,7 @@ class Infusion(Dose, Immutable):
 
 
 class Compartment(CompartmentBase):
-    """Compartment for a compartmental system
+    """Compartment for a compartmental system.
 
     Parameters
     ----------
@@ -1865,12 +1865,12 @@ class Compartment(CompartmentBase):
 
     @property
     def name(self) -> str:
-        """Compartment name"""
+        """Compartment name."""
         return self._name
 
     @property
     def amount(self) -> Expr:
-        """Compartment amount symbol"""
+        """Compartment amount symbol."""
         return self._amount
 
     @property
@@ -1888,17 +1888,17 @@ class Compartment(CompartmentBase):
 
     @property
     def lag_time(self) -> Expr:
-        """Lag time for doses into compartment"""
+        """Lag time for doses into compartment."""
         return self._lag_time
 
     @property
     def bioavailability(self) -> Expr:
-        """Bioavailability fraction for doses into compartment"""
+        """Bioavailability fraction for doses into compartment."""
         return self._bioavailability
 
     @property
     def free_symbols(self) -> set[Expr]:
-        """Get set of all free symbols in the compartment
+        """Get set of all free symbols in the compartment.
 
         Examples
         --------
@@ -1917,7 +1917,7 @@ class Compartment(CompartmentBase):
         return symbs
 
     def subs(self, substitutions: Mapping[Expr, Expr]) -> Compartment:
-        """Substitute expressions or symbols in compartment
+        """Substitute expressions or symbols in compartment.
 
         Examples
         --------
@@ -2015,7 +2015,7 @@ class Compartment(CompartmentBase):
 
 
 class Statements(Sequence, Immutable):
-    """A sequence of symbolic statements describing the model
+    """A sequence of symbolic statements describing the model.
 
     Two types of statements are supported: Assignment and CompartmentalSystem.
     A Statements object can have 0 or 1 CompartmentalSystem. The order of
@@ -2082,7 +2082,7 @@ class Statements(Sequence, Immutable):
 
     @property
     def free_symbols(self) -> set[Expr]:
-        """Get a set of all free symbols
+        """Get a set of all free symbols.
 
         Examples
         --------
@@ -2100,7 +2100,7 @@ class Statements(Sequence, Immutable):
 
     @property
     def lhs_symbols(self) -> set[Expr]:
-        """Get set of all symbols defined in this Statements
+        """Get set of all symbols defined in this Statements.
 
         Examples
         --------
@@ -2120,7 +2120,7 @@ class Statements(Sequence, Immutable):
 
     @property
     def rhs_symbols(self) -> set[Expr]:
-        """Get set of all symbols used in this Statements
+        """Get set of all symbols used in this Statements.
 
         Examples
         --------
@@ -2145,7 +2145,7 @@ class Statements(Sequence, Immutable):
 
     @property
     def ode_system(self) -> CompartmentalSystem | None:
-        """Returns the ODE system of the model or None if the model doesn't have an ODE system
+        """Returns the ODE system of the model or None if the model doesn't have an ODE system.
 
         Examples
         --------
@@ -2167,7 +2167,7 @@ class Statements(Sequence, Immutable):
 
     @property
     def before_odes(self) -> Statements:
-        """All statements before the ODE system
+        """All statements before the ODE system.
 
         Examples
         --------
@@ -2192,7 +2192,7 @@ class Statements(Sequence, Immutable):
 
     @property
     def after_odes(self) -> Statements:
-        """All statements after the ODE system
+        """All statements after the ODE system.
 
         Examples
         --------
@@ -2210,7 +2210,7 @@ class Statements(Sequence, Immutable):
 
     @property
     def error(self) -> Statements:
-        """All statements after the ODE system or the whole model if no ODE system
+        """All statements after the ODE system or the whole model if no ODE system.
 
         Examples
         --------
@@ -2265,7 +2265,7 @@ class Statements(Sequence, Immutable):
         return None, None
 
     def find_assignment(self, symbol: TSymbol) -> Assignment | None:
-        """Returns last assignment of symbol
+        """Returns last assignment of symbol.
 
         Parameters
         ----------
@@ -2288,7 +2288,7 @@ class Statements(Sequence, Immutable):
         return self._lookup_last_assignment(symbol)[1]
 
     def get_assignment(self, symbol: TSymbol) -> Assignment:
-        """Returns last assignment of symbol
+        """Returns last assignment of symbol.
 
         This method assumes that the assignment exists
 
@@ -2321,7 +2321,7 @@ class Statements(Sequence, Immutable):
         return assignment
 
     def get_assignment_index(self, symbol: TSymbol) -> int:
-        """Returns index of last assignment of symbol
+        """Returns index of last assignment of symbol.
 
         Raises if assignment could not be found
 
@@ -2348,7 +2348,7 @@ class Statements(Sequence, Immutable):
         return ind
 
     def find_assignment_index(self, symbol: TSymbol) -> int | None:
-        """Returns index of last assignment of symbol
+        """Returns index of last assignment of symbol.
 
         Parameters
         ----------
@@ -2370,7 +2370,7 @@ class Statements(Sequence, Immutable):
         return self._lookup_last_assignment(symbol)[0]
 
     def reassign(self, symbol: TSymbol, expression: TExpr) -> Statements:
-        """Reassign symbol to expression
+        """Reassign symbol to expression.
 
         Set symbol to be expression and remove all previous assignments of symbol
 
@@ -2407,7 +2407,7 @@ class Statements(Sequence, Immutable):
         return Statements(new)
 
     def _create_dependency_graph(self):
-        """Create a graph of dependencies between statements"""
+        """Create a graph of dependencies between statements."""
         graph = nx.DiGraph()
         for i in range(len(self) - 1, -1, -1):
             graph.add_node(i)
@@ -2425,7 +2425,7 @@ class Statements(Sequence, Immutable):
         return graph
 
     def direct_dependencies(self, statement: Statement) -> Statements:
-        """Find all direct dependencies of a statement
+        """Find all direct dependencies of a statement.
 
         Parameters
         ----------
@@ -2455,7 +2455,7 @@ class Statements(Sequence, Immutable):
         return stats
 
     def dependencies(self, symbol_or_statement: TSymbol | Statement) -> set[Expr]:
-        """Find all dependencies of a symbol or statement
+        """Find all dependencies of a symbol or statement.
 
         Parameters
         ----------
@@ -2508,7 +2508,7 @@ class Statements(Sequence, Immutable):
     def remove_symbol_definitions(
         self, symbols: Iterable[Expr], statement: Statement
     ) -> Statements:
-        """Remove symbols and dependencies not used elsewhere
+        """Remove symbols and dependencies not used elsewhere.
 
         If the statement no longer depends on the specified
         symbols, this method will make sure that the definitions
@@ -2544,7 +2544,7 @@ class Statements(Sequence, Immutable):
         return Statements(tuple(self[i] for i in range(len(self)) if i not in remove))
 
     def full_expression(self, expression: TExpr) -> Expr:
-        """Expand an expression into its full definition
+        """Expand an expression into its full definition.
 
         Parameters
         ----------

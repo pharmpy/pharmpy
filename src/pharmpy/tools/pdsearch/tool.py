@@ -51,7 +51,7 @@ def create_workflow(
     parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
 ):
     """
-    Build a PD model
+    Build a PD model.
 
     Parameters
     ----------

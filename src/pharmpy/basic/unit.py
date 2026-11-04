@@ -53,7 +53,7 @@ class Unit:
         return cls("1")
 
     def is_compatible_with(self, other: Unit, molar_mass: float | None = None) -> bool:
-        """Check if this unit is compatible with (i.e. convertible to) another unit"""
+        """Check if this unit is compatible with (i.e. convertible to) another unit."""
         if molar_mass:
             unit1 = Unit(str(ureg.Quantity(1.0, self._units).to_base_units().units))
             unit1 = unit1._replace_unit_of_dimension(ureg.mol.dimensionality, ureg.gram)
@@ -65,7 +65,7 @@ class Unit:
         return is_compat
 
     def get_dimensionality_string(self) -> str:
-        """Get a human readable string with dimensionality of unit"""
+        """Get a human readable string with dimensionality of unit."""
         if self == Unit.unitless():
             return "1"
         s = str(ureg.get_dimensionality(self._units))
@@ -85,7 +85,7 @@ class Unit:
         return Unit(new_unit)
 
     def replace_unit_of_dimension(self, replacement: Unit) -> Unit:
-        """Replace the unit for one dimension"""
+        """Replace the unit for one dimension."""
         return self._replace_unit_of_dimension(
             replacement._units.dimensionality, replacement._units
         )

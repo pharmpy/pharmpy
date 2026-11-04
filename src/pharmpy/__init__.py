@@ -4,7 +4,7 @@
 
 r"""
 =======
-Pharmpy
+Pharmpy.
 =======
 
 Pharmpy is a python package for pharmacometric modeling.

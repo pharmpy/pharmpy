@@ -611,7 +611,7 @@ def parse_solver(control_stream):
 
 
 def parse_initial_individual_estimates(control_stream, name_map, basepath) -> pd.DataFrame | None:
-    """Initial individual estimates
+    """Initial individual estimates.
 
     These are taken from the $ETAS FILE.
     If no $ETAS is present None will be returned.
@@ -651,7 +651,7 @@ def parse_dataset_path(control_stream, basepath) -> Path | None:
 
 
 def _synonym(key, value):
-    """Return a tuple reserved name and synonym"""
+    """Return a tuple reserved name and synonym."""
     _reserved_column_names = [
         'ID',
         'L1',

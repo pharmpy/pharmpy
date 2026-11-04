@@ -11,7 +11,7 @@ from pkgutil import iter_modules
 
 def detect_model(src):
     """Detects appropriate implementation from a source object
-    Return an external model module
+    Return an external model module.
     """
 
     plugins = _load_external_modules()
@@ -31,7 +31,7 @@ def detect_model(src):
 
 
 def _load_external_modules():
-    """Find and import all available external modules"""
+    """Find and import all available external modules."""
     path = Path(__file__).resolve().parent
 
     # str on path to workaround https://bugs.python.org/issue44061

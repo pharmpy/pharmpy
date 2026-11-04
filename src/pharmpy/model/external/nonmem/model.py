@@ -80,7 +80,7 @@ class NONMEMModelInternals(ModelInternals):
 
 
 def convert_model(model):
-    """Convert any model into a NONMEM model"""
+    """Convert any model into a NONMEM model."""
     if isinstance(model, Model):
         return model
 
@@ -148,7 +148,7 @@ class Model(BaseModel):
         self._internals = internals
 
     def update_source(self) -> Model:
-        """Update the source
+        """Update the source.
 
         path - path to modelfile
         nofiles - Set to not write any files (i.e. dataset, phi input etc)

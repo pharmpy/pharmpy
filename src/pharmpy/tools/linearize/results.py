@@ -64,7 +64,7 @@ def calculate_results(
 
 
 def psn_linearize_results(path):
-    """Create linearize results from a PsN linearize run
+    """Create linearize results from a PsN linearize run.
 
     :param path: Path to PsN linearize run directory
     :return: A :class:`QAResults` object

@@ -21,7 +21,7 @@ FORTRAN_FORMAT = re.compile(r'(\d+)\w(\d+)')
 
 
 def detect_model(src, *args, **kwargs):
-    """Check if src represents a legacy NONMEM control stream"""
+    """Check if src represents a legacy NONMEM control stream."""
     if isinstance(src, str) and src.startswith("FILE    FSTREAM"):
         return Model
     else:

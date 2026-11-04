@@ -9,7 +9,7 @@ from pharmpy.model import Model
 
 
 def get_lag_times(model: Model) -> dict[str, Expr]:
-    """Get lag times for all compartments
+    """Get lag times for all compartments.
 
     Parameters
     ----------
@@ -34,7 +34,7 @@ def get_lag_times(model: Model) -> dict[str, Expr]:
 
 
 def get_bioavailability(model: Model) -> dict[str, Expr]:
-    """Get bioavailability of doses for all compartments
+    """Get bioavailability of doses for all compartments.
 
     Parameters
     ----------

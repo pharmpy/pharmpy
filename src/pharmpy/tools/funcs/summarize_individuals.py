@@ -147,7 +147,7 @@ def summarize_individuals_count_table(
     model_entries: Sequence[ModelEntry] | None = None,
     df: pd.DataFrame = None,
 ):
-    r"""Create a count table for individual data
+    r"""Create a count table for individual data.
 
     Content of the various columns:
 

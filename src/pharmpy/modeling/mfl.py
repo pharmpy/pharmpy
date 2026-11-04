@@ -136,7 +136,7 @@ def _interpret_ref(model: Model, symbol) -> tuple[str, ...]:
 
 def _get_bioaval_parameters(model):
     """Find all bioavail individual parameters
-    Handle the case where one statement is only a logistic transformation
+    Handle the case where one statement is only a logistic transformation.
     """
     all_bio = get_bioavailability(model)
     pk = model.statements.before_odes

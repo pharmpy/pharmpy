@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-"""Pharmpy configuration"""
+"""Pharmpy configuration."""
 
 import configparser
 import os
@@ -115,7 +115,7 @@ class Configuration(ABC):
 
 
 class ConfigurationContext:
-    """Context to temporarily set configuration options"""
+    """Context to temporarily set configuration options."""
 
     def __init__(self, config, **kwargs):
         self.config = config

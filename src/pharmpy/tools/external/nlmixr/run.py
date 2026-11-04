@@ -480,7 +480,7 @@ def compare_models(
 
 def print_step(s: str) -> None:
     """
-    Print step currently being performed. Used during verification
+    Print step currently being performed. Used during verification.
 
     Parameters
     ----------
@@ -498,7 +498,7 @@ def print_step(s: str) -> None:
 def fixate_eta(model: pharmpy.model.Model) -> pharmpy.model.Model:
     """
     Used during verification to give information to model to fixate etas to
-    NONMEM estimates. Add the information to the models tool_options
+    NONMEM estimates. Add the information to the models tool_options.
 
     Parameters
     ----------
@@ -523,7 +523,7 @@ def fixate_eta(model: pharmpy.model.Model) -> pharmpy.model.Model:
 def write_fix_eta(modelfit_results: ModelfitResults, path=None, force=True) -> str:
     """
     Writes ETAs to be fixated during verification to a csv file to be read by
-    nlmixr2
+    nlmixr2.
 
     Parameters
     ----------
@@ -596,7 +596,7 @@ def verify_param(model1, res1, model2, res2, est=False):
 
 def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> ModelfitResults | None:
     """
-    Create ModelfitResults object for given model object taken from values saved in executed Rdata file
+    Create ModelfitResults object for given model object taken from values saved in executed Rdata file.
 
     Parameters
     ----------

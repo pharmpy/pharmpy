@@ -551,7 +551,7 @@ def _create_template(expression, operation):
 
 
 def _get_operation_func(operation):
-    """Gets operation based on string"""
+    """Gets operation based on string."""
     if operation == '*':
         return mul
     elif operation == '+':
@@ -790,7 +790,7 @@ def _get_iov_groups(model: Model):
 
 
 def transform_etas_boxcox(model: Model, list_of_etas: list[str] | str | None = None) -> Model:
-    """Applies a boxcox transformation to selected etas
+    """Applies a boxcox transformation to selected etas.
 
     Initial estimate for lambda is 0.1 with bounds (-3, 3).
 
@@ -828,7 +828,7 @@ def transform_etas_boxcox(model: Model, list_of_etas: list[str] | str | None = N
 
 
 def transform_etas_tdist(model: Model, list_of_etas: list[str] | str | None = None) -> Model:
-    """Applies a t-distribution transformation to selected etas
+    """Applies a t-distribution transformation to selected etas.
 
     Initial estimate for degrees of freedom is 80 with bounds (3, 100).
 
@@ -866,7 +866,7 @@ def transform_etas_tdist(model: Model, list_of_etas: list[str] | str | None = No
 
 
 def transform_etas_john_draper(model: Model, list_of_etas: list[str] | str | None = None) -> Model:
-    """Applies a John Draper transformation to selected etas
+    """Applies a John Draper transformation to selected etas.
 
     See [1]_ for more information.
 
@@ -1225,7 +1225,7 @@ def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
 def update_initial_individual_estimates(
     model: Model, individual_estimates: pd.Series, force: bool = True
 ) -> Model:
-    """Update initial individual estimates for a model
+    """Update initial individual estimates for a model.
 
     Updates initial individual estimates for a model.
 

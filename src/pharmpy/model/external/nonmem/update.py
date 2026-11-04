@@ -386,7 +386,7 @@ def create_omega_block(model: Model, distribution: Distribution, eta_number: int
 
 
 def update_ode_system(model: Model, old: CompartmentalSystem | None, new: CompartmentalSystem):
-    """Update ODE system
+    """Update ODE system.
 
     Handle changes from to CompartmentSystem
     """
@@ -461,7 +461,7 @@ def check_and_update_cmt_column(model, old, new):
 
 
 def _add_cmt(model):
-    """Add a CMT column, overwriting column name CMT if existing"""
+    """Add a CMT column, overwriting column name CMT if existing."""
     # NOTE : pharmpy.modeling.add_cmt not used due to recursion of update_source()
     cmt_name = "CMT"
     cmt = get_cmt(model)
@@ -548,7 +548,7 @@ def update_cmt(model, old, new):
 
 
 def is_nonlinear_odes(model: Model):
-    """Check if ode system is nonlinear"""
+    """Check if ode system is nonlinear."""
     odes = get_odes(model)
     M = odes.compartmental_matrix
     pk = model.statements.before_odes
@@ -955,7 +955,7 @@ def update_bio(model, old, new):
     """
     Update all bioavailability statements to match the numbering of the
     compartments in NONMEM.
-    Is based on the order of dosing compartments
+    Is based on the order of dosing compartments.
     """
     newmap = new_compartmental_map(new)
     for dose in new.dosing_compartments:
@@ -987,14 +987,14 @@ def update_bio(model, old, new):
 
 def new_compartmental_map(cs: CompartmentalSystem):
     """Create compartmental map for updated model
-    cs - new compartmental system
+    cs - new compartmental system.
     """
     compmap = {name: i for i, name in enumerate(cs.compartment_names, start=1)}
     return compmap
 
 
 def create_compartment_remap(oldmap, newmap):
-    """Creates a map from old compartment number to new compartment number
+    """Creates a map from old compartment number to new compartment number.
 
     For all compartments where remapping is needed
     Assume that compartments with same name in new and old are the same compartments
@@ -1007,7 +1007,7 @@ def create_compartment_remap(oldmap, newmap):
 
 
 def pk_param_conversion(model: Model, advan, trans):
-    """Conversion map for pk parameters for removed or added compartment"""
+    """Conversion map for pk parameters for removed or added compartment."""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if not all_subs:
         return model
@@ -1295,7 +1295,7 @@ def match_advan12(statements):
 
 
 def new_advan_trans(model: Model):
-    """Decide which new advan and trans to be used"""
+    """Decide which new advan and trans to be used."""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if all_subs:
         subs = all_subs[0]
@@ -1369,7 +1369,7 @@ def new_advan_trans(model: Model):
 
 
 def update_subroutines_record(model: Model, advan, trans):
-    """Update $SUBROUTINES with new advan and trans"""
+    """Update $SUBROUTINES with new advan and trans."""
     all_subs = model.internals.control_stream.get_records('SUBROUTINES')
     if not all_subs:
         content = f'$SUBROUTINES {advan} {trans}\n'
@@ -1396,7 +1396,7 @@ def update_subroutines_record(model: Model, advan, trans):
 
 
 def update_model_record(model: Model, advan):
-    """Update $MODEL"""
+    """Update $MODEL."""
     odes = model.statements.ode_system
     if not isinstance(odes, CompartmentalSystem):
         return model
@@ -1438,7 +1438,7 @@ def update_model_record(model: Model, advan):
 
 
 def update_needed_pk_parameters(model: Model, advan, trans):
-    """Add missing pk parameters that NONMEM needs"""
+    """Add missing pk parameters that NONMEM needs."""
     statements = model.statements
     odes = get_odes(model)
     if (
@@ -1582,7 +1582,7 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
 def define_parameter(model: Model, name: str, value: Expr, synonyms: list[str] | None = None):
     """Define a parameter in statements if not defined
     Update if already defined as other value
-    return True if new assignment was added
+    return True if new assignment was added.
     """
     if synonyms is None:
         synonyms = [name]
@@ -2307,7 +2307,7 @@ def update_name_of_tables(control_stream: NMTranControlStream, new_name: str):
 
 
 def update_sizes(control_stream, model: Model):
-    """Update $SIZES if needed"""
+    """Update $SIZES if needed."""
     all_sizes = control_stream.get_records('SIZES')
     sizes = all_sizes[0] if all_sizes else create_record('$SIZES\n')
     assert isinstance(sizes, SizesRecord)
@@ -2362,7 +2362,7 @@ def get_needed_ISAMPLEMAX(model: Model) -> int:
 
 
 def add_dummy_dv(model: Model) -> Model:
-    """Add a dummy column if DV not present"""
+    """Add a dummy column if DV not present."""
     try:
         _ = model.datainfo.dv_column
     except IndexError:
@@ -2379,7 +2379,7 @@ def add_dummy_dv(model: Model) -> Model:
 
 
 def update_input(control_stream, model: Model, keep_dataset: bool):
-    """Update $INPUT
+    """Update $INPUT.
 
     keep_dataset is whether the update should keep the original dataset in mind (e.g if the original
     dataset should be used and a column has been removed we need to update that node, otherwise it can
@@ -2443,7 +2443,7 @@ def get_zero_fix_rvs(model, eta=True):
 
 
 def update_initial_individual_estimates(model: Model, path, nofiles=False):
-    """Update $ETAS
+    """Update $ETAS.
 
     Could have 0 FIX in model. Need to read these
     """

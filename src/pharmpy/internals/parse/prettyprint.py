@@ -16,7 +16,7 @@ MAXLEN = 60
 
 
 def _preview(content: str):
-    """Represents str and cut into shorts if too long"""
+    """Represents str and cut into shorts if too long."""
     cut = len(content) - MAXLEN
     if cut > 0:
         preview = '"' + repr(content[0:MAXLEN])[1:-1] + '"'
@@ -27,7 +27,7 @@ def _preview(content: str):
 
 
 def _formatter(content: bool | Literal['full'], ast_node):
-    """Formats AST node (Tree and Leaf) for treeprint"""
+    """Formats AST node (Tree and Leaf) for treeprint."""
     if content:
         if content == 'full':
             lines = [ast_node.rule] + str(ast_node).splitlines(True)

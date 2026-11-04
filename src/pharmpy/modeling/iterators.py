@@ -28,7 +28,7 @@ from .parameter_sampling import create_rng
 
 
 class DatasetIterator:
-    """Base class for iterator classes that generate new datasets from an input dataset
+    """Base class for iterator classes that generate new datasets from an input dataset.
 
     The __next__ method could return either a DataFrame or a tuple where the first
     element is the main DataFrame.
@@ -48,7 +48,7 @@ class DatasetIterator:
         self._name_pattern = name_pattern
 
     def _check_exhausted(self):
-        """Check if the iterator is exhausted. Raise StopIteration in that case"""
+        """Check if the iterator is exhausted. Raise StopIteration in that case."""
         if self._next > self._iterations:
             raise StopIteration
 
@@ -58,7 +58,7 @@ class DatasetIterator:
 
     def _retrieve_dataset(self, df_or_model):
         """Extract dataset from model and remember the model.
-        If input is dataset simply pass through and set model to None
+        If input is dataset simply pass through and set model to None.
         """
         try:
             dataset = df_or_model.dataset
@@ -70,7 +70,7 @@ class DatasetIterator:
 
     def _combine_dataset(self, df, provenance=None):
         """If we are working with a model set the dataset and return model
-        else simply pass the dataset through
+        else simply pass the dataset through.
         """
         if self._model is None:
             return df

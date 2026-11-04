@@ -18,7 +18,7 @@ MethodType = Literal['FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'B
 
 
 def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs) -> Model:
-    """Set estimation step
+    """Set estimation step.
 
     Sets estimation step for a model. Methods currently supported are:
         FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM, BAYES
@@ -97,7 +97,7 @@ def add_estimation_step(
     derivatives: Sequence[Sequence[Expr]] = (),
     individual_eta_samples: bool = False,
 ) -> Model:
-    """Add estimation step
+    """Add estimation step.
 
     Adds estimation step for a model in a given index. Methods currently supported are:
         FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM
@@ -208,7 +208,7 @@ def add_estimation_step(
 
 
 def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED) -> Model:
-    """Change model into simulation model
+    """Change model into simulation model.
 
     Parameters
     ----------
@@ -255,7 +255,7 @@ def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED) -> Model:
 
 
 def remove_estimation_step(model: Model, idx: int) -> Model:
-    """Remove estimation step
+    """Remove estimation step.
 
     Parameters
     ----------
@@ -302,7 +302,7 @@ def remove_estimation_step(model: Model, idx: int) -> Model:
 def append_estimation_step_options(
     model: Model, tool_options: Mapping[str, Any], idx: int = -1
 ) -> Model:
-    """Append estimation step options
+    """Append estimation step options.
 
     Appends options to an existing estimation step.
 
@@ -362,7 +362,7 @@ def append_estimation_step_options(
 def add_parameter_uncertainty_step(
     model: Model, parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']
 ) -> Model:
-    """Adds parameter uncertainty step to the final estimation step
+    """Adds parameter uncertainty step to the final estimation step.
 
     Parameters
     ----------
@@ -404,7 +404,7 @@ def add_parameter_uncertainty_step(
 
 
 def remove_parameter_uncertainty_step(model: Model) -> Model:
-    """Removes parameter uncertainty step from the final estimation step
+    """Removes parameter uncertainty step from the final estimation step.
 
     Parameters
     ----------
@@ -443,7 +443,7 @@ def remove_parameter_uncertainty_step(model: Model) -> Model:
 
 
 def set_evaluation_step(model: Model, idx: int = -1) -> Model:
-    """Set evaluation step
+    """Set evaluation step.
 
     Change the final or the estimation step with a specific index to do evaulation.
 
@@ -500,7 +500,7 @@ def add_derivative(
     derivatives with respect to the prediction is supported. Default is to add all possible
     ETA and EPS derivatives.
     First order derivates are specied either by single string or single-element tuple.
-    For instance with_respect_to = "ETA_1" or with_respect_to = ("ETA_1",)
+    For instance with_respect_to = "ETA_1" or with_respect_to = ("ETA_1",).
 
     Second order derivatives are specified by giving the two independent varibles in a tuple
     of tuples. For instance with_respect_to ((ETA_1, EPS_1),)
@@ -569,7 +569,7 @@ def remove_derivative(
     derivatives with respect to the prediction is supported. Default is to remove all
     that are present,
     First order derivates are specied either by single string or single-element tuple.
-    For instance with_respect_to = "ETA_1" or with_respect_to = ("ETA_1",)
+    For instance with_respect_to = "ETA_1" or with_respect_to = ("ETA_1",).
 
     Second order derivatives are specified by giving the two independent varibles in a tuple
     of tuples. For instance with_respect_to ((ETA_1, EPS_1),)
@@ -625,7 +625,7 @@ def remove_derivative(
 
 
 def add_predictions(model: Model, pred: list[str]) -> Model:
-    """Add predictions and/or residuals
+    """Add predictions and/or residuals.
 
     Add predictions to estimation step.
 
@@ -679,7 +679,7 @@ def add_predictions(model: Model, pred: list[str]) -> Model:
 
 
 def add_residuals(model: Model, res: list[str]) -> Model:
-    """Add predictions and/or residuals
+    """Add predictions and/or residuals.
 
     Add residuals to estimation step.
 
@@ -736,7 +736,7 @@ def add_residuals(model: Model, res: list[str]) -> Model:
 
 
 def remove_predictions(model: Model, to_remove: Iterable[str] | None = None) -> Model:
-    """Remove predictions and/or residuals
+    """Remove predictions and/or residuals.
 
     Remove predictions from estimation step. Default is to remove all predictions.
 
@@ -788,7 +788,7 @@ def remove_predictions(model: Model, to_remove: Iterable[str] | None = None) -> 
 
 
 def remove_residuals(model: Model, to_remove: Iterable[str] | None = None) -> Model:
-    """Remove residuals
+    """Remove residuals.
 
     Remove residuals from estimation step. Default is to remove all residuals.
 
@@ -841,7 +841,7 @@ def remove_residuals(model: Model, to_remove: Iterable[str] | None = None) -> Mo
 
 
 def is_simulation_model(model: Model) -> bool:
-    """Check if a model is a pure simulation model
+    """Check if a model is a pure simulation model.
 
     Parameters
     ----------
@@ -868,7 +868,7 @@ def is_simulation_model(model: Model) -> bool:
 
 
 def add_output_variables(model: Model, variables: Sequence[str], append: bool = True) -> Model:
-    """Add output variables to an execution step
+    """Add output variables to an execution step.
 
     Parameters
     ----------

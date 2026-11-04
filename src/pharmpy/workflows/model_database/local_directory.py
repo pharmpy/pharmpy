@@ -78,7 +78,7 @@ def create_model_entry(model, modelfit_results):
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):
-    """ModelDatabase implementation for single local directory
+    """ModelDatabase implementation for single local directory.
 
     All files will be stored in the same directory. It is assumed that
     all files connected to a model are named modelname + extension. This means that
@@ -173,7 +173,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
 
 
 class LocalModelDirectoryDatabase(TransactionalModelDatabase):
-    """ModelDatabase implementation for a local directory structure
+    """ModelDatabase implementation for a local directory structure.
 
     Files will be stored in separate subdirectories named after each model.
     There are no restrictions on names of the files so models can have the same

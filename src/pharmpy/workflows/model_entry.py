@@ -71,7 +71,7 @@ class ModelEntry(Immutable):
         modelfit_results: ModelfitResults,
         simulation_results: SimulationResults | None = None,
     ) -> ModelEntry:
-        """Attaches modelfit results and possible log to ModelEntry objects"""
+        """Attaches modelfit results and possible log to ModelEntry objects."""
         if self._modelfit_results:
             raise ValueError('ModelEntry `modelfit_results` attribute already set')
         if self._simulation_results:
@@ -86,22 +86,22 @@ class ModelEntry(Immutable):
 
     @property
     def model(self) -> Model:
-        """Model object"""
+        """Model object."""
         return self._model
 
     @property
     def parent(self) -> Model | None:
-        """Parent model of main model"""
+        """Parent model of main model."""
         return self._parent
 
     @property
     def modelfit_results(self) -> ModelfitResults | None:
-        """Modelfit results of main model"""
+        """Modelfit results of main model."""
         return self._modelfit_results
 
     @property
     def simulation_results(self) -> SimulationResults | None:
-        """Simulation results of main model"""
+        """Simulation results of main model."""
         return self._simulation_results
 
     def __repr__(self) -> str:

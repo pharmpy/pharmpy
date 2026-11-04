@@ -42,7 +42,7 @@ from .data import read_dataset
 
 
 def read_model(path: str | Path, missing_data_token: str | None = None) -> Model:
-    """Read model from file
+    """Read model from file.
 
     Parameters
     ----------
@@ -74,7 +74,7 @@ def read_model(path: str | Path, missing_data_token: str | None = None) -> Model
 
 
 def read_model_from_string(code: str) -> Model:
-    """Read model from the model code in a string
+    """Read model from the model code in a string.
 
     Parameters
     ----------
@@ -112,7 +112,7 @@ def read_model_from_string(code: str) -> Model:
 
 
 def write_model(model: Model, path: str | Path = '', force: bool = True) -> Model:
-    """Write model code to file
+    """Write model code to file.
 
     An updated Pharmpy model is returned. This will have a new name based on the filename
     and it might have updates to the model code (e.g. for $DATA in NONMEM models).
@@ -166,7 +166,7 @@ def write_model(model: Model, path: str | Path = '', force: bool = True) -> Mode
 def convert_model(
     model: Model, to_format: Literal['generic', 'nlmixr', 'nonmem', 'rxode']
 ) -> Model:
-    """Convert model to other format
+    """Convert model to other format.
 
     Note that the operation is not done inplace.
 
@@ -199,7 +199,7 @@ def convert_model(
 
 
 def get_model_code(model: Model) -> str:
-    """Get the model code of the underlying model language as a string
+    """Get the model code of the underlying model language as a string.
 
     Parameters
     ----------
@@ -222,7 +222,7 @@ def get_model_code(model: Model) -> str:
 
 
 def print_model_code(model: Model) -> None:
-    """Print the model code of the underlying model language to the console
+    """Print the model code of the underlying model language to the console.
 
     Parameters
     ----------
@@ -272,7 +272,7 @@ def print_model_code(model: Model) -> None:
 
 
 def set_name(model: Model, new_name: str) -> Model:
-    """Set name of model object
+    """Set name of model object.
 
     Parameters
     ----------
@@ -302,7 +302,7 @@ def set_name(model: Model, new_name: str) -> Model:
 
 
 def set_description(model: Model, new_description: str) -> Model:
-    """Set description of model object
+    """Set description of model object.
 
     Parameters
     ----------
@@ -332,7 +332,7 @@ def set_description(model: Model, new_description: str) -> Model:
 
 
 def bump_model_number(model: Model, path: str | Path | None = None) -> Model:
-    """If the model name ends in a number increase it
+    """If the model name ends in a number increase it.
 
     If path is set increase the number until no file exists
     with the same name in path.
@@ -379,7 +379,7 @@ def bump_model_number(model: Model, path: str | Path | None = None) -> Model:
 
 
 def load_example_model(name: str) -> Model:
-    """Load an example model
+    """Load an example model.
 
     Load an example model from models built into Pharmpy
 
@@ -428,7 +428,7 @@ def load_example_model(name: str) -> Model:
 
 
 def load_example_dataset(name: str) -> pandas.DataFrame:
-    """Load an example dataset
+    """Load an example dataset.
 
     Load an example dataset from dataset built into Pharmpy
 
@@ -483,7 +483,7 @@ def load_example_dataset(name: str) -> pandas.DataFrame:
 
 
 def get_model_covariates(model: Model, strings: bool = False) -> list[str] | list[Expr]:
-    """List of covariates used in model
+    """List of covariates used in model.
 
     A covariate in the model is here defined to be a data item
     affecting the model prediction excluding dosing items that
@@ -548,7 +548,7 @@ def get_model_covariates(model: Model, strings: bool = False) -> list[str] | lis
 
 
 def print_model_symbols(model: Model) -> None:
-    """Print all symbols defined in a model
+    """Print all symbols defined in a model.
 
     Symbols will be in one of the categories thetas, etas, omegas, epsilons, sigmas,
     variables and data columns
@@ -595,7 +595,7 @@ def print_model_symbols(model: Model) -> None:
 
 
 def get_config_path() -> str | None:
-    r"""Returns path to the user config path
+    r"""Returns path to the user config path.
 
     Returns
     -------
@@ -624,7 +624,7 @@ def get_config_path() -> str | None:
 
 
 def create_config_template() -> None:
-    r"""Create a basic config file template
+    r"""Create a basic config file template.
 
     If a configuration file already exists it will not be overwritten
 
@@ -650,7 +650,7 @@ def create_config_template() -> None:
 
 
 def remove_unused_parameters_and_rvs(model: Model) -> Model:
-    """Remove any parameters and rvs that are not used in the model statements
+    """Remove any parameters and rvs that are not used in the model statements.
 
     Parameters
     ----------
@@ -705,7 +705,7 @@ def _get_unused_parameters_and_rvs(statements, parameters, random_variables):
 
 
 def rename_symbols(model: Model, new_names: Mapping[TSymbol, TSymbol]) -> Model:
-    """Rename symbols in the model
+    """Rename symbols in the model.
 
     Make sure that no name clash occur.
 
@@ -839,7 +839,7 @@ def filter_dataset(model: Model, expr: str) -> Model:
 
 
 def get_nested_model(model_1: Model, model_2: Model) -> Model | None:
-    """Return nested model from a pair of models
+    """Return nested model from a pair of models.
 
     Function to get a nested model from a pair of models, None
     if neither model is nested. A model is not considered nested if:

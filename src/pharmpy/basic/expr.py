@@ -36,7 +36,7 @@ class ExprStrPrinter(sympy_printing.str.StrPrinter):
 
 
 class Expr:
-    """A real valued symbolic expression with real symbols"""
+    """A real valued symbolic expression with real symbols."""
 
     def __init__(self, source: TExpr):
         if isinstance(source, Expr):
@@ -330,12 +330,12 @@ class Expr:
 
     @classmethod
     def first(cls, col, group) -> Expr:
-        """Function giving the first value of col for all records in group"""
+        """Function giving the first value of col for all records in group."""
         return cls.function("first", (col, group))
 
     @classmethod
     def newind(cls) -> Expr:
-        """The newind function
+        """The newind function.
 
         0 - For the first record of the dataset
         1 - For the first record of each individual (except if it is the first in the dataset)
@@ -345,7 +345,7 @@ class Expr:
 
     @classmethod
     def forward(cls, value, condition, group=None) -> Expr:
-        """Function to carry forward value at a certain condition"""
+        """Function to carry forward value at a certain condition."""
         if group is None:
             func = cls.function("forward", (value, condition))
         else:
@@ -354,7 +354,7 @@ class Expr:
 
     @classmethod
     def count_if(cls, condition, group) -> Expr:
-        """Function to increase and give count if condition is true"""
+        """Function to increase and give count if condition is true."""
         return cls.function("count_if", (condition, group))
 
     def __gt__(self, other) -> BooleanExpr:

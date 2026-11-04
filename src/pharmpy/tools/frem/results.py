@@ -36,7 +36,7 @@ from pharmpy.workflows import Results
 
 @dataclass(frozen=True)
 class FREMResults(Results):
-    """FREM Results class
+    """FREM Results class.
 
     What follows is a description on how the FREM results are stored.
     See :py:mod:`pharmpy.tools.frem` for a description of how the results are calculated.
@@ -188,7 +188,7 @@ class FREMResults(Results):
 
 
 def plot_covariate_effects(res):
-    """Plot covariate effects"""
+    """Plot covariate effects."""
     ce = (res.covariate_effects - 1) * 100
     cov_stats = pd.melt(
         res.covariate_statistics.reset_index(),
@@ -258,7 +258,7 @@ def plot_covariate_effects(res):
 
 
 def plot_individual_effects(res):
-    """Plot individual effects"""
+    """Plot individual effects."""
     covs = res.covariate_baselines
     ie = res.individual_effects.join(covs)
     param_names = list(ie.index.get_level_values('parameter').unique())
@@ -339,7 +339,7 @@ def plot_individual_effects(res):
 
 
 def plot_unexplained_variability(res):
-    """Plot unexplained variability"""
+    """Plot unexplained variability."""
     uv = res.unexplained_variability
     param_names = list(uv.index.get_level_values('parameter').unique())
     cov_order = list(uv.index.get_level_values('covariate').unique())
@@ -406,7 +406,7 @@ def calculate_results(
     seed=None,
     **kwargs,
 ):
-    """Calculate FREM results
+    """Calculate FREM results.
 
     :param method: Either 'cov_sampling' or 'bipp'
     """
@@ -524,7 +524,7 @@ def calculate_results_using_cov_sampling(
     rescale=True,
     seed=None,
 ):
-    """Calculate the FREM results using covariance matrix for uncertainty
+    """Calculate the FREM results using covariance matrix for uncertainty.
 
     :param cov_model_results: Take the parameter uncertainty covariance matrix from this model
                       instead of the frem model.
@@ -568,7 +568,7 @@ def calculate_results_using_cov_sampling(
 def calculate_results_from_samples(
     frem_model, frem_model_results, continuous, categorical, parvecs, rescale=True
 ):
-    """Calculate the FREM results given samples of parameter estimates"""
+    """Calculate the FREM results given samples of parameter estimates."""
     n = len(parvecs)
     dist = frem_model.random_variables.iiv[-1]
     rvs = list(dist.names)
@@ -909,7 +909,7 @@ def _calculate_covariate_baselines(model, res, covariates):
 def calculate_results_using_bipp(
     frem_model, frem_model_results, continuous, categorical, rescale=True, samples=2000, seed=None
 ):
-    """Estimate a covariance matrix for the frem model using the BIPP method
+    """Estimate a covariance matrix for the frem model using the BIPP method.
 
     Bootstrap on the individual parameter posteriors
     Only the individual estimates, individual unvertainties and the parameter estimates
@@ -967,7 +967,7 @@ def calculate_results_using_bipp(
 
 
 def psn_reorder_base_model_inits(model, path):
-    """Reorder omega inits from base model in PsN
+    """Reorder omega inits from base model in PsN.
 
     If base model was reordered PsN writes the omega inits dict to m1/model_1.inits
     """
@@ -1007,7 +1007,7 @@ def psn_reorder_base_model_inits(model, path):
 
 
 def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=500, method=None):
-    """Create frem results from a PsN FREM run
+    """Create frem results from a PsN FREM run.
 
     :param path: Path to PsN frem run directory
     :return: A :class:`FREMResults` object

@@ -16,7 +16,7 @@ from pharmpy.tools.common import ToolResults
 
 @dataclass(frozen=True)
 class RUVSearchResults(ToolResults):
-    """RUVSearch results class"""
+    """RUVSearch results class."""
 
     cwres_models: Any | None = None
 

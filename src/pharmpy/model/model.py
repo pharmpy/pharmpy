@@ -4,7 +4,7 @@
 
 """
 ===================
-Generic Model class
+Generic Model class.
 ===================
 
 **Base class of all implementations.**
@@ -39,18 +39,18 @@ from .statements import CompartmentalSystem, Statements
 
 
 class ModelError(Exception):
-    """Exception for errors in model object"""
+    """Exception for errors in model object."""
 
 
 class ModelSyntaxError(ModelError):
-    """Exception for Syntax errors in model code"""
+    """Exception for Syntax errors in model code."""
 
     def __init__(self, msg='model syntax error'):
         super().__init__(msg)
 
 
 class ModelfitResultsError(ModelError):
-    """Exception for issues with ModelfitResults"""
+    """Exception for issues with ModelfitResults."""
 
 
 @dataclass(frozen=True)
@@ -63,7 +63,7 @@ class ModelInternals:
 
 
 class Model(Immutable):
-    """The Pharmpy model class"""
+    """The Pharmpy model class."""
 
     filename_extension = '.ppmod'
 
@@ -463,7 +463,7 @@ class Model(Immutable):
         )
 
     def __eq__(self, other):
-        """Compare two models for equality
+        """Compare two models for equality.
 
         Tests whether a model is equal to another model. This ignores
         implementation-specific details such as NONMEM $DATA and FILE
@@ -604,17 +604,17 @@ class Model(Immutable):
 
     @property
     def name(self) -> str:
-        """Name of the model"""
+        """Name of the model."""
         return self._name
 
     @property
     def dependent_variables(self) -> frozenmapping[Expr, int]:
-        """The dependent variables of the model mapped to the corresponding DVIDs"""
+        """The dependent variables of the model mapped to the corresponding DVIDs."""
         return self._dependent_variables
 
     @property
     def value_type(self) -> str | Expr:
-        """The type of the model value (dependent variables)
+        """The type of the model value (dependent variables).
 
         By default this is set to 'PREDICTION' to mean that the model outputs a prediction.
         It could optionally be set to 'LIKELIHOOD' or '-2LL' to let the model output the likelihood
@@ -626,12 +626,12 @@ class Model(Immutable):
 
     @property
     def observation_transformation(self) -> frozenmapping[Expr, Expr]:
-        """Transformation to be applied to the observation data"""
+        """Transformation to be applied to the observation data."""
         return self._observation_transformation
 
     @property
     def parameters(self) -> Parameters:
-        """Definitions of population parameters
+        """Definitions of population parameters.
 
         See :class:`pharmpy.Parameters`
         """
@@ -639,7 +639,7 @@ class Model(Immutable):
 
     @property
     def random_variables(self) -> RandomVariables:
-        """Definitions of random variables
+        """Definitions of random variables.
 
         See :class:`pharmpy.RandomVariables`
         """
@@ -647,7 +647,7 @@ class Model(Immutable):
 
     @property
     def statements(self) -> Statements:
-        """Definitions of model statements
+        """Definitions of model statements.
 
         See :class:`pharmpy.Statements`
         """
@@ -655,7 +655,7 @@ class Model(Immutable):
 
     @property
     def execution_steps(self) -> ExecutionSteps:
-        """Definitions of estimation steps
+        """Definitions of estimation steps.
 
         See :class:`pharmpy.ExecutionSteps`
         """
@@ -663,7 +663,7 @@ class Model(Immutable):
 
     @property
     def datainfo(self) -> DataInfo:
-        """Definitions of model statements
+        """Definitions of model statements.
 
         See :class:`pharmpy.Statements`
         """
@@ -671,29 +671,29 @@ class Model(Immutable):
 
     @property
     def dataset(self) -> pd.DataFrame | None:
-        """Dataset connected to model"""
+        """Dataset connected to model."""
         return self._dataset
 
     @property
     def initial_individual_estimates(self) -> pd.DataFrame | None:
-        """Initial estimates for individual parameters"""
+        """Initial estimates for individual parameters."""
         return self._initial_individual_estimates
 
     @property
     def internals(self) -> ModelInternals | None:
-        """Internal data for tool specific part of model"""
+        """Internal data for tool specific part of model."""
         return self._internals
 
     @property
     def code(self) -> str:
-        """Model type specific code"""
+        """Model type specific code."""
         d = self.to_dict()
         d['__magic__'] = "Pharmpy Model"
         d['__version__'] = pharmpy.__version__
         return json.dumps(d)
 
     def has_same_dataset_as(self, other: Model) -> bool:
-        """Check if this model has the same dataset as another model
+        """Check if this model has the same dataset as another model.
 
         Parameters
         ----------
@@ -716,12 +716,12 @@ class Model(Immutable):
 
     @property
     def description(self) -> str:
-        """A free text description of the model"""
+        """A free text description of the model."""
         return self._description
 
     @staticmethod
     def parse_model(path: Path | str, missing_data_token: str | None = None) -> Model:
-        """Create a model object by parsing a model file of any supported type
+        """Create a model object by parsing a model file of any supported type.
 
         Parameters
         ----------
@@ -745,7 +745,7 @@ class Model(Immutable):
 
     @staticmethod
     def parse_model_from_string(code: str) -> Model:
-        """Create a model object by parsing a string with model code of any supported type
+        """Create a model object by parsing a string with model code of any supported type.
 
         Parameters
         ----------
@@ -763,7 +763,7 @@ class Model(Immutable):
 
     def update_source(self) -> Model:
         """Update source code of the model. If any paths need to be changed or added (e.g. for a
-        NONMEM model with an updated dataset) they will be replaced with DUMMYPATH
+        NONMEM model with an updated dataset) they will be replaced with DUMMYPATH.
         """
         return self
 
@@ -792,7 +792,7 @@ def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:
 
 
 def get_and_check_odes(model: Model) -> CompartmentalSystem:
-    """Get the ode_system from model and raise if not a CompartmentalSystem
+    """Get the ode_system from model and raise if not a CompartmentalSystem.
 
     Parameters
     ----------
@@ -812,7 +812,7 @@ def get_and_check_odes(model: Model) -> CompartmentalSystem:
 
 
 def get_and_check_dataset(model: Model) -> pd.DataFrame:
-    """Get the dataset from a model and raise if the model has no dataset
+    """Get the dataset from a model and raise if the model has no dataset.
 
     Parameters
     ----------
@@ -832,7 +832,7 @@ def get_and_check_dataset(model: Model) -> pd.DataFrame:
 
 
 def is_defined(model: Model, symbol: str | Expr) -> bool:
-    """Check if a symbol is defined in a model
+    """Check if a symbol is defined in a model.
 
     Will allow the symbol to be defined in the datainfo or in the statements.
 

@@ -123,7 +123,7 @@ def fit(
 
 
 def create_results(path: str | Path, **kwargs) -> Results:
-    """Create/recalculate results object given path to run directory
+    """Create/recalculate results object given path to run directory.
 
     Parameters
     ----------
@@ -153,7 +153,7 @@ def create_results(path: str | Path, **kwargs) -> Results:
 
 
 def read_results(path: str | Path) -> Results:
-    """Read results object from file
+    """Read results object from file.
 
     Parameters
     ----------
@@ -181,7 +181,7 @@ def read_results(path: str | Path) -> Results:
 
 
 def run_tool(tool_name: str, *args, **kwargs) -> Model | list[Model] | tuple[Model] | Results:
-    """Run tool workflow
+    """Run tool workflow.
 
     .. note::
         This is a general function that can run any tool. There is also one function for each
@@ -415,7 +415,7 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
 
 
 def resume_tool(path: str):
-    """Resume tool workflow from tool database path
+    """Resume tool workflow from tool database path.
 
     Parameters
     ----------
@@ -761,7 +761,7 @@ def retrieve_models(
     source: str | Path | Context,
     names: list[str] | None = None,
 ) -> list[Model]:
-    """Retrieve models after a tool run
+    """Retrieve models after a tool run.
 
     Any models created and run by the tool can be
     retrieved.
@@ -798,7 +798,7 @@ def retrieve_models(
 
 
 def retrieve_final_model(res: Results) -> Model:
-    """Retrieve final model from a result object
+    """Retrieve final model from a result object.
 
     Parameters
     ----------
@@ -833,7 +833,7 @@ def retrieve_final_model(res: Results) -> Model:
 
 
 def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
-    """Print a summary of the model fit
+    """Print a summary of the model fit.
 
     Parameters
     ----------
@@ -894,7 +894,7 @@ def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
 
 
 def write_results(results: Results, path: str | Path, compression: bool = False, csv: bool = False):
-    """Write results object to json (or csv) file
+    """Write results object to json (or csv) file.
 
     Note that the csv-file cannot be read into a results object again.
 
@@ -1009,7 +1009,7 @@ def rank_models(
     penalties: list[float] | None = None,
     **kwargs,
 ) -> pd.DataFrame:
-    """Ranks a list of models
+    """Ranks a list of models.
 
     Ranks a list of models with a given ranking function
 
@@ -1329,7 +1329,7 @@ def summarize_modelfit_results(
     context: Context,
     include_all_execution_steps: bool = False,
 ) -> pd.DataFrame:
-    """Summarize results of model runs
+    """Summarize results of model runs.
 
     Summarize different results after fitting a model, includes runtime, ofv,
     and parameter estimates (with errors). If include_all_execution_steps is False,
@@ -1469,7 +1469,7 @@ def _get_estimation_runtime(res, i):
 
 
 def read_modelfit_results(path: str | Path, esttool: str | None = None) -> ModelfitResults:
-    """Read results from external tool for a model
+    """Read results from external tool for a model.
 
     Parameters
     ----------
@@ -1504,7 +1504,7 @@ def _get_run_setup_from_metadata(path):
 
 
 def load_example_modelfit_results(name: str):
-    """Load the modelfit results of an example model
+    """Load the modelfit results of an example model.
 
     Load the modelfit results of an example model built into Pharmpy
 

@@ -21,7 +21,7 @@ def add_allometry(
     upper_bounds: list[int | float] | None = None,
     fixed: bool = True,
 ) -> Model:
-    """Add allometric scaling of parameters
+    """Add allometric scaling of parameters.
 
     Add an allometric function to each listed parameter. The function will be
     P=P*(X/Z)**T where P is the parameter, X the allometric_variable, Z the reference_value

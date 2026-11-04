@@ -5,7 +5,7 @@
 
 class RawRecord:
     """A record that just keeps contents unparsed.
-    Used for unknown records and for anything coming before the first record
+    Used for unknown records and for anything coming before the first record.
     """
 
     def __init__(self, content, name='', raw_name=''):

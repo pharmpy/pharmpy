@@ -18,7 +18,7 @@ class Grid:
         self._grid[row][col] = value
 
     def _column_widths(self):
-        """Calculate the number of characters needed for each column"""
+        """Calculate the number of characters needed for each column."""
         widths = []
         for col in range(self.ncols):
             maxlen = 0
@@ -192,7 +192,7 @@ class DualVerticalArrows:
 
 def left_parens(height):
     """Return an array containing each row of a large parenthesis
-    used for pretty printing
+    used for pretty printing.
     """
     a = ['⎧']
     for _ in range(height - 2):
@@ -203,7 +203,7 @@ def left_parens(height):
 
 def right_parens(height):
     """Return an array containing each row of a large parenthesis
-    used for pretty printing
+    used for pretty printing.
     """
     a = ['⎫']
     for _ in range(height - 2):
@@ -213,7 +213,7 @@ def right_parens(height):
 
 
 def bracket(a):
-    """Append a left bracket for an array of lines"""
+    """Append a left bracket for an array of lines."""
     if len(a) == 1:
         return '{' + a[0]
     if len(a) == 2:
