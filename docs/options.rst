@@ -78,5 +78,5 @@ Dipatching options are technical options telling Pharmpy something about how a w
 +-----------------------------+-------------------------------------------------------------------------------------------------+
 | :code:`ref`                 | The path to the tool run. For more information see :ref:`context`                               |
 +-----------------------------+-------------------------------------------------------------------------------------------------+
-| :code:`context`             | Context to use for the tool run. For more information see :ref:`context`                        |
+| :code:`project`             | Project to use for the tool run. For more information see :ref:`project`                        |
 +-----------------------------+-------------------------------------------------------------------------------------------------+

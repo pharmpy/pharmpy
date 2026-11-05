@@ -19,4 +19,6 @@ General information about the Pharmpy tools can be found here:
    Strictness <strictness>
    Selection criteria <selection_criteria>
    Context <context>
+   Project <project>
+   Model database <model_database>
    Dispatching <dispatching>

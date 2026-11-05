@@ -4,9 +4,9 @@
 
 .. _dispatching:
 
-~~~~~~~~~~~
+===========
 Dispatching
-~~~~~~~~~~~
+===========
 
 Dispatching is how a tool is run. Is it on a local system? Should it run in serial or parallel? 
 

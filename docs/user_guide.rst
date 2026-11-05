@@ -17,6 +17,7 @@ basic use cases in Pharmpy. More detailed information can be found in the :ref:`
    modeling
    model
    data
+   tutorials
    configuration
    using_r
    cli
