@@ -12,7 +12,7 @@ from pharmpy.model import Model
 
 from ...workflows.model_entry import ModelEntry
 from ..hashing import ModelHash
-from ..results import Results
+from ..results import ModelfitResults
 
 
 class ModelTransaction(ABC):
@@ -33,11 +33,11 @@ class ModelTransaction(ABC):
             )
 
     @abstractmethod
-    def store_model(self) -> None:
+    def store_model(self) -> Model:
         """Store the model object bound to this transaction."""
 
     @abstractmethod
-    def store_local_file(self, path: Path, new_filename: str | None = None):
+    def store_local_file(self, path: Path, new_filename: str | None = None) -> None:
         """Store a file from the local machine for the model bound to this
         transaction.
 
@@ -123,7 +123,7 @@ class ModelSnapshot(ABC):
         """
 
     @abstractmethod
-    def retrieve_modelfit_results(self) -> Results:
+    def retrieve_modelfit_results(self) -> ModelfitResults:
         """Read modelfit results from the database.
 
         Parameters
@@ -133,7 +133,7 @@ class ModelSnapshot(ABC):
 
         Returns
         -------
-        Results
+        ModelfitResults
             Retrieved model results object
         """
 
@@ -290,7 +290,7 @@ class ModelDatabase(ABC):
         """
 
     @abstractmethod
-    def retrieve_modelfit_results(self, model: Model | ModelHash) -> Results:
+    def retrieve_modelfit_results(self, model: Model | ModelHash) -> ModelfitResults:
         """Read modelfit results from the database.
 
         Parameters
@@ -397,7 +397,7 @@ class DummySnapshot(ModelSnapshot):
     def retrieve_model(self) -> Model:
         return self.database.retrieve_model(self.key)
 
-    def retrieve_modelfit_results(self) -> Results:
+    def retrieve_modelfit_results(self) -> ModelfitResults:
         return self.database.retrieve_modelfit_results(self.key)
 
     def retrieve_model_entry(self) -> ModelEntry:
@@ -454,7 +454,7 @@ class TransactionalModelDatabase(ModelDatabase):
         with self.snapshot(obj) as sn:
             return sn.retrieve_model()
 
-    def retrieve_modelfit_results(self, obj: Model | ModelEntry | ModelHash) -> Results:
+    def retrieve_modelfit_results(self, obj: Model | ModelEntry | ModelHash) -> ModelfitResults:
         with self.snapshot(obj) as sn:
             return sn.retrieve_modelfit_results()
 

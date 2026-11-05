@@ -4,9 +4,10 @@
 
 import json
 import shutil
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from os import stat
 from pathlib import Path
+from typing import Any
 
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
@@ -206,7 +207,9 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         return path_lock(str(path), shared=False)
 
     @contextmanager
-    def snapshot(self, obj: Model | ModelEntry | ModelHash):
+    def snapshot(
+        self, obj: Model | ModelEntry | ModelHash
+    ) -> AbstractContextManager[ModelSnapshot]:
         key = ModelHash(obj)
         model_path = self.path / str(key)
         destination = model_path / DIRECTORY_PHARMPY_METADATA
@@ -221,7 +224,9 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
             yield LocalModelDirectoryDatabaseSnapshot(self, obj)
 
     @contextmanager
-    def transaction(self, obj: Model | ModelEntry | ModelHash):
+    def transaction(
+        self, obj: Model | ModelEntry | ModelHash
+    ) -> AbstractContextManager[ModelTransaction]:
         key = ModelHash(obj)
         model_path = self.path / str(key)
         destination = model_path / DIRECTORY_PHARMPY_METADATA
@@ -245,7 +250,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
 
 
 class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
-    def store_model(self):
+    def store_model(self) -> Model:
         if self.model_entry is None:
             raise ValueError("Cannot store model: No model attached to transaction")
 
@@ -313,7 +318,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         write_model(model, model_path / ("model" + model.filename_extension), force=True)
         return model
 
-    def store_local_file(self, path, new_filename=None):
+    def store_local_file(self, path: Path, new_filename: str | None = None) -> None:
         if Path(path).is_file():
             destination = self.database.path / str(self.key)
             destination.mkdir(parents=True, exist_ok=True)
@@ -321,13 +326,13 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
                 destination = destination / new_filename
             shutil.copy2(path, destination)
 
-    def store_metadata(self, metadata):
+    def store_metadata(self, metadata: dict[str, Any]) -> None:
         destination = self.database.path / str(self.key) / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
         with open(destination / FILE_METADATA, 'w') as f:
             json.dump(metadata, f, indent=2)
 
-    def store_modelfit_results(self):
+    def store_modelfit_results(self) -> None:
         destination = self.database.path / str(self.key) / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
 
@@ -336,7 +341,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         if modelfit_results is not None:
             modelfit_results.to_json(destination / FILE_MODELFIT_RESULTS)
 
-    def store_model_entry(self):
+    def store_model_entry(self) -> None:
         if self.model_entry is None:
             raise ValueError('Transaction does not have `model_entry` attribute')
         # FIXME: Store parent
@@ -345,7 +350,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
 
 
 class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
-    def list_all_files(self):
+    def list_all_files(self) -> list[str]:
         path = self.database.path / str(self.key)
         file_names = [f.name for f in path.iterdir() if f.is_file()]
         if len(file_names) > 0:
@@ -353,7 +358,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         else:
             raise ValueError(f"Cannot find any files for {self.key}")
 
-    def retrieve_file(self, filename, destination_path, force=False):
+    def retrieve_file(self, filename: str, destination_path: Path, force: bool = False) -> None:
         # Return path to file
         path = self.database.path / str(self.key) / filename
         if path.is_file() and stat(path).st_size > 0:
@@ -365,7 +370,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         else:
             raise FileNotFoundError(f"Cannot retrieve {filename} for {self.key}")
 
-    def retrieve_all_files(self, destination_path, force=False):
+    def retrieve_all_files(self, destination_path: Path, force: bool = False) -> None:
         if not destination_path.exists():
             raise ValueError(
                 f"Cannot copy files to `{destination_path}`:  directory does not exist"
@@ -377,7 +382,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             dst = destination_path / file_name
             self.retrieve_file(file_name, dst, force)
 
-    def retrieve_model(self):
+    def retrieve_model(self) -> Model:
         path = self._find_full_model_path()
 
         # NOTE: This will guess the model type
@@ -385,7 +390,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
 
         return model
 
-    def _find_full_model_path(self):
+    def _find_full_model_path(self) -> Path:
         extensions = ('.mod', '.ctl')
         root = self.database.path / str(self.key)
         errors = []
@@ -404,7 +409,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             f' Looked up {", ".join(f"`{p}`" for p in errors)}.'
         )
 
-    def retrieve_modelfit_results(self):
+    def retrieve_modelfit_results(self) -> ModelfitResults | None:
         model = self.retrieve_model()
         path = self._find_full_model_path()
         res = get_modelfit_results(model, path)
@@ -423,7 +428,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         else:
             return None
 
-    def retrieve_model_entry(self):
+    def retrieve_model_entry(self) -> ModelEntry:
         model = self.retrieve_model()
         modelfit_results = self.retrieve_modelfit_results()
         return create_model_entry(model, modelfit_results)
