@@ -8,6 +8,8 @@ import builtins
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
+from pharmpy.internals.immutable import cache_method_no_args
+
 from .help_functions import format_numbers
 from .model_feature import ModelFeature
 
@@ -61,6 +63,7 @@ class Peripherals(ModelFeature):
             return False
         return self.number == other.number and self.metabolite == other.metabolite
 
+    @cache_method_no_args
     def __hash__(self) -> int:
         return hash((self.number, self.metabolite))
 
