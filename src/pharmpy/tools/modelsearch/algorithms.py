@@ -5,7 +5,7 @@
 from collections import defaultdict
 from collections.abc import Callable, Iterable
 from itertools import product
-from typing import Any
+from typing import Any, Literal, get_args
 
 from pharmpy.modeling import (
     add_allometry,
@@ -18,8 +18,10 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
-ALGORITHMS = frozenset(('exhaustive', 'exhaustive_stepwise', 'reduced_stepwise'))
-IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
+ALGORITHMS_TYPE_HINT = Literal['exhaustive', 'exhaustive_stepwise', 'reduced_stepwise']
+ALGORITHMS = frozenset(get_args(ALGORITHMS_TYPE_HINT))
+IIV_STRATEGIES_TYPE_HINT = Literal['no_add', 'add_diagonal', 'fullblock', 'absorption_delay']
+IIV_STRATEGIES = frozenset(get_args(IIV_STRATEGIES_TYPE_HINT))
 
 
 def _group_incompatible_features(funcs):

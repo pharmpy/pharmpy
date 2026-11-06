@@ -7,7 +7,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar, get_args
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
@@ -28,7 +28,8 @@ from pharmpy.workflows import ModelEntry, ModelfitResults, Results
 
 DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
 
-RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
+RANK_TYPES_TYPE_HINT = Literal['ofv', 'lrt', 'aic', 'bic', 'mbic']
+RANK_TYPES = frozenset(get_args(RANK_TYPES_TYPE_HINT))
 
 
 def update_initial_estimates(
@@ -134,7 +135,7 @@ def summarize_tool(
     return df_sorted
 
 
-def create_plots(model: Model | None, results: ModelfitResults):
+def create_plots(model: Model | None, results: ModelfitResults | None):
     if model is None:
         return {
             'dv_vs_pred': None,

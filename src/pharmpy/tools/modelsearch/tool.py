@@ -2,12 +2,16 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-from dataclasses import dataclass
-from typing import Literal
+from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any, Literal
+
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
-from pharmpy.mfl import LagTime, ModelFeatures, Peripherals, Transits
+from pharmpy.mfl import Allometry, LagTime, ModelFeature, ModelFeatures, Peripherals, Transits
 from pharmpy.model import Model
 from pharmpy.modeling.mfl import (
     generate_transformations,
@@ -16,7 +20,7 @@ from pharmpy.modeling.mfl import (
     transform_into_search_space,
 )
 from pharmpy.tools.common import (
-    RANK_TYPES,
+    RANK_TYPES_TYPE_HINT,
     ToolResults,
     add_parent_column,
     create_plots,
@@ -24,13 +28,14 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.modelrank import ModelRankResults
 from pharmpy.tools.modelsearch import algorithms
 from pharmpy.tools.run import (
     run_subtool,
     summarize_errors_from_entries,
     summarize_modelfit_results_from_entries,
 )
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import Context, ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from .algorithms import _add_allometry
@@ -40,9 +45,9 @@ def create_workflow(
     model: Model,
     results: ModelfitResults,
     search_space: str | ModelFeatures,
-    algorithm: Literal[tuple(algorithms.ALGORITHMS)] = 'reduced_stepwise',
-    iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
-    rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
+    algorithm: algorithms.ALGORITHMS_TYPE_HINT = 'reduced_stepwise',
+    iiv_strategy: algorithms.IIV_STRATEGIES_TYPE_HINT = 'absorption_delay',
+    rank_type: RANK_TYPES_TYPE_HINT = 'bic',
     cutoff: float | int | None = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     E: float | str | None = None,
@@ -112,17 +117,17 @@ def create_workflow(
 
 
 def start(
-    context,
-    search_space,
-    algorithm,
-    iiv_strategy,
-    rank_type,
-    cutoff,
-    results,
-    model,
-    strictness,
-    E,
-    parameter_uncertainty_method,
+    context: Context,
+    search_space: str | ModelFeatures,
+    algorithm: str,
+    iiv_strategy: str,
+    rank_type: str,
+    cutoff: float | int | None,
+    results: ModelfitResults,
+    model: Model,
+    strictness: str,
+    E: float | str | None,
+    parameter_uncertainty_method: str | None,
 ):
     context.log_info("Starting tool modelsearch")
 
@@ -159,7 +164,7 @@ def start(
     else:
         # Always create base, even if same as input for proper
         # post-process behaviour.
-        base_fit = start_task
+        base_fit = [start_task]
 
     task_result = Task(
         'results',
@@ -222,17 +227,17 @@ def _start(model: Model, modelfit_results: ModelfitResults) -> ModelEntry:
     return ModelEntry.create(model, modelfit_results=modelfit_results)
 
 
-def _results(context, res):
+def _results(context: Context, res: ModelSearchResults) -> ModelSearchResults:
     context.log_info("Finishing tool modelsearch")
     return res
 
 
-def clear_description(model_entry):
+def clear_description(model_entry: ModelEntry) -> ModelEntry:
     model, res, parent = model_entry.model, model_entry.modelfit_results, model_entry.parent
     return ModelEntry.create(model.replace(description=""), modelfit_results=res, parent=parent)
 
 
-def filter_mfl_statements(mfl_statements: ModelFeatures, model_entry: ModelEntry):
+def filter_mfl_statements(mfl_statements: ModelFeatures, model_entry: ModelEntry) -> ModelFeatures:
     model = model_entry.model
     model_mfl = get_model_features(model, type='pk')
     mfl_statements -= model_mfl
@@ -241,7 +246,7 @@ def filter_mfl_statements(mfl_statements: ModelFeatures, model_entry: ModelEntry
     return mfl_statements
 
 
-def get_mfl_funcs(mfl: ModelFeatures):
+def get_mfl_funcs(mfl: ModelFeatures) -> dict[tuple[str, ...], Callable]:
     ss_funcs = generate_transformations(mfl)
     assert len(ss_funcs) == len(mfl)
     keys = [(type(f).__name__.upper(),) + _get_args(f) for f in mfl]
@@ -249,7 +254,7 @@ def get_mfl_funcs(mfl: ModelFeatures):
     return {k: v for k, v in sorted(res.items(), key=lambda x: (x[0][0], str(x[0][1])))}
 
 
-def _get_args(feature):
+def _get_args(feature: ModelFeature) -> tuple[Any, ...]:
     if isinstance(feature, Peripherals):
         return (feature.number,)
     elif isinstance(feature, LagTime):
@@ -261,7 +266,9 @@ def _get_args(feature):
         return feature.args
 
 
-def create_base_model(ss, allometry, model_or_model_entry):
+def create_base_model(
+    ss: ModelFeatures, allometry: ModelFeatures | None, model_or_model_entry: Model | ModelEntry
+) -> ModelEntry:
     if isinstance(model_or_model_entry, ModelEntry):
         model = model_or_model_entry.model
         res = model_or_model_entry.modelfit_results
@@ -279,15 +286,15 @@ def create_base_model(ss, allometry, model_or_model_entry):
 
 
 def post_process(
-    context,
-    mfl,
-    rank_type,
-    cutoff,
-    strictness,
-    E,
-    parameter_uncertainty_method,
+    context: Context,
+    mfl: ModelFeatures,
+    rank_type: str,
+    cutoff: float | int | None,
+    strictness: str,
+    E: float | str | None,
+    parameter_uncertainty_method: str | None,
     *model_entries: ModelEntry,
-):
+) -> ModelSearchResults:
     _, base_model_entry, res_model_entries = categorize_model_entries(model_entries)
 
     rank_type += '_mixed' if rank_type in ('bic', 'mbic') else ''
@@ -309,6 +316,7 @@ def post_process(
         E=E,
         parameter_uncertainty_method=parameter_uncertainty_method,
     )
+    assert isinstance(rank_res, ModelRankResults)
 
     summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
     tables = create_result_tables(model_entries)
@@ -331,7 +339,9 @@ def post_process(
     return res
 
 
-def create_result_tables(model_entries):
+def create_result_tables(
+    model_entries: tuple[ModelEntry, ...],
+) -> dict[Literal['summary_models', 'summary_errors'], pd.DataFrame]:
     summary_models = summarize_modelfit_results_from_entries(model_entries)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
     summary_models = summary_models.reset_index().set_index(['step', 'model'])
@@ -341,7 +351,7 @@ def create_result_tables(model_entries):
     return {'summary_models': summary_models, 'summary_errors': summary_errors}
 
 
-def categorize_model_entries(model_entries):
+def categorize_model_entries(model_entries: tuple[ModelEntry, ...]):
     res_model_entries = []
     input_model_entry = None
     base_model_entry = None
@@ -393,6 +403,7 @@ def validate_input(
     if allometry:
         assert len(allometry) == 1
         allometry = allometry[0]
+        assert isinstance(allometry, Allometry)
         covariate = allometry.covariate
         if covariate not in list(model.dataset.columns):
             raise ValueError(
