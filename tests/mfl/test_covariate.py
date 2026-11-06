@@ -124,6 +124,15 @@ def test_eq():
     assert c1 != 1
 
 
+def test_hash():
+    c1 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP')
+    assert hash(c1) == hash(c1)
+    c2 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP')
+    assert hash(c1) == hash(c2)
+    c3 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP', optional=True)
+    assert hash(c1) != hash(c3)
+
+
 def test_lt():
     c1 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP')
     assert not c1 < c1

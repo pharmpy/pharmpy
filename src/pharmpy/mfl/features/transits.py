@@ -74,6 +74,9 @@ class Transits(ModelFeature):
             return False
         return self.number == other.number and self.depot == other.depot
 
+    def __hash__(self) -> int:
+        return hash((self.number, self.depot))
+
     def __lt__(self, other) -> bool:
         if not isinstance(other, Transits):
             return NotImplemented

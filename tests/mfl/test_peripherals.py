@@ -68,6 +68,15 @@ def test_eq():
     assert p1 != 1
 
 
+def test_hash():
+    p1 = Peripherals.create(0)
+    assert hash(p1) == hash(p1)
+    p2 = Peripherals.create(0)
+    assert hash(p1) == hash(p2)
+    p3 = Peripherals.create(0, True)
+    assert hash(p1) != hash(p3)
+
+
 def test_lt():
     p1 = Peripherals.create(0)
     assert not p1 < p1

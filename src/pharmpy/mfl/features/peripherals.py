@@ -61,6 +61,9 @@ class Peripherals(ModelFeature):
             return False
         return self.number == other.number and self.metabolite == other.metabolite
 
+    def __hash__(self) -> int:
+        return hash((self.number, self.metabolite))
+
     def __lt__(self, other) -> bool:
         if not isinstance(other, Peripherals):
             return NotImplemented

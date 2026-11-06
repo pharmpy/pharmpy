@@ -63,6 +63,15 @@ def test_eq():
     assert a1 != 1
 
 
+def test_hash():
+    a1 = Allometry.create(covariate='WT')
+    assert hash(a1) == hash(a1)
+    a2 = Allometry.create(covariate='WT')
+    assert hash(a1) == hash(a2)
+    a3 = Allometry.create(covariate='WT', reference=80)
+    assert hash(a1) != hash(a3)
+
+
 def test_repr_many():
     a = Allometry.create(covariate='WT')
     mfl = ModelFeatures.create([a])

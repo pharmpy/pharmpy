@@ -80,6 +80,15 @@ def test_eq():
     assert t1 != 1
 
 
+def test_hash():
+    t1 = Transits.create(0)
+    assert hash(t1) == hash(t1)
+    t2 = Transits.create(0)
+    assert hash(t1) == hash(t2)
+    t3 = Transits.create(0, False)
+    assert hash(t1) != hash(t3)
+
+
 def test_lt():
     t1 = Transits.create(0)
     assert not t1 < t1

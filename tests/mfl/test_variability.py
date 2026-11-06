@@ -114,6 +114,19 @@ def test_eq(var_type):
     assert var1 != 1
 
 
+@pytest.mark.parametrize(
+    'var_type',
+    [IIV, IOV],
+)
+def test_hash(var_type):
+    var1 = var_type.create(parameter='CL', fp='EXP', optional=False)
+    assert hash(var1) == hash(var1)
+    var2 = var_type.create(parameter='CL', fp='EXP', optional=False)
+    assert hash(var1) == hash(var2)
+    var3 = var_type.create(parameter='CL', fp='ADD', optional=False)
+    assert hash(var1) != hash(var3)
+
+
 def test_eq_iiv_iov():
     iiv = IIV.create(parameter='CL', fp='EXP', optional=False)
     iov = IOV.create(parameter='CL', fp='EXP', optional=False)

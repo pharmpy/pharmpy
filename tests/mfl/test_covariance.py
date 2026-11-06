@@ -119,6 +119,15 @@ def test_eq(kwargs1, kwargs2):
     assert c1 != 1
 
 
+def test_hash():
+    c1 = Covariance.create(type='iiv', parameters=['vc', 'cl'])
+    assert hash(c1) == hash(c1)
+    c2 = Covariance.create(type='iiv', parameters=['vc', 'cl'])
+    assert hash(c1) == hash(c2)
+    c3 = Covariance.create(type='iov', parameters=['vc', 'cl'])
+    assert hash(c1) != hash(c3)
+
+
 @pytest.mark.parametrize(
     'kwargs1, kwargs2, expected',
     [

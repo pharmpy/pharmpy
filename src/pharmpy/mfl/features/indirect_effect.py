@@ -57,6 +57,9 @@ class IndirectEffect(ModelFeature):
             return False
         return self.type == other.type and self.production == other.production
 
+    def __hash__(self) -> int:
+        return hash((self.type, self.production))
+
     def __lt__(self, other) -> bool:
         if not isinstance(other, IndirectEffect):
             return NotImplemented

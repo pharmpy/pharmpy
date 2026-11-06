@@ -53,6 +53,9 @@ class Allometry(ModelFeature):
             return False
         return self.covariate == other.covariate and self.reference == other.reference
 
+    def __hash__(self) -> int:
+        return hash((self.covariate, self.reference))
+
     @staticmethod
     def repr_many(mf: ModelFeatures) -> str:
         features = tuple(feat for feat in mf.features if isinstance(feat, Allometry))

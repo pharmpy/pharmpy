@@ -154,6 +154,9 @@ class Covariate(ModelFeature):
             and self.optional == other.optional
         )
 
+    def __hash__(self) -> int:
+        return hash((self.parameter, self.covariate, self.fp, self.op, self.optional))
+
     def __lt__(self, other) -> bool:
         if not isinstance(other, Covariate):
             return NotImplemented

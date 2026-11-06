@@ -51,6 +51,15 @@ def test_eq():
     assert l1 != 1
 
 
+def test_hash():
+    l1 = LagTime.create(on=True)
+    assert hash(l1) == hash(l1)
+    l2 = LagTime.create(on=True)
+    assert hash(l1) == hash(l2)
+    l3 = LagTime.create(on=False)
+    assert hash(l1) != hash(l3)
+
+
 def test_lt():
     l1 = LagTime.create(on=True)
     assert not l1 < l1

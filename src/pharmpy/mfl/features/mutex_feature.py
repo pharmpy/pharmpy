@@ -43,6 +43,9 @@ class MutexFeature(ModelFeature):
             return False
         return self.type == other.type
 
+    def __hash__(self) -> int:
+        return hash(self.type)
+
     def __lt__(self, other) -> bool:
         if not isinstance(other, self.__class__):
             return NotImplemented

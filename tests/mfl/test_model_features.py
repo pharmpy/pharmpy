@@ -898,6 +898,23 @@ def test_eq():
     assert mf1 != 1
 
 
+def test_hash():
+    a1 = Absorption.create('FO')
+    mf1 = ModelFeatures.create([a1])
+    assert hash(mf1) == hash(mf1)
+
+    a2 = Absorption.create('ZO')
+    mf2 = ModelFeatures.create([a1, a2])
+    assert hash(mf1) != hash(mf2)
+
+    a3 = Absorption.create('SEQ-ZO-FO')
+    mf3 = ModelFeatures.create([a1, a3])
+    assert hash(mf2) != hash(mf3)
+
+    mf4 = ModelFeatures.create([a3, a1])
+    assert hash(mf3) == hash(mf4)
+
+
 def test_getitem():
     a1 = Absorption.create('FO')
     mf = ModelFeatures.create([a1])

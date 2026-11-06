@@ -109,6 +109,25 @@ def test_eq(feature_class, type_a, type_b):
 
 
 @pytest.mark.parametrize(
+    'feature_class, type_a, type_b',
+    (
+        (Absorption, 'FO', 'ZO'),
+        (Elimination, 'FO', 'MM'),
+        (DirectEffect, 'LINEAR', 'SIGMOID'),
+        (EffectComp, 'LINEAR', 'SIGMOID'),
+        (Metabolite, 'PSC', 'BASIC'),
+    ),
+)
+def test_hash(feature_class, type_a, type_b):
+    f1 = feature_class.create(type_a)
+    assert hash(f1) == hash(f1)
+    f2 = feature_class.create(type_a)
+    assert hash(f1) == hash(f2)
+    f3 = feature_class.create(type_b)
+    assert hash(f1) != hash(f3)
+
+
+@pytest.mark.parametrize(
     'feature_class, order, types',
     (
         (Absorption, ('FO', 'ZO', 'SEQ-ZO-FO', 'WEIBULL'), ABSORPTION_TYPES),

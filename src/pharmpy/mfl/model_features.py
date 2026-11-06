@@ -356,6 +356,9 @@ class ModelFeatures(Immutable):
             return False
         return all(feat1 == feat2 for feat1, feat2 in zip(self.features, other.features))
 
+    def __hash__(self) -> int:
+        return hash(self.features)
+
     def __repr__(self) -> str:
         feature_repr = []
         if self.absorption:

@@ -62,6 +62,15 @@ def test_eq():
     assert ie1 != 1
 
 
+def test_hash():
+    ie1 = IndirectEffect.create(type='linear', production=True)
+    assert hash(ie1) == hash(ie1)
+    ie2 = IndirectEffect.create(type='linear', production=True)
+    assert hash(ie1) == hash(ie2)
+    ie3 = IndirectEffect.create(type='linear', production=False)
+    assert hash(ie1) != hash(ie3)
+
+
 def test_lt():
     ie1 = IndirectEffect.create(type='linear', production=True)
     assert not ie1 < ie1

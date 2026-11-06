@@ -45,6 +45,9 @@ class LagTime(ModelFeature):
             return False
         return self.on == other.on
 
+    def __hash__(self) -> int:
+        return hash(self.on)
+
     def __lt__(self, other) -> bool:
         if not isinstance(other, LagTime):
             return NotImplemented
