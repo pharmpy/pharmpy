@@ -938,7 +938,7 @@ def summarize_errors(context: Context) -> pd.DataFrame:
     return summarize_errors_from_entries(mes)
 
 
-def summarize_errors_from_entries(mes: list[ModelEntry]):
+def summarize_errors_from_entries(mes: Sequence[ModelEntry]):
     idcs, rows = [], []
 
     for me in mes:
@@ -1359,7 +1359,7 @@ def summarize_modelfit_results(
 
 
 def summarize_modelfit_results_from_entries(
-    mes: list[ModelEntry],
+    mes: Sequence[ModelEntry],
     include_all_execution_steps: bool = False,
 ) -> pd.DataFrame:
 
