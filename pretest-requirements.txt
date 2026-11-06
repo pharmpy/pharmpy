@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 # Direct dependencies
 pip==26.2.2
-tox==4.67.1
+tox==4.67.7
 # Indirect dependencies
 cachetools==7.2.8
 chardet==7.7.0
