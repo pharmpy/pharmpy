@@ -246,7 +246,7 @@ def filter_mfl_statements(mfl_statements: ModelFeatures, model_entry: ModelEntry
     return mfl_statements
 
 
-def get_mfl_funcs(mfl: ModelFeatures) -> dict[tuple[str, ...], Callable]:
+def get_mfl_funcs(mfl: ModelFeatures) -> dict[tuple[Any, ...], Callable]:
     ss_funcs = generate_transformations(mfl)
     assert len(ss_funcs) == len(mfl)
     keys = [(type(f).__name__.upper(),) + _get_args(f) for f in mfl]

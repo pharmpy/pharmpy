@@ -3,10 +3,13 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
+from functools import partial
 from itertools import product
-from typing import Any, Literal, get_args
+from typing import Any, Literal, cast, get_args
 
+from pharmpy.mfl import Allometry, ModelFeatures
+from pharmpy.model import Model
 from pharmpy.modeling import (
     add_allometry,
     add_iiv,
@@ -24,14 +27,16 @@ IIV_STRATEGIES_TYPE_HINT = Literal['no_add', 'add_diagonal', 'fullblock', 'absor
 IIV_STRATEGIES = frozenset(get_args(IIV_STRATEGIES_TYPE_HINT))
 
 
-def _group_incompatible_features(funcs):
+def _group_incompatible_features(
+    funcs: dict[tuple[Any, ...], Callable],
+) -> list[list[tuple[Any, ...]]]:
     grouped = defaultdict(list)
     for key in funcs:
         grouped[key[0]].append(key)
-    return grouped.values()
+    return list(grouped.values())
 
 
-def all_combinations(fns: dict[tuple[str | int, ...], Callable]) -> Iterable[tuple[str | int, ...]]:
+def all_combinations(fns: dict[tuple[Any, ...], Callable]) -> Iterable[tuple[tuple[Any, ...], ...]]:
     grouped = _group_incompatible_features(fns)
     feats = ((None, *group) for group in grouped)
     for t in product(*feats):
@@ -40,7 +45,7 @@ def all_combinations(fns: dict[tuple[str | int, ...], Callable]) -> Iterable[tup
             yield a
 
 
-def key_to_str(key: tuple[str | int, ...]) -> str:
+def key_to_str(key: tuple[Any, ...]) -> str:
     name, *args = key
     return f'{name}({", ".join(map(str, args))})'
 
@@ -49,7 +54,11 @@ def get_funcs_same_type(funcs, feat):
     return [value for key, value in funcs.items() if key[0] == feat[0]]
 
 
-def exhaustive(mfl_funcs, iiv_strategy: str, allometry=None):
+def exhaustive(
+    mfl_funcs: dict[tuple[Any, ...], Callable],
+    iiv_strategy: IIV_STRATEGIES_TYPE_HINT,
+    allometry: ModelFeatures | None = None,
+) -> tuple[Workflow, list[Task]]:
     # TODO: rewrite using _create_model_workflow
     wb_search = WorkflowBuilder()
 
@@ -61,7 +70,7 @@ def exhaustive(mfl_funcs, iiv_strategy: str, allometry=None):
         model_name = f'modelsearch_run{i}'
 
         # NOTE: The different functions need to be extracted first otherwise an error is raised
-        funcs = {mfl_funcs[feat] for feat in combo}
+        funcs = [mfl_funcs[feat] for feat in combo]
 
         task_create_candidate = Task(
             'create_candidate',
@@ -83,8 +92,12 @@ def exhaustive(mfl_funcs, iiv_strategy: str, allometry=None):
 
 
 def exhaustive_stepwise(
-    mfl_funcs, iiv_strategy: str, wb_search=None, tool_name="modelsearch", allometry=None
-):
+    mfl_funcs: dict[tuple[Any, ...], Callable],
+    iiv_strategy: IIV_STRATEGIES_TYPE_HINT,
+    wb_search: WorkflowBuilder | None = None,
+    tool_name: str = "modelsearch",
+    allometry: ModelFeatures | None = None,
+) -> tuple[Workflow, list[Task]]:
     if not wb_search:
         wb_search = WorkflowBuilder()
     model_tasks = []
@@ -124,7 +137,11 @@ def exhaustive_stepwise(
     return Workflow(wb_search), model_tasks
 
 
-def reduced_stepwise(mfl_funcs, iiv_strategy: str, allometry=None):
+def reduced_stepwise(
+    mfl_funcs: dict[tuple[Any, ...], Callable],
+    iiv_strategy: IIV_STRATEGIES_TYPE_HINT,
+    allometry: ModelFeatures | None = None,
+) -> tuple[Workflow, list[Task]]:
     wb_search = WorkflowBuilder()
     model_tasks = []
 
@@ -173,7 +190,9 @@ def reduced_stepwise(mfl_funcs, iiv_strategy: str, allometry=None):
     return Workflow(wb_search), model_tasks
 
 
-def _find_same_model_groups(wf, mfl_funcs):
+def _find_same_model_groups(
+    wf: WorkflowBuilder, mfl_funcs: dict[tuple[Any, ...], Callable]
+) -> list[list[Task]]:
     tasks = wf.output_tasks
     tasks_removed = []
     all_groups = []
@@ -196,22 +215,26 @@ def _find_same_model_groups(wf, mfl_funcs):
     return all_groups
 
 
-def get_best_model(*model_entries):
-    models_with_res = [model_entry for model_entry in model_entries if model_entry.modelfit_results]
+def get_best_model(*model_entries: ModelEntry) -> ModelEntry:
+    models_with_res = [
+        model_entry for model_entry in model_entries if model_entry.modelfit_results is not None
+    ]
     if models_with_res:
-        return min(models_with_res, key=lambda x: x.modelfit_results.ofv)
+        return min(models_with_res, key=lambda x: x.modelfit_results.ofv)  # type: ignore[union-attr]
     # FIXME: Should be None, maybe dynamic workflows are needed
     return model_entries[0]
 
 
-def _get_possible_actions(wf, mfl_funcs):
+def _get_possible_actions(
+    wf: WorkflowBuilder, mfl_funcs: dict[tuple[Any, ...], Callable]
+) -> dict[Task, list[tuple[str, ...]]]:
     actions = {}
     if wf.output_tasks:
         tasks = wf.output_tasks
     else:
-        tasks = ['']
+        tasks = [None]
     for task in tasks:
-        if task:
+        if task is not None:
             feat_previous = _get_previous_features(wf, task, mfl_funcs)
         else:
             feat_previous = []
@@ -225,7 +248,9 @@ def _get_possible_actions(wf, mfl_funcs):
     return actions
 
 
-def _get_previous_features(wf, task, mfl_funcs):
+def _get_previous_features(
+    wf: WorkflowBuilder, task: Task, mfl_funcs: dict[tuple[Any, ...], Callable]
+) -> list[tuple[Any, ...]]:
     tasks_upstream = wf.get_upstream_tasks(task)
     tasks_upstream.reverse()
     tasks_dict = {key_to_str(key): key for key in mfl_funcs}
@@ -235,7 +260,14 @@ def _get_previous_features(wf, task, mfl_funcs):
     return features_previous
 
 
-def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, allometry, model_entry):
+def create_candidate_exhaustive(
+    model_name: str,
+    combo: tuple[tuple[Any, ...]],
+    funcs: list[Callable],
+    iiv_strategy: IIV_STRATEGIES_TYPE_HINT,
+    allometry: ModelFeatures | None,
+    model_entry: ModelEntry,
+) -> ModelEntry:
     input_model, input_res = model_entry.model, model_entry.modelfit_results
     model = _update_name_and_description(model_name, combo, model_entry)
     model = update_initial_estimates(model, input_res)
@@ -247,7 +279,14 @@ def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, allometr
     return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
 
-def create_candidate_stepwise(model_name, feat, func, iiv_strategy, allometry, model_entry):
+def create_candidate_stepwise(
+    model_name: str,
+    feat: tuple[Any, ...],
+    func: Callable,
+    iiv_strategy: IIV_STRATEGIES_TYPE_HINT,
+    allometry: ModelFeatures | None,
+    model_entry: ModelEntry,
+) -> ModelEntry:
     input_model, input_res = model_entry.model, model_entry.modelfit_results
     model = _update_name_and_description(model_name, (feat,), model_entry)
     model = update_initial_estimates(model, input_res)
@@ -258,16 +297,17 @@ def create_candidate_stepwise(model_name, feat, func, iiv_strategy, allometry, m
     return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
 
-def _add_allometry(model, allometry):
-    if allometry is None:
+def _add_allometry(model: Model, mfl_allometry: ModelFeatures | None) -> Model:
+    if mfl_allometry is None:
         return model
-    assert len(allometry) == 1
-    allometry = allometry[0]
+    assert len(mfl_allometry) == 1
+    allometry = mfl_allometry[0]
+    assert isinstance(allometry, Allometry)
     model = add_allometry(model, allometry.covariate, allometry.reference)
     return model
 
 
-def _apply_transformation(feat, func, model):
+def _apply_transformation(feat: tuple[Any, ...], func: Callable, model: Model) -> Model:
     old_params = set(model.parameters)
     model = func(model)
     if feat[0] == 'PERIPHERALS':
@@ -282,17 +322,25 @@ def _apply_transformation(feat, func, model):
     return model
 
 
-def _is_allowed(feat_current, func_current, feat_previous, mfl_funcs):
+def _is_allowed(
+    feat_current: tuple[Any, ...],
+    func_current: Callable,
+    feat_previous: list[tuple[Any, ...]],
+    mfl_funcs: dict[tuple[Any, ...], Callable],
+) -> bool:
     func_type = get_funcs_same_type(mfl_funcs, feat_current)
     # Check if current function is in previous transformations
     if feat_current in feat_previous:
         return False
     # Check if peripheral transformation is allowed
     if feat_current[0] == 'PERIPHERALS':
-        peripheral_previous = [
-            mfl_funcs[feat] for feat in feat_previous if feat[0] == 'PERIPHERALS'
-        ]
-        allowed_p = _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs)
+        peripheral_previous = cast(
+            list[partial[Model]],
+            [mfl_funcs[feat] for feat in feat_previous if feat[0] == 'PERIPHERALS'],
+        )
+        allowed_p = _is_allowed_peripheral(
+            cast(partial[Model], func_current), peripheral_previous, mfl_funcs
+        )
         return allowed_p
     # Equivalent to changing the absorption rate model to instantaneous absorption
     if feat_current == ('TRANSITS', 0, 'NODEPOT'):
@@ -334,7 +382,11 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_funcs):
     return True
 
 
-def _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs):
+def _is_allowed_peripheral(
+    func_current: partial[Model],
+    peripheral_previous: Sequence[partial[Model]],
+    mfl_funcs: dict[tuple[Any, ...], Callable],
+) -> bool:
     n_all: list[Any] = [args[0] for (kind, *args) in mfl_funcs if kind == 'PERIPHERALS']
     n = func_current.keywords['n']
     if peripheral_previous:
@@ -347,7 +399,9 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs):
     return n_index > 0 and n_all[n_index - 1] < n
 
 
-def _update_name_and_description(name, features, me):
+def _update_name_and_description(
+    name: str, features: tuple[tuple[Any, ...], ...], me: ModelEntry
+) -> Model:
     model = me.model
     features_str = ';'.join(map(key_to_str, features))
     if not model.description or (me.parent is not None and me.parent.name == model.name):
@@ -357,7 +411,9 @@ def _update_name_and_description(name, features, me):
     return model.replace(name=name, description=description)
 
 
-def _add_iiv_to_func(iiv_strategy, model, input_model_entry):
+def _add_iiv_to_func(
+    iiv_strategy: IIV_STRATEGIES_TYPE_HINT, model: Model, input_model_entry: ModelEntry
+) -> Model:
     sset, rvs = model.statements, model.random_variables
     if iiv_strategy == 'add_diagonal' or iiv_strategy == 'fullblock':
         try:
@@ -368,6 +424,7 @@ def _add_iiv_to_func(iiv_strategy, model, input_model_entry):
                     f'{model.name}: {e} (add_pk_iiv, parent: {input_model_entry.model.name}'
                 )
         if iiv_strategy == 'fullblock':
+            assert input_model_entry.modelfit_results is not None
             try:
                 model = create_joint_distribution(
                     model,
@@ -375,10 +432,13 @@ def _add_iiv_to_func(iiv_strategy, model, input_model_entry):
                 )
             except ValueError as e:
                 if str(e) == 'New parameter inits are not valid':
+                    parent_name = (
+                        input_model_entry.parent.name
+                        if input_model_entry.parent is not None
+                        else ''
+                    )
                     raise ValueError(
-                        f'{model.name}: {e} '
-                        f'(create_joint_distribution, '
-                        f'parent: {input_model_entry.parent.name})'
+                        f'{model.name}: {e} (create_joint_distribution, parent: {parent_name})'
                     )
     else:
         assert iiv_strategy == 'absorption_delay'
