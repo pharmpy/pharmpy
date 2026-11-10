@@ -215,10 +215,13 @@ def add_iov(
     Example
     -------
     >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> model = add_iov(model, "TIME", "CL")
-    >>> model.statements.find_assignment("CL")  # doctest: +SKIP
-    CL = ETA_CL + TVCL
+    >>> dataset = load_example_dataset('moxo')
+    >>> model = create_basic_pk_model('oral', dataset)
+    >>> model = convert_model(model, 'nonmem')
+    >>> model = add_iov(model, "VISI", "CL")
+    >>> model.random_variables.iov
+    ETA_IOV_1_1 ~ N(0, OMEGA_IOV_1)
+    ETA_IOV_1_2 ~ N(0, OMEGA_IOV_1)
 
     See Also
     --------
