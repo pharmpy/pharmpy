@@ -16,7 +16,6 @@ Current developers and core scientists
 --------------------------------------
 
 * Rikard Nordgren, rikard.nordgren@uu.se (maintainer)
-* Stella Belin, stella.belin@uu.se (maintainer)
 * Mats O. Karlsson
 * Andrew C. Hooker
 * Xiaomei Chen
