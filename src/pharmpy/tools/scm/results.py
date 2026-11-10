@@ -585,9 +585,8 @@ def relations_from_config_file(path, files):
                 elif scanning_included:
                     if not empty_line.match(row) and not comment_line.match(row):
                         included_lines.append(row.strip())
-                elif scanning_test:
-                    if not empty_line.match(row) and not comment_line.match(row):
-                        test_lines.append(row.strip())
+                elif scanning_test and not empty_line.match(row) and not comment_line.match(row):
+                    test_lines.append(row.strip())
         if test_lines is not None and len(test_lines) > 0:
             break  # Do not check any other file, if more than one
 

@@ -167,16 +167,16 @@ def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
                 largest_value = expr.args[0].expr
                 largest_cond = expr.args[0].cond
                 for value, cond in expr.args[1:]:
-                    if cond is not sympy.S.true:
-                        if cond.rhs > largest_cond.rhs:
-                            largest_value = value
-                            largest_cond = cond
-                        elif cond.rhs == largest_cond.rhs:
-                            if not isinstance(cond, sympy.LessThan) and isinstance(
-                                largest_cond, sympy.LessThan
-                            ):
-                                largest_value = value
-                                largest_cond = cond
+                    if cond is not sympy.S.true and (
+                        cond.rhs > largest_cond.rhs
+                        or (
+                            cond.rhs == largest_cond.rhs
+                            and not isinstance(cond, sympy.LessThan)
+                            and isinstance(largest_cond, sympy.LessThan)
+                        )
+                    ):
+                        largest_value = value
+                        largest_cond = cond
                 value = largest_value
         cg.indent()
         value = convert_eps_to_sigma(value, model)
