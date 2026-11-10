@@ -568,14 +568,17 @@ def compare_to_input_model(
                 f'Worse {rank_options.rank_type} in final model {best_model.name} '
                 f'than {input_model.name}, selecting input model'
             )
-            best_model_entry = input_model_entry
+            final_model_entry = input_model_entry
+        else:
+            final_model_entry = best_model_entry
         summary_tool = add_parent_column(
             rank_res.summary_tool, [input_model_entry, best_model_entry]
         )
     else:
+        final_model_entry = input_model_entry
         summary_tool = None
 
-    return best_model_entry, summary_tool
+    return final_model_entry, summary_tool
 
 
 def create_linearized_model_entry(
