@@ -41,9 +41,9 @@ def create_workflow(
     results : ModelfitResults
         Results of estimation of model
     model_name : str, optional
-        New name of linearized model. The default is "linbase".
+        New name of linearized model. The default is ``'linbase'``.
     description : str, optional
-        Description of linearized model. The default is "".
+        Description of linearized model. The default is ``''``.
 
     Returns
     -------

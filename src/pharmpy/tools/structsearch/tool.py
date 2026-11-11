@@ -67,7 +67,7 @@ def create_workflow(
     results : ModelfitResults
         Results for the start model
     type : str
-        Type of model. Currently only 'drug_metabolite', 'pkpd' and 'tmdd'
+        Type of model. Currently only ``'drug_metabolite'``, ``'pkpd'`` and ``'tmdd'``
     search_space : str
         Search space to test
     b_init: float
@@ -86,14 +86,14 @@ def create_workflow(
         Which ranking type should be used. Default is BIC.
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
-        is None (all models will be ranked)
+        is ``None`` (all models will be ranked)
     strictness : str or None
         Strictness criteria
     dv_types : dict
         Dictionary of DV types for TMDD models with multiple DVs
     initial_error_models : dict or None
-        Dictionary of DVID to error model. Supported error models are 'proportional',
-        'additive' and 'combined'. If None or if any DVID is not specified, 'proportional'
+        Dictionary of DVID to error model. Supported error models are ``'proportional'``,
+        ``'additive'`` and ``'combined'``. If ``None`` or if any DVID is not specified, ``'proportional'``
         will be used
     parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method. Will be used in ranking models if strictness includes

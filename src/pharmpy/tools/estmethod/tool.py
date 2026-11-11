@@ -42,16 +42,16 @@ def create_workflow(
     Parameters
     ----------
     algorithm : str
-         The algorithm to use (can be 'exhaustive', 'exhaustive_with_update' or 'exhaustive_only_eval')
+         The algorithm to use (can be ``'exhaustive'``, ``'exhaustive_with_update'`` or ``'exhaustive_only_eval'``)
     methods : list of {'FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES'}, None or 'all'
          List of estimation methods to test.
-         Can be specified as 'all', a list of estimation methods, or None (to not test any estimation method)
+         Can be specified as ``'all'``, a list of estimation methods, or ``None`` (to not test any estimation method)
     solvers : str or list of {'CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'} or None
-         List of solvers to test. Can be specified as 'all', a list of solvers, or None (to
+         List of solvers to test. Can be specified as ``'all'``, a list of solvers, or ``None`` (to
          not test any solver)
     parameter_uncertainty_methods : str or list of {'SANDWICH', 'SMAT', 'RMAT'} or None
          List of parameter uncertainty methods to test.
-         Can be specified as 'all', a list of uncertainty methods, or None (to not evaluate any uncertainty)
+         Can be specified as ``'all'``, a list of uncertainty methods, or ``None`` (to not evaluate any uncertainty)
     compare_ofv : bool
         Whether to compare the OFV between candidates. Comparison is made by evaluating using IMP
     results : ModelfitResults
