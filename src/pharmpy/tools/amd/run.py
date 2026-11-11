@@ -149,7 +149,7 @@ def create_workflow(
     parameter_uncertainty_method: {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method.
     units: Mapping[str, str]
-        Specify units to use for DV or AMT. For example {'DV': 'mg/L'}
+        Specify units to use for DV or AMT. For example ``{'DV': 'mg/L'}``
     ignore_datainfo_fallback : bool
         Ignore using datainfo to get information not given by the user. Default is False
     initial_error_models : dict or None
