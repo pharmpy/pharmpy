@@ -105,11 +105,11 @@ def create_workflow(
     results : ModelfitResults
         Results of input if input is a model
     modeltype : str
-        Type of model to build. Valid strings are 'basic_pk', 'pkpd', 'drug_metabolite' and 'tmdd'
+        Type of model to build. Valid strings are ``'basic_pk'``, ``'pkpd'``, ``'drug_metabolite'`` and ``'tmdd'``
     administration : str
-        Route of administration. Either 'iv', 'oral' or 'ivoral'
+        Route of administration. Either ``'iv'``, ``'oral'`` or ``'ivoral'``
     strategy : str
-        Run algorithm for AMD procedure. Valid options are 'default', 'reevaluation', 'SIR', 'SRI', and 'RSI'.
+        Run algorithm for AMD procedure. Valid options are ``'default'``, ``'reevaluation'``, ``'SIR'``, ``'SRI'``, and ``'RSI'``.
     cl_init : float
         Initial estimate for the population clearance
     vc_init : float
@@ -153,12 +153,12 @@ def create_workflow(
     ignore_datainfo_fallback : bool
         Ignore using datainfo to get information not given by the user. Default is False
     initial_error_models : dict or None
-        Dictionary of DVID to error model. Supported error models are 'proportional',
-        'additive' and 'combined'. If None or if any DVID is not specified, 'proportional'
+        Dictionary of DVID to error model. Supported error models are ``'proportional'``,
+        ``'additive'`` and ``'combined'``. If None or if any DVID is not specified, ``'proportional'``
         will be used. The error model will be applied for the start model for DVID == 1,
         if any other are provided they will be applied in the StructSearch tool
     filter_data_records : str or None
-        Expression of which to filter dataset on. E.g. 'DVID == 1' will keep all data records where DVID is 1
+        Expression of which to filter dataset on. E.g. ``'DVID == 1'`` will keep all data records where DVID is 1
     _E: dict
         EXPERIMENTAL FEATURE. Dictionary of different E-values used in mBIC.
 
