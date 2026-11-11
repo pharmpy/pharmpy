@@ -195,6 +195,12 @@ path = [
   "tests/testdata/nonmem/errors/no_header_error.lst",
   "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/pheno.lst",
   "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/pheno.mod",
+  "tests/testdata/psn/crossval_dir1/m1/est_model*.lst",
+  "tests/testdata/nonmem/cdd/pheno_real.lst",
+  "tests/testdata/nonmem/cdd/pheno_real.mod",
+  "tests/testdata/nonmem/cdd/pheno_real_bin10/m1/cdd_*.lst",
+  "tests/testdata/nonmem/cdd/pheno_real_bin10/m1/cdd_*.mod",
+  "tests/testdata/nonmem/cdd/pheno_real_bin10/m1/rem_*.mod",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
