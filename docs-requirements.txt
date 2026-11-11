@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 #Direct dependencies except those that are already dependencies of Pharmpy itself
 sphinx-tabs==3.5.0
-pydata-sphinx-theme==0.23.0
+pydata-sphinx-theme==0.24.0
 sphinxcontrib-autoprogram==0.1.9
 sphinxcontrib.bibtex==2.7.0
 sphinx-automodapi==0.22.1
