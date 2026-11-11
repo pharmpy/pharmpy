@@ -572,7 +572,7 @@ def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
 
 def set_placebo_model(
     model: Model,
-    expr: Literal['linear', 'exp', 'hyperbolic'],
+    expr: Literal['linear', 'exp_decrease', 'exp_increase', 'tmax', 'exp_decrease_to_new_SS'],
     operator: Literal['*', '+', 'prop'] = '*',
 ) -> Model:
     r"""Add a placebo or disease progression effect to a model.
@@ -594,6 +594,10 @@ def set_placebo_model(
     * tmax
 
         .. math:: R = B \cdot \frac{t_{max} \cdot t}{t_{50} + t}
+
+    * exp_decrease_to_new_SS
+
+        .. math:: R = B + (PDPSS - B) \cdot (1 - e^{-TIME / TD})
 
     :math:`B` is the baseline effect
 
@@ -704,4 +708,7 @@ def set_placebo_model(
     model = model.replace(statements=statements)
     if have_old_pdp_model:
         model = remove_unused_parameters_and_rvs(model)
+    else:
+        model = model.update_source()
+
     return model
