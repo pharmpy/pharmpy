@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 import json
+import re
 import shutil
 from contextlib import AbstractContextManager, contextmanager
 from os import stat
@@ -288,8 +289,8 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
                 highest = 0
                 for file in datasets_path.iterdir():
                     name = file.name
-                    if name.startswith('data') and name.endswith('.csv'):
-                        number = int(name[4:-4])  # Remove data and .csv
+                    if match := re.match(r'^data(\d+)\.csv$', name):
+                        number = int(match.group(1))  # Remove data and .csv
                         highest = max(number, highest)
 
                 dataset_basename = f'data{highest + 1}'
