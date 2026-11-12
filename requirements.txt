@@ -74,7 +74,7 @@ python-dateutil==4.0.0
 pytz==2026.6
 pywin32==312; sys_platform == 'win32' and platform_python_implementation != 'PyPy'
 PyYAML==6.0.3
-pyzmq==27.2.0
+pyzmq==27.3.0
 referencing==0.37.0
 requests==2.34.2
 rich==15.0.0
