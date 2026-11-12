@@ -59,6 +59,15 @@ path = [
   "tests/testdata/nonmem/moxo_sim_data.csv",
   "tests/testdata/nonmem/Simulated_CMS_colistin_PK_data.csv",
   "tests/testdata/nonmem/errors/failed_run.mod",
+  "tests/testdata/nonmem/models/pef.mod",
+  "tests/testdata/nonmem/models/pef.csv",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/warfarin_ddmore.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/multEST/noSIM/anneal2_V7_30_beta.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/multEST/noSIM/superid2_6_V7_30_beta.lst",
+  "tests/testdata/nonmem/fcon/mox2/FDATA",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/example6b_V7_30_beta.lst",
+  "tests/testdata/nonmem/models/fviii6.datainfo",
+  "tests/testdata/nonmem/models/fviii6.prn",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
