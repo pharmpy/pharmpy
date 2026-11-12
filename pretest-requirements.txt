@@ -12,6 +12,6 @@ filelock==4.2.9
 packaging==26.3
 platformdirs==4.14.3
 pluggy==1.7.0
-pyproject-api==1.12.2
+pyproject-api==1.12.5
 virtualenv==21.15.6
 tomli==2.5.0
