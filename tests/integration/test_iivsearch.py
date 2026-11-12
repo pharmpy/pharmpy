@@ -166,6 +166,16 @@ from pharmpy.workflows import LocalDirectoryContext
             2,
             'iivsearch_run7',
         ),
+        (
+            'bottom_up_stepwise',
+            'skip',
+            'IIV?(@IIV,exp)',
+            {},
+            8,
+            4,
+            1,
+            'iivsearch_run6',
+        ),
     ],
 )
 def test_iivsearch_dummy(

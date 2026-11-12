@@ -29,12 +29,14 @@ from pharmpy.tools.iivsearch.algorithms import (
     get_iiv_combinations,
 )
 from pharmpy.tools.iivsearch.tool import (
+    IIV_ALGORITHMS,
     create_base_model_entry,
     create_param_mapping,
     create_workflow,
     needs_base_model,
     prepare_algorithms,
     prepare_input_model_entry,
+    prepare_mfl,
     prepare_rank_options,
     update_linearized_base_model,
     validate_input,
@@ -97,6 +99,35 @@ def test_prepare_input_model_entry_custom_covariates(load_model_for_test, testda
     assert me.model.description == '[CL]+[V]'
     assert me.modelfit_results is not None
     assert me.parent is None
+
+
+@pytest.mark.parametrize(
+    'search_space',
+    ['IIV?([CL,VC],EXP)', 'IIV?(@PK,EXP)'],
+)
+def test_prepare_mfl_unchanged(testdata, load_model_for_test, search_space):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for algorithm in IIV_ALGORITHMS:
+        assert prepare_mfl(model, search_space, algorithm) == ModelFeatures.create(search_space)
+
+
+@pytest.mark.parametrize(
+    'search_space, algorithm, expected',
+    [
+        ('IIV?(@IIV,EXP)', 'top_down_exhaustive', 'IIV?(@IIV,EXP)'),
+        ('IIV?(@IIV,EXP)', 'bottom_up_stepwise', 'IIV?([CL,MAT,VC],EXP)'),
+        ('IIV?(@IIV,EXP)', 'simultaneous_stepwise', 'IIV?([CL,MAT,VC],EXP)'),
+        ('IIV?(@IIV,EXP)', 'skip', 'IIV?(@IIV,EXP)'),
+        (
+            'IIV?(@IIV,EXP);IIV?(@PK,EXP)',
+            'bottom_up_stepwise',
+            'IIV?([CL,MAT,VC],EXP);IIV?(@PK,EXP)',
+        ),
+    ],
+)
+def test_prepare_mfl_iiv_ref(testdata, load_model_for_test, search_space, algorithm, expected):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    assert prepare_mfl(model, search_space, algorithm) == ModelFeatures.create(expected)
 
 
 @pytest.mark.parametrize(

@@ -9,7 +9,7 @@ from typing import Literal
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
-from pharmpy.mfl import ModelFeatures
+from pharmpy.mfl import ModelFeatures, Ref
 from pharmpy.model import Model
 from pharmpy.modeling import (
     create_joint_distribution,
@@ -141,7 +141,7 @@ def create_workflow(
     """
     wb = WorkflowBuilder(name='iivsearch')
 
-    mfl = ModelFeatures.create(search_space)
+    mfl = prepare_mfl(model, search_space, algorithm)
 
     rank_options = prepare_rank_options(
         rank_type,
@@ -190,6 +190,16 @@ def create_workflow(
     wb.add_task(results_task, predecessors=[post_process_task])
 
     return Workflow(wb)
+
+
+def prepare_mfl(model, search_space, algorithm):
+    mfl = ModelFeatures.create(search_space)
+    if algorithm not in ('bottom_up_stepwise', 'simultaneous_stepwise'):
+        return mfl
+    if iivs_ref := [iiv for iiv in mfl.iiv if iiv.parameter == Ref('IIV')]:
+        iivs_expanded = expand_model_features(model, ModelFeatures.create(iivs_ref))
+        mfl = mfl - iivs_ref + iivs_expanded
+    return mfl
 
 
 def prepare_rank_options(
