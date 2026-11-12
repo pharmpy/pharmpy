@@ -58,6 +58,7 @@ path = [
   "tests/testdata/nonmem/ruvsearch/moxo_simulated_resmod.csv",
   "tests/testdata/nonmem/moxo_sim_data.csv",
   "tests/testdata/nonmem/Simulated_CMS_colistin_PK_data.csv",
+  "tests/testdata/nonmem/errors/failed_run.mod",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
@@ -227,6 +228,8 @@ path = [
   "tests/testdata/nonmem/pheno_real_linbase.mod",
   "tests/testdata/psn/qa_dir1/pheno_real_linbase.lst",
   "tests/testdata/psn/qa_dir1/pheno_real_linbase.mod",
+  "tests/testdata/psn/qa_dir1/linearize_run/scm_dir1/derivatives.mod",
+  "tests/testdata/psn/qa_dir1/linearize_run/scm_dir1/derivatives.lst",
   "tests/testdata/nonmem/pheno_real.tab",
   "tests/testdata/nonmem/pheno_nm750.mod",
   "tests/testdata/nonmem/models/pheno_conc.mod",
@@ -259,6 +262,30 @@ path = [
   "tests/testdata/psn/frem_dir1/final_models/model_4.mod",
   "tests/testdata/nonmem/models/pheno5.lst",
   "tests/testdata/nonmem/models/pheno5.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan2.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan1_zero_order.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan3.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan4.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan11.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan12.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan2_seq.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan5_depot.mod",
+  "tests/testdata/nonmem/modeling/pheno_advan5_nodepot.mod",
+  "tests/testdata/nonmem/linearize/linearize_dir1/pheno_linbase.lst",
+  "tests/testdata/nonmem/linearize/linearize_dir1/pheno_linbase.mod",
+  "tests/testdata/nonmem/linearize/linearize_dir1/scm_dir1/derivatives.mod",
+  "tests/testdata/nonmem/linearize/linearize_dir1/scm_dir1/derivatives.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/multEST/noSIM/pheno_multEST.dta",
+  "tests/testdata/nonmem/modelfit_results/onePROB/multEST/noSIM/pheno_multEST.mod",
+  "tests/testdata/nonmem/modelfit_results/onePROB/multEST/noSIM/pheno_multEST.lst",
+  "tests/testdata/nonmem/errors/control_stream_error.lst",
+  "tests/testdata/nonmem/errors/zero_gradient_error.lst",
+  "tests/testdata/nonmem/errors/rounding_error.lst",
+  "tests/testdata/nonmem/errors/estimate_near_boundary_warning.lst",
+  "tests/testdata/nonmem/errors/est_step_warning.lst",
+  "tests/testdata/nonmem/pheno_real.lst",
+  "tests/testdata/nonmem/pheno_real.mod",
+  "tests/testdata/nonmem/pheno_real.xml",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
