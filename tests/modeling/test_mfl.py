@@ -20,6 +20,7 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
+    fix_parameters,
     remove_covariate_effect,
     remove_iiv,
     remove_lag_time,
@@ -591,6 +592,29 @@ def test_generate_transformations_custom_covariate(load_model_for_test, testdata
             'COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
             'covariance',
             'COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
+        ),
+        (
+            [
+                add_peripheral_compartment,
+                add_lag_time,
+                add_pk_iiv,
+                partial(create_joint_distribution, rvs=['CL', 'VC', 'QP1']),
+                partial(create_joint_distribution, rvs=['MAT', 'VP1', 'MDT']),
+                partial(
+                    fix_parameters,
+                    parameter_names=[
+                        'IIV_CL',
+                        'IIV_QP1',
+                        'IIV_VC',
+                        'IIV_CL_IIV_VC',
+                        'IIV_CL_IIV_QP1',
+                        'IIV_VC_IIV_QP1',
+                    ],
+                ),
+            ],
+            'COVARIANCE(IIV,[CL,QP1,VC]);COVARIANCE(IIV,[MAT,VP1])',
+            'covariance',
+            'COVARIANCE(IIV,[CL,QP1,VC]);COVARIANCE(IIV,[MAT,VP1])',
         ),
     ),
 )

@@ -500,18 +500,24 @@ def transform_into_search_space(
     if model_features == search_space:
         return model
 
+    if type == 'covariance' or type is None:
+        forced_covariances = search_space.filter('forced').covariance
+        search_space -= forced_covariances
+    else:
+        forced_covariances = None
+
     features_to_add, features_to_remove = _get_feature_diffs(search_space, model_features, type)
 
     transformations = generate_transformations(features_to_remove, include_add=False)
     transformations += generate_transformations(features_to_add, include_remove=False)
-    if type == 'covariance' or type is None:
-        forced_covariances = search_space.filter('forced').covariance
-        if forced_covariances != model_features.covariance:
-            transformations += generate_transformations(
-                search_space.filter('forced').covariance,
-                individual_estimates=individual_estimates,
-                iivs=get_model_features(model, type='iiv').iiv,
-            )
+
+    if forced_covariances is not None and forced_covariances != model_features.covariance:
+        transformations += generate_transformations(
+            forced_covariances,
+            individual_estimates=individual_estimates,
+            iivs=get_model_features(model, type='iiv').iiv,
+        )
+
     model_transformed = model
     for func in transformations:
         try:
