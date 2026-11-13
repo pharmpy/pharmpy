@@ -389,12 +389,12 @@ from pharmpy.mfl.parsing import parse
             ],
         ),
         (
-            'IIV?([CL,VC],EXP);IIV(MAT,ADD)',
+            'IIV?([CL,VC],EXP);IIV(E_MAX,ADD)',
             IIV,
             [
                 ('CL', 'EXP', True),
                 ('VC', 'EXP', True),
-                ('MAT', 'ADD', False),
+                ('E_MAX', 'ADD', False),
             ],
         ),
         (

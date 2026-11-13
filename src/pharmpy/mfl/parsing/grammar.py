@@ -67,7 +67,7 @@ VARIABLE_NAME: /[a-zA-Z_]+/
 
 values: value | _value_array
 _value_array: "[" [value ("," value)*] "]"
-value: /[a-zA-Z0-9-]+/
+value: /[a-zA-Z0-9-_]+/
 
 n: "n"i
 _counts: count | count_array
