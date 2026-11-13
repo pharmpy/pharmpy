@@ -17,6 +17,15 @@ Changes
 * Support dataframes as input to :code:`modeling.create_basic_pk_model`, :code:`modeling.create_basic_pk_model`, and
   :code:`modeling.create_basic_pk_model` (deprecate option :code:`dataset_path` in favor of :code:`input`)
 
+Bugfixes
+========
+
+* Support underscore in parameter names in MFL parsing
+* Fix crash in IIVSearch where input model is selected
+* Fix bug in IIVSearch that caused runs with search spaces containing :code:`IIV(@IIV,...)` to not create any models
+* Fix crash in IIVSearch where input is PKPD models with fixed block structure
+* Fix crash in tools where original dataset name starts with :code:`data` and new candidate dataset is stored (e.g. in ModelSearch for ZO absorption)
+
 .. _2.3.0:
 
 2.3.0 (2026-10-29)
