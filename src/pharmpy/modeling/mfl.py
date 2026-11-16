@@ -511,12 +511,20 @@ def transform_into_search_space(
     transformations = generate_transformations(features_to_remove, include_add=False)
     transformations += generate_transformations(features_to_add, include_remove=False)
 
-    if forced_covariances is not None and forced_covariances != model_features.covariance:
-        transformations += generate_transformations(
-            forced_covariances,
-            individual_estimates=individual_estimates,
-            iivs=get_model_features(model, type='iiv').iiv,
-        )
+    if type == 'covariance' or type is None:
+        if forced_covariances and forced_covariances != model_features.covariance:
+            cov = forced_covariances
+        elif not search_space.covariance:
+            cov = search_space.covariance
+        else:
+            cov = None
+
+        if cov is not None:
+            transformations += generate_transformations(
+                cov,
+                individual_estimates=individual_estimates,
+                iivs=get_model_features(model, type='iiv').iiv,
+            )
 
     model_transformed = model
     for func in transformations:

@@ -25,6 +25,7 @@ Bugfixes
 * Fix bug in IIVSearch that caused runs with search spaces containing :code:`IIV(@IIV,...)` to not create any models
 * Fix crash in IIVSearch where input is PKPD models with fixed block structure
 * Fix crash in tools where original dataset name starts with :code:`data` and new candidate dataset is stored (e.g. in ModelSearch for ZO absorption)
+* Fix crash in IIVSearch linearize where covariance block was split in base model
 
 .. _2.3.0:
 
