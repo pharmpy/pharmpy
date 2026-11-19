@@ -209,12 +209,12 @@ def create_base_model(type, dataset, kpd_driver):
 
 def create_and_run_placebo_models(context, treatment_variable, data_strategy, baseme):
     exprs = (
-        ("linear", "*"),
+        ("linear", "prop"),
         ("linear", "+"),
         ("exp_decrease", "*"),
         ("exp_increase", "*"),
         ("exp_decrease_to_new_SS", "+"),
-        ("tmax", "*"),
+        ("tmax", "prop"),
         ("tmax", "+"),
     )
     context.log_info(f"Running {len(exprs)} placebo/disease progression models.")
