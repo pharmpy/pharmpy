@@ -2,8 +2,8 @@
 ..
 .. SPDX-License-Identifier: CC0-1.0
 
-next version
-------------
+2.4.0 (2026-11-19)
+------------------
 
 New features
 ============
@@ -16,6 +16,7 @@ Changes
 
 * Support dataframes as input to :code:`modeling.create_basic_pk_model`, :code:`modeling.create_basic_pk_model`, and
   :code:`modeling.create_basic_pk_model` (deprecate option :code:`dataset_path` in favor of :code:`input`)
+* Change tmax and linear placebo and disease progression models in pdsearch to proportional
 
 Bugfixes
 ========
