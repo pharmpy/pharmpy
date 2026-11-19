@@ -38,7 +38,7 @@ Definitions
 ===========
 """
 
-__version__ = '2.3.0'
+__version__ = '2.4.0'
 
 from pharmpy import config
 
