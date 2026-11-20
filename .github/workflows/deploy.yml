@@ -13,9 +13,11 @@ jobs:
 
   run-main:
     uses: ./.github/workflows/main.yml
+    secrets: inherit
 
   run-integration:
     uses: ./.github/workflows/integration.yml
+    secrets: inherit
 
   build:
     needs: [run-main, run-integration]
