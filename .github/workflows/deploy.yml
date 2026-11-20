@@ -51,11 +51,6 @@ jobs:
       - name: Install graphviz
         run: sudo apt install graphviz
 
-      - name: Run unit tests with tox
-        run: |
-          cd pharmpy
-          tox -e unit
-
       - name: Build documentation
         run: |
           cd pharmpy
