@@ -54,10 +54,10 @@ def set_tmdd(
     type : str
         Type of TMDD model
     dv_types: dict
-        Dictionary of DV types for TMDD models with multiple DVs (e.g. dv_types = {'drug' : 1, 'target': 2}).
+        Dictionary of DV types for TMDD models with multiple DVs (e.g. `{'drug' : 1, 'target': 2}`).
         Default is None which means that all observations are treated as drug observations.
-        For dv = 1 the only allowed keys are 'drug' and 'drug_tot'. If no DV for drug is specified then (free) drug
-        will have dv = 1.
+        For dv = 1 the only allowed keys are `'drug'` and `'drug_tot'`. If no DV for drug is specified then (free)
+        drug will have dv = 1.
 
     Returns
     -------
