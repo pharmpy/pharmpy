@@ -68,6 +68,15 @@ path = [
   "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/example6b_V7_30_beta.lst",
   "tests/testdata/nonmem/models/fviii6.datainfo",
   "tests/testdata/nonmem/models/fviii6.prn",
+  "tests/testdata/nonmem/models/mox1.mod",
+  "tests/testdata/nonmem/models/mox1.lst",
+  "tests/testdata/nonmem/models/mox2.mod",
+  "tests/testdata/nonmem/models/mox2.lst",
+  "tests/testdata/nonmem/models/mox_2comp.mod",
+  "tests/testdata/nonmem/models/mox_2comp.lst",
+  "tests/testdata/nonmem/ruvsearch/mox3.mod",
+  "tests/testdata/nonmem/ruvsearch/mox3.lst",
+  "tests/testdata/nonmem/models/mytab_mox2",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
