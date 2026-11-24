@@ -607,7 +607,7 @@ def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
 
 def set_placebo_model(
     model: Model,
-    expr: Literal['linear', 'exp_decrease', 'tmax', 'exp_decrease_to_new_SS'],
+    expr: Literal['linear', 'exp_decrease', 'tmax', 'exp_approach_to_new_SS'],
     operator: Literal['*', '+', 'prop'] = '*',
 ) -> Model:
     r"""Add a placebo or disease progression effect to a model.
@@ -626,7 +626,7 @@ def set_placebo_model(
 
         .. math:: R = B \cdot \frac{t_{max} \cdot t}{t_{50} + t}
 
-    * exp_decrease_to_new_SS
+    * exp_approach_to_new_SS
 
         .. math:: R = B + (PDPSS - B) \cdot (1 - e^{-TIME / TD})
 
@@ -689,9 +689,9 @@ def set_placebo_model(
         model = add_individual_parameter(model, td.name, init=td_init)
         passign_expr = (-idv / td).exp()
         rassign_expr = old_rassign_expr * P
-    elif expr == 'exp_decrease_to_new_SS':
+    elif expr == 'exp_approach_to_new_SS':
         if operator != '+':
-            raise ValueError('Only + is supported for exp_decrease_to_new_SS')
+            raise ValueError('Only + is supported for exp_approach_to_new_SS')
         td = create_symbol(model, "TD")
         td_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
         model = add_individual_parameter(model, td.name, init=td_init)

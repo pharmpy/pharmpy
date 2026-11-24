@@ -214,7 +214,7 @@ def create_and_run_placebo_models(context, treatment_variable, data_strategy, ba
         ("linear", "prop"),
         ("linear", "+"),
         ("exp_decrease", "*"),
-        ("exp_decrease_to_new_SS", "+"),
+        ("exp_approach_to_new_SS", "+"),
         ("tmax", "prop"),
         ("tmax", "+"),
     )

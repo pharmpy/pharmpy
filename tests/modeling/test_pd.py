@@ -223,7 +223,7 @@ def test_find_central_comp(load_model_for_test, testdata):
         ("linear", "*", S("SLOPE") * S("TIME"), S('B') * S('PDP')),
         ("exp_decrease", "*", (-S('TIME') / S('TD')).exp(), S('B') * S('PDP')),
         (
-            "exp_decrease_to_new_SS",
+            "exp_approach_to_new_SS",
             "+",
             (S('PDP_SS') - S('B')) * (1 - (-S('TIME') / S('TD')).exp()),
             S('B') + S('PDP'),
