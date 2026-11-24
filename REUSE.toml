@@ -77,6 +77,12 @@ path = [
   "tests/testdata/nonmem/ruvsearch/mox3.mod",
   "tests/testdata/nonmem/ruvsearch/mox3.lst",
   "tests/testdata/nonmem/models/mytab_mox2",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/theo.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/theo_nonp.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/theo_withcov.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/large_s_matrix_cov_fail.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/UseCase7.lst",
+  "tests/testdata/nonmem/modelfit_results/multPROB/multEST/withSIM/multprobmix_nm730.lst",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"
@@ -308,3 +314,19 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "None"
 SPDX-License-Identifier = "CC0-1.0"
+
+
+[[annotations]]
+# Adapted from https://doi.org/10.1023/A:1020561807903
+path = [
+  "src/pharmpy/internals/example_models/moxo.mod",
+  "tests/testdata/nonmem/modelfit_results/onePROB/multEST/noSIM/withBayes.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/multEST/noSIM/withBayes.mod",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/mox_fail_nonp.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/mox_nocov_nonp.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/near_bounds.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/near_bounds.mod",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "Mats O. Karlsson 1998"
+SPDX-License-Identifier = "CC-BY-4.0"
