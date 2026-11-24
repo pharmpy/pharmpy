@@ -180,9 +180,11 @@ def start_pdsearch(context, input, type, kpd_driver, results) -> ModelEntry:
             input_me = ModelEntry.create(input, modelfit_results=results)
             context.store_input_model_entry(input_me)
             model = set_baseline_effect(input)
+            model = set_name(model, "start")
             me = ModelEntry.create(model=model)
         else:
-            me = ModelEntry.create(input, modelfit_results=results)
+            model = set_name(input, "start")
+            me = ModelEntry.create(model, modelfit_results=results)
             context.store_input_model_entry(me)
     else:
         try:
@@ -290,9 +292,9 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, data_str
     n_models = 0
     wb = WorkflowBuilder()
     for baseme in mes:
-        if type == 'pd':
+        if type in {'pd', 'pkpd'}:
             mfl = ModelFeatures.create(
-                "DIRECTEFFECT([STEP, EMAX, SIGMOID]);INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)"
+                "DIRECTEFFECT([STEP,EMAX,SIGMOID]);EFFECTCOMP([LINEAR,EMAX,SIGMOID]);INDIRECTEFFECT([LINEAR,EMAX,SIGMOID], *)"
             )
         else:
             # INDIRECTEFFECT not supported for KPD models
@@ -302,13 +304,14 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, data_str
             # so add linear if not binary
             mfl = mfl + ModelFeatures.create("DIRECTEFFECT(LINEAR)")
 
-        for feature in mfl:
+        for i, feature in enumerate(mfl, start=1):
             create_task = Task(
-                f'create_drug_effect_{feature.args[0].lower()}',
+                f'create_drug_effect_{i}',
                 create_drug_effect_model,
                 treatment_variable,
                 type,
                 feature,
+                i,
                 baseme,
             )
             wb.add_task(create_task)
@@ -397,7 +400,7 @@ def create_placebo_model(expr, op, baseme):
     return me
 
 
-def create_drug_effect_model(treatment_variable, type, feature, baseme):
+def create_drug_effect_model(treatment_variable, type, feature, i, baseme):
     if not treatment_variable and type == 'kpd':
         treatment_variable = 'KPD'
     base_model = baseme.model
@@ -405,7 +408,7 @@ def create_drug_effect_model(treatment_variable, type, feature, baseme):
     mfl = ModelFeatures.create([feature])
     func = generate_transformations(mfl)[0]
     model = func(model, variable=treatment_variable)
-    model = set_name(model, f"{base_model.name}_drug_{feature.args[0].lower()}")
+    model = set_name(model, f"drug_effect_{i}")
     model = set_description(model, model.description + f"; {feature}")
     me = ModelEntry.create(model=model, parent=base_model)
     return me
@@ -478,3 +481,13 @@ def validate_input(
 
     if type == 'pkpd' and not isinstance(input, Model):
         raise TypeError("Input must be a model to build a pkpd model")
+
+    if type == 'pkpd':
+        dvid_col = input.datainfo.find_column_by_type('dvid')
+        if not dvid_col:
+            raise ValueError('Could not find column of type `dvid` (needed for pkpd models)')
+        dvid_values = set(input.dataset[dvid_col.name])
+        if dvid_values != {1, 2}:
+            raise ValueError(
+                f'Invalid values in column `{dvid_col.name}` for model type pkpd: got {sorted(dvid_values)} (valid values are 1 & 2)'
+            )
