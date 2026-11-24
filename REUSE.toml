@@ -83,6 +83,7 @@ path = [
   "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/large_s_matrix_cov_fail.lst",
   "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/UseCase7.lst",
   "tests/testdata/nonmem/modelfit_results/multPROB/multEST/withSIM/multprobmix_nm730.lst",
+  "tests/testdata/nonmem/modelfit_results/onePROB/oneEST/noSIM/sparse_matrix_with_msfi.lst",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "None"

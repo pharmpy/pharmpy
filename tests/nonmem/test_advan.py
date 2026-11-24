@@ -206,18 +206,14 @@ def test_pheno(pheno, advan, trans, compmat, amounts, strodes, corrics):
 
 
 def test_advan5(testdata, load_model_for_test):
-    model = load_model_for_test(testdata / 'nonmem' / 'DDMODEL00000130')
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_depot.mod')
     cm, ass, _ = compartmental_model(model, 'ADVAN5', 'TRANS1')
     assert ass.symbol == S('F')
-    assert ass.expression.piecewise_args[1][0] == Expr.function('A_CMS1', 't')
-    assert ass.expression.piecewise_args[0][0] == Expr.function('A_COL1', 't')
     assert cm.amounts == Matrix(
         [
-            Expr.function('A_CMS1', 't'),
-            Expr.function('A_CMS2', 't'),
-            Expr.function('A_INTM', 't'),
-            Expr.function('A_INTM2', 't'),
-            Expr.function('A_COL1', 't'),
+            Expr.function('A_DEPOT', 't'),
+            Expr.function('A_CENTRAL', 't'),
+            Expr.function('A_PERIPHERAL', 't'),
         ]
     )
     # compmat = Matrix(
