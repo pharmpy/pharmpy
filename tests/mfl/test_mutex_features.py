@@ -132,8 +132,8 @@ def test_hash(feature_class, type_a, type_b):
     (
         (Absorption, ('FO', 'ZO', 'SEQ-ZO-FO', 'WEIBULL'), ABSORPTION_TYPES),
         (Elimination, ('FO', 'ZO', 'MM', 'MIX-FO-MM'), ELIMINATION_TYPES),
-        (DirectEffect, ('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN'), DIRECT_EFFECT_TYPES),
-        (EffectComp, ('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN'), EFFECT_COMP_TYPES),
+        (DirectEffect, ('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN', 'EXP'), DIRECT_EFFECT_TYPES),
+        (EffectComp, ('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN', 'EXP'), EFFECT_COMP_TYPES),
         (Metabolite, ('PSC', 'BASIC'), METABOLITE_TYPES),
     ),
 )

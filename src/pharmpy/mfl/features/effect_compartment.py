@@ -8,12 +8,12 @@ from pharmpy.internals.immutable import frozenmapping
 
 from .mutex_feature import MutexFeature
 
-EFFECT_COMP_TYPES = frozenset(('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN'))
+EFFECT_COMP_TYPES = frozenset(('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN', 'EXP'))
 
 
 class EffectComp(MutexFeature):
     _COMPLEXITY_ORDER = frozenmapping(
-        {'LINEAR': 0, 'EMAX': 1, 'SIGMOID': 2, 'STEP': 3, 'LOGLIN': 4}
+        {'LINEAR': 0, 'EMAX': 1, 'SIGMOID': 2, 'STEP': 3, 'LOGLIN': 4, 'EXP': 5}
     )
 
     @classmethod

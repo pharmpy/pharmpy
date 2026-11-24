@@ -172,7 +172,7 @@ from pharmpy.mfl.parsing import parse
         (
             'DIRECTEFFECT(*)',
             DirectEffect,
-            [('LINEAR',), ('EMAX',), ('SIGMOID',), ('STEP',), ('LOGLIN',)],
+            [('LINEAR',), ('EMAX',), ('SIGMOID',), ('STEP',), ('LOGLIN',), ('EXP',)],
         ),
         ('INDIRECTEFFECT(LINEAR,PRODUCTION)', IndirectEffect, [('LINEAR', True)]),
         (
@@ -210,7 +210,14 @@ from pharmpy.mfl.parsing import parse
         (
             'EFFECTCOMP(*)',
             EffectComp,
-            [('LINEAR',), ('EMAX',), ('SIGMOID',), ('STEP',), ('LOGLIN',)],
+            [
+                ('LINEAR',),
+                ('EMAX',),
+                ('SIGMOID',),
+                ('STEP',),
+                ('LOGLIN',),
+                ('EXP',),
+            ],
         ),
         ('METABOLITE(PSC)', Metabolite, [('PSC',)]),
         ('METABOLITE([PSC,BASIC])', Metabolite, [('PSC',), ('BASIC',)]),

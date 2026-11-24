@@ -85,10 +85,10 @@ MFL support the following model features:
 |               | `effect`                       |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | DIRECTEFFECT  | :code:`LINEAR, EMAX, SIGMOID,  | Direct effect PD models                                            |
-|               | STEP, LOGLIN`                  |                                                                    |
+|               | STEP, LOGLIN, EXP`             |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | EFFECTCOMP    | :code:`LINEAR, EMAX, SIGMOID,  | Effect compartment PD models                                       |
-|               | STEP, LOGLIN`                  |                                                                    |
+|               | STEP, LOGLIN, EXP`             |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | INDIRECTEFFECT| :code:`LINEAR, EMAX, SIGMOID`  | Indirect effect PD models. `option` can be                         |
 |               | , `option`                     | either :code:`PRODUCTION` or :code:`DEGRADATION`                   |

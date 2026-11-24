@@ -32,7 +32,7 @@ from pharmpy.modeling import (
 from .error import set_proportional_error_model
 from .odes import add_individual_parameter, set_initial_estimates
 
-PDTypes = Literal['linear', 'emax', 'sigmoid', 'step', 'loglin']
+PDTypes = Literal['linear', 'emax', 'sigmoid', 'step', 'loglin', 'exp']
 
 
 def add_effect_compartment(model: Model, expr: PDTypes, variable: str | None = None) -> Model:
@@ -61,6 +61,10 @@ def add_effect_compartment(model: Model, expr: PDTypes, variable: str | None = N
     * Log-linear:
 
         .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
+
+    * Exponential:
+
+        .. math:: E = \text{slope} \cdot C^n
 
     :math:`B` is the baseline effect
 
@@ -143,7 +147,7 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: str | None = None) 
 
     * Emax:
 
-        .. math:: E = B \cdot \Bigg(1 + \frac {E_{max} \cdot C } { EC_{50} + C}  \Bigg)
+    .. math:: E = B \cdot \Bigg(1 + \frac {E_{max} \cdot C } { EC_{50} + C}  \Bigg)
 
     * Step effect:
 
@@ -157,6 +161,11 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: str | None = None) 
     * Log-linear:
 
         .. math:: E = \text{slope} \cdot \text{log}(C + C_0)
+
+    * Exponential:
+
+        .. math:: E = \text{slope} \cdot C^n
+
 
     :math:`B` is the baseline effect
 
@@ -233,6 +242,14 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True) -> Model:
         s = create_symbol(model, "SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
         effect = s * conc
+        if not zero_handled:
+            effect = _handle_zero(model, effect)
+    elif expr == "exp":
+        s = create_symbol(model, "SLOPE")
+        model = add_individual_parameter(model, s.name, lower=-float("inf"))
+        n = create_symbol(model, "N")
+        model = add_individual_parameter(model, n.name, lower=-float("inf"))
+        effect = s * (conc**n)
         if not zero_handled:
             effect = _handle_zero(model, effect)
     elif expr == "emax":
