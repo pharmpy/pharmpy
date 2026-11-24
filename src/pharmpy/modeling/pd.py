@@ -35,7 +35,7 @@ from .odes import add_individual_parameter, set_initial_estimates
 PDTypes = Literal['linear', 'emax', 'sigmoid', 'step', 'loglin']
 
 
-def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
+def add_effect_compartment(model: Model, expr: PDTypes, variable: str | None = None) -> Model:
     r"""Add an effect compartment.
 
     Implemented PD models are:
@@ -70,6 +70,8 @@ def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
         Pharmpy model
     expr : {'linear', 'emax', 'sigmoid', 'step', 'loglin'}
         Name of the PD effect function.
+    variable : str
+        Name of variable to use (if None concentration will be used)
 
     Returns
     -------
@@ -84,7 +86,16 @@ def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
     >>> model.statements.ode_system.find_compartment("EFFECT")
     Compartment(EFFECT, amount=A_EFFECT(t), input=KE0*A_CENTRAL(t)/VC)
     """
-    vc, _ = get_central_volume_and_clearance(model)
+    if variable is None:
+        vc, _ = get_central_volume_and_clearance(model)
+        odes = get_and_check_odes(model)
+        central = odes.central_compartment
+        variable_symb = central.amount / vc
+        concentration = True
+    else:
+        odes = None
+        variable_symb = Expr.symbol(variable)
+        concentration = False
 
     odes = get_and_check_odes(model)
     central = odes.central_compartment
@@ -95,7 +106,12 @@ def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
     model = add_individual_parameter(model, met.name)
     ke0_ass = Assignment.create(ke0, 1 / met)
 
-    effect = Compartment.create("EFFECT", input=ke0 * central.amount / vc)
+    if odes is not None:
+        cb = CompartmentalSystemBuilder(odes)
+    else:
+        cb = CompartmentalSystemBuilder()
+
+    effect = Compartment.create("EFFECT", input=ke0 * variable_symb)
     cb.add_compartment(effect)
     cb.add_flow(effect, output, ke0)
 
@@ -108,7 +124,9 @@ def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
         )
     )
 
-    model = _add_effect(model, expr, effect.amount)
+    model = _add_effect(
+        model, expr, effect.amount if variable is None else variable_symb, concentration
+    )
     return model.update_source()
 
 
