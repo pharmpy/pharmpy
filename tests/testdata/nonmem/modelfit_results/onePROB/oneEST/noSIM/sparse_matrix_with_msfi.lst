@@ -1,40 +1,5 @@
 Fri Sep 23 11:39:12 CEST 2016
-$PROBLEM    + COVAR KM-VMAX
-; 1. Based on: run530
-
-; 2. Description:
-
-;    DOSE ON F AS EMAX MODEL
-
-; 3. Label:
-
-;    HIGHRIF1 PK MODEL
-
-; 4. Structural model:
-
-;    1-COMP PK MODEL WITH TRANSIT ABSORPTION MODEL WITH AUTO-INDUCTION AND MICHAELIS-MENTEN CL WITH M3 METHOD LOG-TRANSFORMED DATA
-
-; 5. Covariate model:
-
-;    FFM ON CL AND V2
-
-; 6. Inter-individual variability:
-
-;    KM, V2, MTT, NN, KA, VMAX
-
-; 7. Inter-occasion variability:
-
-;    KM, MTT, BIO, KA.
-
-; 8. Residual variability:
-
-;    ADDITIVE
-
-; 9. Estimation:
-
-;    LAPLACIAN WITH INTERACTION
-
-; Based on final model by Smythe run 106
+$PROBLEM    A
 $ABBREVIATED DERIV2=NOCOMMON
 $INPUT      ID TIME TADO DGRP DV BQL AMT EVID OCC PLOT AGE SEX RACE WT
             HT BMI HIV FFM NDV DOSE
@@ -42,7 +7,7 @@ $DATA      ../../m1/bs_pr1_22.dta IGNORE=@
 $MSFI       psn_msfo-1-step1
 $SUBROUTINE ADVAN13 TRANS1 TOL=10
 $MODEL      NCOMP=3 COMP=(DEPOT,DEFDOSE) COMP=(CENTRAL,DEFOBS)
-            COMP=(ENZ)
+            COMP=(EZ)
 $PK 
 "FIRST
 "  COMMON/PRCOMG/  IDUM1,IDUM2,IMAX,IDUM4,IDUM5
@@ -53,137 +18,7 @@ IF(AMT.GT.0)PD     = AMT          ; PD   = oral DOSE
 IF(AMT.GT.0)TDOS   = TIME         ; TDOS = time of DOSE
 TAD                = TIME - TDOS  ; TAD  = time after DOSE
 
-;;-------------------Fat Free Mass-------------------------------------;;
-
-NFMCL  = FFM
-ALLMCL = (NFMCL/70)**0.75
-
-NFMV  = FFM
-ALLMV = (NFMV/70)
-
-TVVMAX  = THETA(1)               ; CL
-TVKM    = THETA(2)
-TVV2    = THETA(3)*ALLMV               ; V2
-TVKA    = THETA(4)                     ; KA
-TVEMAX  = THETA(5)                     ; EMAX
-TVEC50  = THETA(6)                     ; EC50
-TVKENZ  = THETA(7)                     ; KENZ
-TVMTT   = THETA(8)                     ; MTT
-TVNN    = THETA(9)                     ; NN
-TVFEMAX = THETA(10)                    ; FEMAX
-TVFED50 = THETA(11)                    ; FEC50
-
-IF (OCC.EQ.1) THEN
-  IOVBIO = ETA(7)
-  ELSE
-  IOVBIO = ETA(8)
-ENDIF
-
-IF (OCC.EQ.1) THEN
-  IOVMTT = ETA(9)
-  ELSE
-  IOVMTT = ETA(10)
-ENDIF
-
-IF (OCC.EQ.1) THEN
-  IOVKM = ETA(11)
-  ELSE
-  IOVKM = ETA(12)
-ENDIF
-
-IF (OCC.EQ.1) THEN
-  IOVKA = ETA(13)
-  ELSE
-  IOVKA = ETA(14)
-ENDIF
-
-VMAX    = TVVMAX*EXP(ETA(2))
-KM      = TVKM*EXP(ETA(1)+IOVKM)
-V2      = TVV2*EXP(ETA(3))
-KA      = TVKA*EXP(ETA(6)+IOVKA)
-EC50    = TVEC50
-EMAX    = TVEMAX
-KENZ    = TVKENZ
-FEMAX   = TVFEMAX
-FED50   = TVFED50
-TVBIO   = 1*(1+FEMAX*(DOSE-450)/(FED50+(DOSE-450)))
-BIO     = TVBIO*EXP(IOVBIO)
-K       = CL/V2
-MTT     = TVMTT*EXP(ETA(4)+IOVMTT)
-NN      = TVNN*EXP(ETA(5))
-S2      = V2
-
-F1      = 0 ; Transit absorption compartment
-A_0(2)  = 0.0001 ; Central comp
-A_0(3)  = 1 ; Induction compartment
-
-KTR     = (NN + 1) / MTT
-
-L       = 0.9189385 + (NN + 0.5)*LOG(NN) - NN + LOG(1 + 1/(12*NN)) ; logarithm of the approximation to the gamma function
-LBPD  = LOG(BIO*PD)
-LKTR  = LOG(KTR)
-CUMUL = LBPD + LKTR - L
-
-$DES 
-CP      = A(2)/V2
-
-TEMPO   = T - TDOS
-  IF(TEMPO.GT.0)THEN
-	KTT   = KTR*TEMPO
-  DADT(1) = EXP(CUMUL + NN*LOG(KTT) - KTT) - KA*A(1)
-  ELSE
-        KTT   = 0
-  DADT(1) = 0
-  ENDIF
-
-DADT(2) = KA*A(1) - (((VMAX/(KM+CP))*ALLMCL)/V2)*A(2)*A(3)
-EFF     = (EMAX*(CP)) / (EC50 + CP)
-DADT(3) = KENZ*(1 + EFF) - KENZ*A(3)
-
-$ERROR 
-IPRED   = LOG(A(2)/S2+0.00001)
-ADD     = SQRT(SIGMA(1,1))   ; ADD error
-SD      = SQRT((ADD)**2)
-
-;Sim_start
-LLOQ=LOG(0.13)
-
-DUM=(LLOQ-IPRED)/SD
-CUMD=PHI(DUM)
-
-IF(DV.GE.LLOQ) THEN
-F_FLAG = 0
-IRES   = DV - IPRED
-IWRES  = IRES / SD
-Y      = IPRED + EPS(1)
-ELSE
-F_FLAG = 1
-IRES   = 0
-IWRES  = 0
-MDVRES = 1
-Y=CUMD
-ENDIF
-
-;IRES  = DV - IPRED
-;IWRES = IRES / SD
-;Y     = IPRED + EPS(1)
-;Sim_end
-
-AA1 = A(1)     ; absorption comp
-AA2 = A(2)     ; central rif comp
-AA3 = A(3)     ; auto-induction comp
-
-IF(AMT.GT.0) THEN
-	TDOS = TIME
-	PD   = AMT
-ENDIF
-
-$ESTIMATION METHOD=1 LAPLACIAN INTER NUMERICAL SLOW MAXEVAL=9999
-            NSIG=3 SIGL=9 PRINT=3 MCETA=100 MSFO=psn_msfo
-$COVARIANCE PRINT=E MATRIX=S SLOW
-;$SIMULATION (1234) ONLYSIM
-
-;Sim_end
+; Abbreviated 
 
 
 NM-TRAN MESSAGES
