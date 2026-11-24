@@ -590,7 +590,7 @@ def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
 
 def set_placebo_model(
     model: Model,
-    expr: Literal['linear', 'exp_decrease', 'exp_increase', 'tmax', 'exp_decrease_to_new_SS'],
+    expr: Literal['linear', 'exp_decrease', 'tmax', 'exp_decrease_to_new_SS'],
     operator: Literal['*', '+', 'prop'] = '*',
 ) -> Model:
     r"""Add a placebo or disease progression effect to a model.
@@ -604,10 +604,6 @@ def set_placebo_model(
     * exp_decrease
 
         .. math:: R = B \cdot e^{\frac{-t}{t_D}}
-
-    * exp_increase
-
-        .. math:: R = B \cdot (1 + e^{\frac{-t}{t_D}})
 
     * tmax
 
@@ -687,14 +683,6 @@ def set_placebo_model(
         model = add_individual_parameter(model, pdp_ss.name, init=pdp_ss_init)
         passign_expr = (pdp_ss - Expr.symbol("B")) * (1 - (-idv / td).exp())
         rassign_expr = old_rassign_expr + P
-    elif expr == 'exp_increase':
-        if operator != '*':
-            raise ValueError('Only * is supported for exp')
-        td = create_symbol(model, "TD")
-        td_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
-        model = add_individual_parameter(model, td.name, init=td_init)
-        passign_expr = 1 - (-idv / td).exp()
-        rassign_expr = old_rassign_expr * P
     elif expr == 'tmax':
         t50 = create_symbol(model, "T50")
         t50_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
