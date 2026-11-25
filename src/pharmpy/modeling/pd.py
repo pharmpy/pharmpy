@@ -101,10 +101,6 @@ def add_effect_compartment(model: Model, expr: PDTypes, variable: str | None = N
         variable_symb = Expr.symbol(variable)
         concentration = False
 
-    odes = get_and_check_odes(model)
-    central = odes.central_compartment
-    cb = CompartmentalSystemBuilder(odes)
-
     ke0 = Expr.symbol("KE0")
     met = Expr.symbol('MET')
     model = add_individual_parameter(model, met.name)
