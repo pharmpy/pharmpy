@@ -16,7 +16,7 @@ comm==0.2.3
 csscompressor==0.9.5
 dask==2026.8.0
 debugpy==1.8.22
-decorator==5.3.1
+decorator==5.3.2
 defusedxml==0.7.1
 distributed==2026.8.0
 docutils==0.22.4
