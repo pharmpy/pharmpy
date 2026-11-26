@@ -231,9 +231,9 @@ def create_and_run_placebo_models(context, treatment_variable, data_strategy, ba
         current_me = ModelEntry.create(model=model, modelfit_results=baseme.modelfit_results)
 
     wb = WorkflowBuilder()
-    for expr, op in exprs:
+    for i, (expr, op) in enumerate(exprs, start=1):
         create_task = Task(
-            f'create_placebo_{expr}_{op}', create_placebo_model, expr, op, current_me
+            f'create_placebo_{expr}_{op}', create_placebo_model, expr, op, i, current_me
         )
         wb.add_task(create_task)
         fit_wf = create_fit_workflow(n=1)
@@ -383,7 +383,7 @@ def run_drug_effect_models_exhaustive(
     return rank_res
 
 
-def create_placebo_model(expr, op, baseme):
+def create_placebo_model(expr, op, i, baseme):
     base_model = baseme.model
     model = set_initial_estimates(base_model, baseme.modelfit_results.parameter_estimates)
     model = set_placebo_model(model, expr, op)
@@ -394,7 +394,7 @@ def create_placebo_model(expr, op, baseme):
     else:
         txtop = op
 
-    model = set_name(model, f"placebo_{txtop}_{expr}")
+    model = set_name(model, f"placebo_{i}")
     model = set_description(model, model.description + f"; PLACEBO({expr.upper()} {txtop})")
     me = ModelEntry.create(model=model, parent=base_model)
     return me
