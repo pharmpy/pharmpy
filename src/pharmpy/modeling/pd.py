@@ -328,35 +328,35 @@ def _get_x50(model: Model, conc) -> Expr:
 
 def _add_response(model: Model, expr: str):
     r_index = model.statements.find_assignment_index("R")
-    if expr != "loglin":
-        E = Expr.symbol("E")
-        if r_index is not None:
-            assignment = model.statements[r_index]
-            assert isinstance(assignment, Assignment)
-            expression = remove_variable_impact(assignment.expression, E)
-            expression = expression * (Expr.integer(1) + E)
-            assignment = Assignment(Expr.symbol("R"), expression)
-            statements = model.statements[0:r_index] + assignment + model.statements[r_index + 1 :]
-        else:
-            b = Expr.symbol("B")
-            assignment = Assignment(Expr.symbol("R"), b * (Expr.integer(1) + E))
-            statements = model.statements + assignment
-        model = model.replace(statements=statements)
+    E = Expr.symbol("E")
+    if r_index is not None:
+        assignment = model.statements[r_index]
+        assert isinstance(assignment, Assignment)
+        expression = remove_variable_impact(assignment.expression, E)
+        expression = expression * (Expr.integer(1) + E)
+        assignment = Assignment(Expr.symbol("R"), expression)
+        statements = model.statements[0:r_index] + assignment + model.statements[r_index + 1 :]
+    else:
+        b = Expr.symbol("B")
+        assignment = Assignment(Expr.symbol("R"), b * (Expr.integer(1) + E))
+        statements = model.statements + assignment
+    model = model.replace(statements=statements)
     return model
 
 
 def _add_dependent_variable(model: Model, expr: str):
-    dv, *_ = model.dependent_variables
-
-    a = model.statements.get_assignment(dv)
     R = Expr.symbol("R")
-    if R not in a.expression.free_symbols:
+    found_dv_with_R = False
+    for dv in model.dependent_variables:
+        a = model.statements.get_assignment(dv)
+        if R in a.expression.free_symbols:
+            found_dv_with_R = True
+            break
+
+    if not found_dv_with_R:
         # Add dependent variable Y_2
         y_2 = Expr.symbol('Y_2')
-        if expr != 'loglin':
-            y = Assignment.create(y_2, R)
-        else:
-            y = Assignment.create(y_2, Expr.symbol("E"))
+        y = Assignment.create(y_2, R)
         dvs = model.dependent_variables.replace(y_2, 2)
         dvcol = model.datainfo.dv_column
         if len(dvcol) == 1 and model.dataset is None:

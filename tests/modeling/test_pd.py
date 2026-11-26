@@ -164,7 +164,7 @@ def _test_effect_models(model, expr, variable, e_zero_protect, x50_name="EC_50",
         assert sset.find_assignment(slope) == Assignment.create(slope, S("POP_SLOPE"))
         assert e_expr == slope * (variable + (e0 / slope).exp()).log()
         if pkpd:
-            assert sset.find_assignment(y_2) == Assignment.create(y_2, e + e * S("epsilon_p"))
+            assert sset.find_assignment(y_2) == Assignment.create(y_2, resp + resp * S("epsilon_p"))
 
 
 @pytest.mark.parametrize(
