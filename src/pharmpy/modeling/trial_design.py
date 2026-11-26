@@ -22,13 +22,15 @@ from pharmpy.model import (
 from .data import get_doses, get_ids, get_observations
 
 
-def create_trial_design(idv_name: str = 'TIME') -> TrialDesign:
+def create_trial_design(idv_name: str = 'TIME', arm_name: str = 'ARM') -> TrialDesign:
     """Create an empty trial design.
 
     Parameters
     ----------
     idv_name : str
         Optional name of the independent variable. Default is TIME
+    arm_name : str
+        Optional name of the arm id variable. Default is ARM
 
     Returns
     -------
@@ -42,12 +44,17 @@ def create_trial_design(idv_name: str = 'TIME') -> TrialDesign:
     >>> td.is_empty
     True
     >>> td
-    Empty trial design object
+    Independent variable: TIME, Arm variable: ARM
+    <BLANKLINE>
+    No activities
 
     """
 
     idv = DataVariable.create(name=idv_name, type='idv', scale='ratio', count=False)
-    new_td = TrialDesign.create(arms=(), independent_variable=idv)
+    arm = DataVariable.create(
+        name=arm_name, type='arm', scale='nominal', count=False, properties={'categories': ()}
+    )
+    new_td = TrialDesign.create(arms=(), independent_variable=idv, arm_variable=arm)
     return new_td
 
 
@@ -74,12 +81,21 @@ def add_arm(td: TrialDesign, name: str, size: int) -> TrialDesign:
     >>> td = create_trial_design()
     >>> td = add_arm(td, name="Placebo", size=100)
     >>> td
-    Empty trial design object
+    Independent variable: TIME, Arm variable: ARM
+    <BLANKLINE>
+    No activities
 
     """
 
     arm = Arm.create(name=name, size=size, activities=())
-    new_td = td + arm
+    properties = td.arm_variable.properties
+    categories: tuple = properties['categories']
+    i = len(categories) + 1
+    new_categories = categories + (i,)
+    new_properties = properties.replace('categories', new_categories)
+    new_arm_variable = td.arm_variable.replace(properties=new_properties)
+    new_td = td.replace(arm_variable=new_arm_variable)
+    new_td = new_td + arm
     return new_td
 
 
@@ -113,6 +129,8 @@ def add_observations(
     >>> td = add_arm(td, name="Placebo", size=100)
     >>> td = add_observations(td, arm="Placebo", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
     >>> td
+    Independent variable: TIME, Arm variable: ARM
+    <BLANKLINE>
                 ╭────── Observations ──────╮
       Placebo   │ 0.0, 1.0, 2.0, 4.0, 16.0 │
                 ╰─────────── DV ───────────╯
@@ -169,6 +187,8 @@ def add_administration(
     >>> td = add_observations(td, arm="Drug", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
     >>> td = add_administration(td, arm="Drug", variable="AMT", amount=10.0, time_points=[0.0, 8.0])
     >>> td
+    Independent variable: TIME, Arm variable: ARM
+    <BLANKLINE>
             ╭────── Observations ──────╮
       Drug  │ 0.0, 1.0, 2.0, 4.0, 16.0 │
             ╰─────────── DV ───────────╯
@@ -252,7 +272,7 @@ def create_dataset_from_design(td: TrialDesign) -> pd.DataFrame:
                     amount.append(float(act.dose.amount))
         d = {idv_name: time, 'EVID': evid, 'AMT': amount}
         if len(td) > 1:
-            d = {'ARM': armcol} | d
+            d = {td.arm_variable.name: armcol} | d
         one_id = pd.DataFrame(d)
         df = pd.concat([one_id] * arm.size, ignore_index=True)
         df.insert(0, 'ID', np.repeat(range(next_id, next_id + arm.size), len(one_id)))

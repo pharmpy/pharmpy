@@ -349,12 +349,17 @@ class Arm(Sequence, Immutable):
 class TrialDesign(Sequence, Immutable):
     """TrialDesign."""
 
-    def __init__(self, arms: tuple[Arm, ...], independent_variable: DataVariable):
+    def __init__(
+        self, arms: tuple[Arm, ...], independent_variable: DataVariable, arm_variable: DataVariable
+    ):
         self._arms = arms
         self._independent_variable = independent_variable
+        self._arm_variable = arm_variable
 
     @classmethod
-    def create(cls, arms: Sequence[Arm], independent_variable: DataVariable | None) -> TrialDesign:
+    def create(
+        cls, arms: Sequence[Arm], independent_variable: DataVariable, arm_variable: DataVariable
+    ) -> TrialDesign:
         seen_names = set()
         for arm in arms:
             if not isinstance(arm, Arm):
@@ -365,18 +370,25 @@ class TrialDesign(Sequence, Immutable):
                 seen_names.add(arm.name)
         if not isinstance(independent_variable, DataVariable):
             raise TypeError("The independent_variable of TrialDesign must be of type DataVariable")
-        return cls(tuple(arms), independent_variable)
+        if not isinstance(arm_variable, DataVariable):
+            raise TypeError("The arm_variable of TrialDesign must be of type DataVariable")
+        return cls(tuple(arms), independent_variable, arm_variable)
 
     def replace(
         self,
         arms: Sequence[Arm] | None = None,
         independent_variable: DataVariable | None = None,
+        arm_variable: DataVariable | None = None,
     ) -> TrialDesign:
         if arms is None:
             arms = self._arms
         if independent_variable is None:
             independent_variable = self._independent_variable
-        return TrialDesign.create(arms=arms, independent_variable=independent_variable)
+        if arm_variable is None:
+            arm_variable = self._arm_variable
+        return TrialDesign.create(
+            arms=arms, independent_variable=independent_variable, arm_variable=arm_variable
+        )
 
     @property
     def arms(self) -> tuple[Arm, ...]:
@@ -388,11 +400,17 @@ class TrialDesign(Sequence, Immutable):
         """Independent variable for the entire trial."""
         return self._independent_variable
 
+    @property
+    def arm_variable(self) -> DataVariable:
+        """Arm indicator variable."""
+        return self._arm_variable
+
     def to_dict(self) -> dict[str, Any]:
         arms = tuple(arm.to_dict() for arm in self)
         return {
             'arms': arms,
             'independent_variable': self._independent_variable.to_dict(),
+            'arm_variable': self._arm_variable.to_dict(),
         }
 
     @classmethod
@@ -401,7 +419,9 @@ class TrialDesign(Sequence, Immutable):
         for sdict in d['arms']:
             arms.append(Arm.from_dict(sdict))
         return cls.create(
-            arms=arms, independent_variable=DataVariable.from_dict(d['independent_variable'])
+            arms=arms,
+            independent_variable=DataVariable.from_dict(d['independent_variable']),
+            arm_variable=DataVariable.from_dict(d['arm_variable']),
         )
 
     def __len__(self):
@@ -421,7 +441,9 @@ class TrialDesign(Sequence, Immutable):
     ) -> Arm | TrialDesign:
         if isinstance(ind, slice):
             return TrialDesign(
-                arms=self._arms[ind], independent_variable=self._independent_variable
+                arms=self._arms[ind],
+                independent_variable=self._independent_variable,
+                arm_variable=self._arm_variable,
             )
         elif isinstance(ind, str):
             for arm in self._arms:
@@ -460,10 +482,13 @@ class TrialDesign(Sequence, Immutable):
         return hash((self._arms, self._independent_variable))
 
     def __repr__(self):
+        header = f"Independent variable: {self.independent_variable.name}, Arm variable: {self.arm_variable.name}\n\n"
         if self.is_empty:
-            return "Empty trial design object"
+            main = "No activities"
         else:
-            return render_trial_design(self)
+            main = render_trial_design(self)
+
+        return header + main
 
     @property
     def is_empty(self):

@@ -197,6 +197,7 @@ def test_arm_is_placebo():
 def test_trialdesign():
     dv = DataVariable("CONC", "dv", "ratio")
     idv = DataVariable.create("TIME", "idv", "ratio", properties={'unit': 'h'})
+    arm = DataVariable.create("ARM", "arm", "nominal")
     obs1 = Observations(dv, 0.0, (0.0, 1.0, 2.0))
     amt = DataVariable("AMT", "dose", "ratio")
     dose = Bolus.create(100)
@@ -207,17 +208,17 @@ def test_trialdesign():
     adm2 = Administration(amt, dose2, 0.0, (0.0, 1.0, 2.0))
     arm2 = Arm.create(name="Arm2", size=50, activities=[obs1, adm2])
 
-    td = TrialDesign((arm1, arm2), independent_variable=idv)
+    td = TrialDesign((arm1, arm2), independent_variable=idv, arm_variable=arm)
     assert td == td
     assert td != "a"
 
-    td2 = TrialDesign.create((arm1, arm2), independent_variable=idv)
+    td2 = TrialDesign.create((arm1, arm2), independent_variable=idv, arm_variable=arm)
     assert td == td2
     assert hash(td) == hash(td2)
 
     assert td.replace(arms=(arm2, arm1)).arms == (arm2, arm1)
     idv2 = DataVariable.create("TAJM", "idv", "ratio")
-    assert td.replace(independent_variable=idv2).independent_variable == idv2
+    assert td.replace(independent_variable=idv2, arm_variable=arm).independent_variable == idv2
 
     d = {
         'arms': (
@@ -317,6 +318,13 @@ def test_trialdesign():
             'scale': 'ratio',
             'type': 'idv',
         },
+        'arm_variable': {
+            'count': False,
+            'name': 'ARM',
+            'properties': {},
+            'scale': 'nominal',
+            'type': 'arm',
+        },
     }
 
     assert td.to_dict() == d
@@ -347,14 +355,17 @@ def test_trialdesign():
         td + "a"
 
     with pytest.raises(TypeError):
-        TrialDesign.create((arm1, arm2), independent_variable=23)
+        TrialDesign.create((arm1, arm2), independent_variable=23, arm_variable=arm)
+
+    with pytest.raises(TypeError):
+        TrialDesign.create((arm1, arm2), independent_variable=idv, arm_variable=23)
 
     assert isinstance(repr(td), str)
 
-    td = TrialDesign.create(arms=(), independent_variable=idv)
+    td = TrialDesign.create(arms=(), independent_variable=idv, arm_variable=arm)
     empty_repr = repr(td)
     empty_arm = Arm.create(name="Empty", size=20, activities=())
-    td = TrialDesign.create(arms=(empty_arm,), independent_variable=idv)
+    td = TrialDesign.create(arms=(empty_arm,), independent_variable=idv, arm_variable=arm)
     empty_repr2 = repr(td)
     assert empty_repr == empty_repr2
 
@@ -362,6 +373,7 @@ def test_trialdesign():
 def test_render_trial_design():
     dv = DataVariable.create("CONC", "dv", "ratio", properties={'unit': 'mg/L'})
     idv = DataVariable.create("TIME", "idv", "ratio", properties={'unit': 'h'})
+    armvar = DataVariable.create("ARM", "arm", "nominal")
     obs = Observations.create(dv, 0.50, (0.0, 1.0, 2.0))
     obs2 = Observations.create(dv, 2.0, (0.0, 1.0))
 
@@ -372,7 +384,7 @@ def test_render_trial_design():
     arm = Arm.create("Arm", 50, (obs, obs2, admin))
 
     arm2 = Arm.create("Arm2", 50, (obs, obs2))
-    td = TrialDesign.create([arm, arm2], independent_variable=idv)
+    td = TrialDesign.create([arm, arm2], independent_variable=idv, arm_variable=armvar)
 
     s = repr(td)
     assert "Arm" in s
@@ -381,14 +393,14 @@ def test_render_trial_design():
     obs = Observations.create(dv, 0, (0, 1, 2))
     arm = Arm.create("Arm", 50, (obs,))
     idv2 = DataVariable.create("TIME", "idv", "ratio")
-    td = TrialDesign.create([arm], independent_variable=idv2)
+    td = TrialDesign.create([arm], independent_variable=idv2, arm_variable=armvar)
     repr(td)
 
     obs1 = Observations.create(dv, 0.0, (0.0, 1.0, 6.0))
     obs2 = Observations.create(dv, 12.0, (0.0, 1.0, 6.0))
     admin = Administration.create(adm, dose, 0.0, [0.0, 1.0])
     arm = Arm.create("Drug", 100, (admin, obs1, obs2))
-    td = TrialDesign.create([arm], independent_variable=idv)
+    td = TrialDesign.create([arm], independent_variable=idv, arm_variable=armvar)
     repr(td)
 
     from pharmpy.model.trial_design import EmptyBlock
@@ -430,18 +442,20 @@ def test_render_trial_design():
 )
 def test_is_empty(arms, answer):
     idv = DataVariable.create("TIME", "idv", "ratio")
-    td = TrialDesign.create(arms=arms, independent_variable=idv)
+    arm = DataVariable.create("ARM", "arm", "nominal")
+    td = TrialDesign.create(arms=arms, independent_variable=idv, arm_variable=arm)
     assert td.is_empty is answer
 
 
 def test_replace_arm():
     idv = DataVariable.create("TIME", "idv", "ratio")
+    arm = DataVariable.create("ARM", "arm", "nominal")
     arm1 = Arm.create(name="Arm1", size=20, activities=())
     arm2 = Arm.create(name="Arm2", size=10, activities=())
     arm3 = Arm.create(name="Arm1", size=15, activities=())
     arms = (arm1, arm2)
 
-    td = TrialDesign.create(arms=arms, independent_variable=idv)
+    td = TrialDesign.create(arms=arms, independent_variable=idv, arm_variable=arm)
     td = td.replace_arm(arm3)
     assert td[0].name == "Arm1"
     assert td[0].size == 15
