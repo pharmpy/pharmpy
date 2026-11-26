@@ -217,6 +217,7 @@ def create_and_run_placebo_models(context, treatment_variable, data_strategy, ba
         ("exp_approach_to_new_SS", "+"),
         ("tmax", "prop"),
         ("tmax", "+"),
+        ("inverse_bateman", "*"),
     )
     context.log_info(f"Running {len(exprs)} placebo/disease progression models.")
     if data_strategy == 'full':

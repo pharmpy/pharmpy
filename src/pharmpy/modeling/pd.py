@@ -603,7 +603,7 @@ def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
 
 def set_placebo_model(
     model: Model,
-    expr: Literal['linear', 'exp_decrease', 'tmax', 'exp_approach_to_new_SS'],
+    expr: Literal['linear', 'exp_decrease', 'tmax', 'exp_approach_to_new_SS', 'inverse_bateman'],
     operator: Literal['*', '+', 'prop'] = '*',
 ) -> Model:
     r"""Add a placebo or disease progression effect to a model.
@@ -625,6 +625,10 @@ def set_placebo_model(
     * exp_approach_to_new_SS
 
         .. math:: R = B + (PDPSS - B) \cdot (1 - e^{-TIME / TD})
+
+    * inverse_bateman
+
+        .. math:: E = B \cdot (e^{-\frac{t}{t_{rec}}} - e^{-\frac{t}{t_{on}}})
 
     :math:`B` is the baseline effect
 
@@ -704,6 +708,15 @@ def set_placebo_model(
         model = add_individual_parameter(model, tmax.name, lower=-1.0)
         passign_expr = tmax * idv / (t50 + idv)
         rassign_expr = operate(old_rassign_expr, P, operator)
+    elif expr == 'inverse_bateman':
+        if operator != '*':
+            raise ValueError('Only * is supported for inverse_bateman')
+        t_on = create_symbol(model, "T_ON")
+        model = add_individual_parameter(model, t_on.name, init=0.1)
+        t_rec = create_symbol(model, "T_REC")
+        model = add_individual_parameter(model, t_rec.name, init=0.1)
+        passign_expr = (-idv / t_rec).exp() - (-idv / t_on).exp()
+        rassign_expr = old_rassign_expr * P
     else:
         raise ValueError(f"Unknown placebo model {expr}")
 
