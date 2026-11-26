@@ -293,11 +293,11 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, data_str
     for baseme in mes:
         if type in {'pd', 'pkpd'}:
             mfl = ModelFeatures.create(
-                "DIRECTEFFECT([STEP,EMAX,SIGMOID,EXP]);EFFECTCOMP([LINEAR,EMAX,SIGMOID,EXP]);INDIRECTEFFECT([LINEAR,EMAX,SIGMOID], *)"
+                "DIRECTEFFECT([STEP,EMAX,SIGMOID,EXP,LOGLIN]);EFFECTCOMP([LINEAR,EMAX,SIGMOID,EXP,LOGLIN]);INDIRECTEFFECT([LINEAR,EMAX,SIGMOID], *)"
             )
         else:
             # INDIRECTEFFECT not supported for KPD models
-            mfl = ModelFeatures.create("DIRECTEFFECT([STEP, EMAX, SIGMOID,EXP])")
+            mfl = ModelFeatures.create("DIRECTEFFECT([STEP, EMAX, SIGMOID,EXP,LOGLIN])")
         if treatment_variable is None or not is_binary(baseme.model, treatment_variable):
             # If the driver is binary linear and step are the same model
             # so add linear if not binary
