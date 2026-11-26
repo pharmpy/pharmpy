@@ -405,7 +405,7 @@ class DataVariable(Immutable):
         type: str = 'unknown',
         scale: str = 'ratio',
         count: bool = False,
-        properties: Mapping[str, Any] = frozenmapping({}),
+        properties: frozenmapping[str, Any] = frozenmapping({}),
     ):
         self._name = name
         self._type = type
@@ -414,7 +414,7 @@ class DataVariable(Immutable):
         self._properties = properties
 
     @staticmethod
-    def _canonicalize_properties(properties: Mapping[str, Any]) -> Mapping[str, Any]:
+    def _canonicalize_properties(properties: Mapping[str, Any]) -> frozenmapping[str, Any]:
         new = dict(properties)
         for key, value in properties.items():
             if key == 'categories':
@@ -582,7 +582,7 @@ class DataVariable(Immutable):
         return self._count
 
     @property
-    def properties(self) -> Mapping[str, Any]:
+    def properties(self) -> frozenmapping[str, Any]:
         """Other properties of the DataVariable.
 
         descriptor
