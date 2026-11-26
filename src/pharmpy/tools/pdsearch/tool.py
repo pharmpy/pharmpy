@@ -395,7 +395,7 @@ def create_placebo_model(expr, op, baseme):
         txtop = op
 
     model = set_name(model, f"placebo_{txtop}_{expr}")
-    model = set_description(model, f"PLACEBO({expr.upper()} {txtop})")
+    model = set_description(model, model.description + f"; PLACEBO({expr.upper()} {txtop})")
     me = ModelEntry.create(model=model, parent=base_model)
     return me
 
