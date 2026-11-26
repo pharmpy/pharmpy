@@ -295,6 +295,8 @@ def create_dataset_from_design(td: TrialDesign) -> pd.DataFrame:
         time = []
         armcol = []
         for act in arm:
+            if isinstance(act, Administration) and arm.is_placebo():
+                continue
             for t in act.time_points:
                 curtime = t + act.start_time
                 armcol.append(armid)
