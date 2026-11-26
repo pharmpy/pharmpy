@@ -181,9 +181,11 @@ def start_pdsearch(context, input, type, kpd_driver, results) -> ModelEntry:
             context.store_input_model_entry(input_me)
             model = set_baseline_effect(input)
             model = set_name(model, "start")
+            model = set_description(model, "BASELINE(CONST)")
             me = ModelEntry.create(model=model)
         else:
             model = set_name(input, "start")
+            model = set_description(model, "BASELINE(CONST)")
             me = ModelEntry.create(model, modelfit_results=results)
             context.store_input_model_entry(me)
     else:
