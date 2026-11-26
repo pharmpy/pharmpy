@@ -419,3 +419,4 @@ Trial design
     add_observations
     create_dataset_from_design
     create_trial_design
+    get_placebo_arm_id

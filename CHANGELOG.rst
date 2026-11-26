@@ -2,6 +2,14 @@
 ..
 .. SPDX-License-Identifier: CC0-1.0
 
+next release
+------------
+
+New features
+============
+
+* Add :code:`modeling.get_placebo_arm_id`
+
 .. _2.4.0:
 
 2.4.0 (2026-11-19)

@@ -282,6 +282,7 @@ from .trial_design import (
     add_observations,
     create_dataset_from_design,
     create_trial_design,
+    get_placebo_arm_id,
 )
 from .units import convert_unit, get_unit_of
 from .write_dataset import write_csv, write_dataset
@@ -409,6 +410,7 @@ __all__ = [
     'get_parameter_rv',
     'get_pd_parameters',
     'get_pk_parameters',
+    'get_placebo_arm_id',
     'get_population_prediction_expression',
     'get_rv_parameters',
     'get_sigmas',

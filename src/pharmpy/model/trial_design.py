@@ -341,7 +341,7 @@ class Arm(Sequence, Immutable):
     def is_placebo(self) -> bool:
         """True if this is the placebo arm."""
         for act in self._activities:
-            if isinstance(act, Administration) and act.dose.amount != 0:
+            if isinstance(act, Administration) and act.dose.amount not in (0, 0.0):
                 return False
         return True
 

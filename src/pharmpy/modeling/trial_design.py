@@ -212,6 +212,41 @@ def add_administration(
     return newtd
 
 
+def get_placebo_arm_id(td: TrialDesign) -> int | None:
+    """Get the id of the placebo arm.
+
+    Parameters
+    ----------
+    td : TrialDesign
+        TrialDesign
+
+    Returns
+    -------
+    int | None
+        Id of the placebo arm or None if there is no placebo arm
+
+    Example
+    -------
+    >>> from pharmpy.modeling import create_trial_design, add_arm, add_observations
+    >>> from pharmpy.modeling import add_administration, create_dataset_from_design
+    >>> from pharmpy.modeling import get_placebo_arm_id
+    >>> td = create_trial_design()
+    >>> td = add_arm(td, name="Drug", size=100)
+    >>> td = add_observations(td, arm="Drug", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
+    >>> td = add_administration(td, arm="Drug", variable="AMT", amount=10.0, time_points=[0.0, 8.0])
+    >>> td = add_arm(td, name="Placebo", size=100)
+    >>> td = add_observations(td, arm="Placebo", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
+    >>> td = add_administration(td, arm="Placebo", variable="AMT", amount=0.0, time_points=[0.0, 8.0])
+    >>> get_placebo_arm_id(td)
+    2
+    """
+
+    for i, arm in enumerate(td.arms, start=1):
+        if arm.is_placebo():
+            return i
+    return None
+
+
 def create_dataset_from_design(td: TrialDesign) -> pd.DataFrame:
     """Create a dataset matching a design.
 
