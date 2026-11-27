@@ -22,13 +22,17 @@ from pharmpy.model import (
 from .data import get_doses, get_ids, get_observations
 
 
-def create_trial_design(idv_name: str = 'TIME', arm_name: str = 'ARM') -> TrialDesign:
+def create_trial_design(
+    idv_name: str = 'TIME', idv_unit: str = 'h', arm_name: str = 'ARM'
+) -> TrialDesign:
     """Create an empty trial design.
 
     Parameters
     ----------
     idv_name : str
         Optional name of the independent variable. Default is TIME
+    idv_unit : str
+        Unit of the independent variable. Default is hours.
     arm_name : str
         Optional name of the arm id variable. Default is ARM
 
@@ -44,13 +48,15 @@ def create_trial_design(idv_name: str = 'TIME', arm_name: str = 'ARM') -> TrialD
     >>> td.is_empty
     True
     >>> td
-    Independent variable: TIME, Arm variable: ARM
+    Independent variable: TIME (h), Arm variable: ARM
     <BLANKLINE>
     No activities
 
     """
 
-    idv = DataVariable.create(name=idv_name, type='idv', scale='ratio', count=False)
+    idv = DataVariable.create(
+        name=idv_name, type='idv', scale='ratio', count=False, properties={'unit': idv_unit}
+    )
     arm = DataVariable.create(
         name=arm_name, type='arm', scale='nominal', count=False, properties={'categories': ()}
     )
@@ -81,7 +87,7 @@ def add_arm(td: TrialDesign, name: str, size: int) -> TrialDesign:
     >>> td = create_trial_design()
     >>> td = add_arm(td, name="Placebo", size=100)
     >>> td
-    Independent variable: TIME, Arm variable: ARM
+    Independent variable: TIME (h), Arm variable: ARM
     <BLANKLINE>
     No activities
 
@@ -100,7 +106,12 @@ def add_arm(td: TrialDesign, name: str, size: int) -> TrialDesign:
 
 
 def add_observations(
-    td: TrialDesign, arm: str, variable: str, time_points: Sequence[float], start_time: float = 0.0
+    td: TrialDesign,
+    arm: str,
+    variable: str,
+    time_points: Sequence[float],
+    start_time: float = 0.0,
+    unit: str | None = None,
 ) -> TrialDesign:
     """Add observations to an arm in a trial design.
 
@@ -116,6 +127,8 @@ def add_observations(
         List of the time points for the observations
     start_time : float
         Set a start_time to offset the time_points. Default 0.0
+    unit : str | None
+        Unit of the observation
 
     Returns
     -------
@@ -129,18 +142,22 @@ def add_observations(
     >>> td = add_arm(td, name="Placebo", size=100)
     >>> td = add_observations(td, arm="Placebo", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
     >>> td
-    Independent variable: TIME, Arm variable: ARM
+    Independent variable: TIME (h), Arm variable: ARM
     <BLANKLINE>
-                ╭────── Observations ──────╮
-      Placebo   │ 0.0, 1.0, 2.0, 4.0, 16.0 │
-                ╰─────────── DV ───────────╯
-                ├──────────────────────────┤
-               0.0                       16.0
+               ╭── Observations ──╮
+      Placebo  │ 0, 1, 2, 4, 16 h │
+               ╰─────── DV ───────╯
+               ├──────────────────┤
+              0.0               16.0
     <BLANKLINE>
 
     """
 
-    datavar = DataVariable.create(name=variable, type="dv")
+    if unit is not None:
+        properties = {'unit': unit}
+    else:
+        properties = {}
+    datavar = DataVariable.create(name=variable, type="dv", properties=properties)
     obs = Observations.create(variable=datavar, start_time=start_time, time_points=time_points)
     oldarm = td[arm]
     newarm = oldarm + obs
@@ -155,6 +172,7 @@ def add_administration(
     amount: float,
     time_points: Sequence[float],
     start_time: float = 0.0,
+    unit: str | None = None,
 ) -> TrialDesign:
     """Add observations to an arm in a trial design.
 
@@ -172,6 +190,8 @@ def add_administration(
         List of the time points for the administration
     start_time : float
         Set a start_time to offset the time_points. Default 0.0
+    unit : str | None
+        Unit of the dose amount
 
     Returns
     -------
@@ -187,21 +207,25 @@ def add_administration(
     >>> td = add_observations(td, arm="Drug", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
     >>> td = add_administration(td, arm="Drug", variable="AMT", amount=10.0, time_points=[0.0, 8.0])
     >>> td
-    Independent variable: TIME, Arm variable: ARM
+    Independent variable: TIME (h), Arm variable: ARM
     <BLANKLINE>
-            ╭────── Observations ──────╮
-      Drug  │ 0.0, 1.0, 2.0, 4.0, 16.0 │
-            ╰─────────── DV ───────────╯
-            ╭───── Administration ─────╮
-            │ 0.0, 8.0                 │
-            ╰─────── 10.0 Bolus ───────╯
-            ├──────────────────────────┤
-           0.0                       16.0
+            ╭── Observations ──╮
+      Drug  │ 0, 1, 2, 4, 16 h │
+            ╰─────── DV ───────╯
+            ╭─ Administration ─╮
+            │ 0, 8 h           │
+            ╰──── 10 Bolus ────╯
+            ├──────────────────┤
+           0.0               16.0
     <BLANKLINE>
 
     """
 
-    datavar = DataVariable.create(name=variable, type="dose")
+    if unit is not None:
+        properties = {'unit': unit}
+    else:
+        properties = {}
+    datavar = DataVariable.create(name=variable, type="dose", properties=properties)
     dose = Bolus(amount=Expr(amount), admid=1)
     adm = Administration.create(
         variable=datavar, dose=dose, start_time=start_time, time_points=time_points

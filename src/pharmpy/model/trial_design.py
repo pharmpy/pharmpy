@@ -11,6 +11,7 @@ from io import StringIO
 from itertools import pairwise
 from typing import Any, overload
 
+from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.rich import box
 from pharmpy.deps.rich import console as rich_console
@@ -163,6 +164,9 @@ class Administration(Activity):
     def time_points(self) -> tuple[float, ...]:
         """Observation times relative to start_time."""
         return self._time_points
+
+    def is_placebo(self) -> bool:
+        return self._dose.amount == Expr.integer(0) or self._dose.amount == Expr.float(0.0)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -341,7 +345,7 @@ class Arm(Sequence, Immutable):
     def is_placebo(self) -> bool:
         """True if this is the placebo arm."""
         for act in self._activities:
-            if isinstance(act, Administration) and act.dose.amount not in (0, 0.0):
+            if isinstance(act, Administration) and not act.is_placebo():
                 return False
         return True
 
@@ -482,7 +486,7 @@ class TrialDesign(Sequence, Immutable):
         return hash((self._arms, self._independent_variable))
 
     def __repr__(self):
-        header = f"Independent variable: {self.independent_variable.name}, Arm variable: {self.arm_variable.name}\n\n"
+        header = f"Independent variable: {self.independent_variable.name} ({self.independent_variable.get_property('unit')}), Arm variable: {self.arm_variable.name}\n\n"
         if self.is_empty:
             main = "No activities"
         else:
@@ -590,14 +594,16 @@ def get_start_and_end_time(activity):
     return start_time, end_time
 
 
-def get_unit_string(activity):
+def get_unit_string(activity, paren=False):
     unit = activity.variable.properties.get('unit', None)
-    unit_str = "" if unit is None else " " + str(unit)
+    start_paren = "(" if paren else ""
+    end_paren = ")" if paren else ""
+    unit_str = "" if unit is None else " " + start_paren + str(unit) + end_paren
     return unit_str
 
 
 def list_with_unit(x, unit=None):
-    s = ", ".join(map(str, x))
+    s = ", ".join([f"{s:g}" for s in x])
     if unit is not None:
         s += f" {unit}"
     return s
@@ -607,7 +613,10 @@ def create_administration_slot(admin, idv_unit, end) -> TimeSlot:
     start, _ = get_start_and_end_time(admin)
     unit = get_unit_string(admin)
     title = "Administration"
-    footer = f"{float(admin.dose.amount)}{unit} {admin.dose.__class__.__name__}"
+    if admin.is_placebo():
+        footer = "Placebo"
+    else:
+        footer = f"{float(admin.dose.amount):g}{unit} {admin.dose.__class__.__name__}"
     content = list_with_unit(admin.time_points, idv_unit)
     slot = TimeSlot(start, end, title, footer, content)
     return slot
@@ -616,7 +625,8 @@ def create_administration_slot(admin, idv_unit, end) -> TimeSlot:
 def create_observation_slot(obs, idv_unit) -> TimeSlot:
     start, end = get_start_and_end_time(obs)
     title = "Observations"
-    footer = obs.variable.name
+    unit = get_unit_string(obs, paren=True)
+    footer = obs.variable.name + unit
     content = list_with_unit(get_time_points(obs), idv_unit)
     slot = TimeSlot(start, end, title, footer, content)
     return slot
@@ -683,7 +693,7 @@ class FramedBlock(Block):
 
     @property
     def min_char_size(self) -> int:
-        return max(len(self.title) + 2, len(self.footer) + 2, len(self.content) + 4)
+        return max(len(self.title) + 6, len(self.footer) + 6, len(self.content) + 4)
 
     @property
     def min_chars_per_time(self) -> float:

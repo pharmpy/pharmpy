@@ -46,6 +46,7 @@ def test_administration():
     adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
     assert adm1.start_time == 0.0
     assert adm1.end_time == 2.0
+    assert not adm1.is_placebo()
     adm2 = Administration.create(amt, dose, 0.0, [0.0, 1.0, 2.0])
     assert adm1 == adm2
     assert adm1 == adm1
@@ -75,6 +76,13 @@ def test_administration():
     }
     assert adm1.to_dict() == d
     assert Administration.from_dict(d) == adm1
+
+    dose3 = Bolus.create(0)
+    dose4 = Bolus.create(0.0)
+    adm = Administration.create(amt, dose3, 0.0, [0.0, 1.0, 2.0])
+    assert adm.is_placebo()
+    adm = Administration.create(amt, dose4, 0.0, [0.0, 1.0, 2.0])
+    assert adm.is_placebo()
 
 
 def test_empty_arm():
@@ -379,11 +387,13 @@ def test_render_trial_design():
 
     adm = DataVariable.create("AMT", "dose", "ratio", properties={'unit': 'mg'})
     dose = Bolus.create(100)
+    dose2 = Bolus.create(0)
     admin = Administration.create(adm, dose, 0.0, [0.0, 1.0])
+    admin2 = Administration.create(adm, dose2, 0.0, [0.0, 1.0])
 
     arm = Arm.create("Arm", 50, (obs, obs2, admin))
 
-    arm2 = Arm.create("Arm2", 50, (obs, obs2))
+    arm2 = Arm.create("Arm2", 50, (obs, obs2, admin2))
     td = TrialDesign.create([arm, arm2], independent_variable=idv, arm_variable=armvar)
 
     s = repr(td)
