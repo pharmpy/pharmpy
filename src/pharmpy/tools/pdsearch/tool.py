@@ -225,7 +225,10 @@ def create_and_run_placebo_models(context, treatment_variable, data_strategy, ba
     if data_strategy == 'full':
         current_me = baseme
     else:
-        model = filter_dataset(baseme.model, f"{treatment_variable}!=0")
+        if 'ARM' in baseme.model.datainfo.names:
+            model = filter_dataset(baseme.model, "ARM!=1")
+        else:
+            model = filter_dataset(baseme.model, f"{treatment_variable}!=0")
         if len(get_observations(model)) == 0:
             context.abort_workflow("No observations left in dataset after ignoring placebo data")
         current_me = ModelEntry.create(model=model, modelfit_results=baseme.modelfit_results)
